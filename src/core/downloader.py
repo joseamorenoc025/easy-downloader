@@ -1,5 +1,5 @@
 import os
-from src.config.settings import settings
+from config.settings import settings
 
 def build_download_options(
     mode: str, 

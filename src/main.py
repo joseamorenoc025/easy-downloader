@@ -1,10 +1,10 @@
 import sys
 import os
 
-# Añadir el directorio raíz del proyecto al path de Python para que reconozca "src"
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Añadir el directorio src al path para que funcione tanto en desarrollo como empaquetado con PyInstaller
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.ui.main_window import MainWindow
+from ui.main_window import MainWindow
 
 def main():
     try:

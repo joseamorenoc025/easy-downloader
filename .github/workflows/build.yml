@@ -26,10 +26,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        # Agrega las opciones de pyinstaller que necesites, ejemplo:
-        # --noconsole para ocultar la terminal de fondo
-        # --icon=assets/icon.ico si tuvieras un ícono
-        pyinstaller --noconfirm --onedir --windowed --name "EasyDownloader" src/main.py
+        pyinstaller --noconfirm --onedir --windowed --name "EasyDownloader" --paths src src/main.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

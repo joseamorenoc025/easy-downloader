@@ -4,14 +4,14 @@ import os
 import re
 import webbrowser
 from tkinter import filedialog
-from src.core.metadata import fetch_metadata
-from src.core.downloader import build_download_options
-from src.core.ffmpeg_utils import check_ffmpeg_installed
-from src.utils.threading_utils import DownloadWorker
-from src.utils.validators import is_valid_url
-from src.utils.formatters import estimate_filesize, format_duration
-from src.ui.dialogs import show_error, show_info, ask_yes_no
-from src.config.settings import settings
+from core.metadata import fetch_metadata
+from core.downloader import build_download_options
+from core.ffmpeg_utils import check_ffmpeg_installed
+from utils.threading_utils import DownloadWorker
+from utils.validators import is_valid_url
+from utils.formatters import estimate_filesize, format_duration
+from ui.dialogs import show_error, show_info, ask_yes_no
+from config.settings import settings
 
 LINK_COLOR = "#5dade2"  # Lighter, more readable blue for dark themes
 
