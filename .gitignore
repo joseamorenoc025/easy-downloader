@@ -1,0 +1,16 @@
+# Environments
+venv/
+.env
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# CustomTkinter caches
+.customtkinter_theme.json
+
+# Logs and temp files
+*.log
+*.tmp
