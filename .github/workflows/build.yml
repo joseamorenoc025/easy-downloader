@@ -28,8 +28,19 @@ jobs:
       run: |
         pyinstaller --noconfirm --onedir --windowed --name "EasyDownloader" --paths src src/main.py
 
-    - name: Upload Artifact
+    - name: Compress build into ZIP
+      run: |
+        Compress-Archive -Path dist/EasyDownloader/* -DestinationPath EasyDownloader-Windows.zip
+
+    - name: Upload to GitHub Release (public asset)
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: EasyDownloader-Windows.zip
+
+    - name: Upload Artifact (manual/workflow_dispatch runs only)
+      if: github.event_name == 'workflow_dispatch'
       uses: actions/upload-artifact@v4
       with:
         name: EasyDownloader-Windows
-        path: dist/EasyDownloader/
+        path: EasyDownloader-Windows.zip
