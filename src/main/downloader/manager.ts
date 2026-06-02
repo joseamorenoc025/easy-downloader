@@ -1,5 +1,8 @@
-import YtDlpWrap from 'yt-dlp-wrap'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { default: YtDlpWrap } = require('yt-dlp-wrap')
 import { randomUUID } from 'crypto'
+import { join } from 'path'
+import { app } from 'electron'
 import { buildDownloadOptions } from './options'
 import type { DownloadItem, DownloadOptions, DownloadProgress } from '../../src/types'
 
@@ -10,30 +13,51 @@ type ErrorCallback = (itemId: string, error: string) => void
 export class DownloadManager {
   private queue: DownloadItem[] = []
   private currentItem: DownloadItem | null = null
-  private currentProcess: YtDlpWrap | null = null
+  private currentEmitter: import('yt-dlp-wrap').YTDlpEventEmitter | null = null
   private cancelled = false
-  private ytDlp: YtDlpWrap
+  private ytDlp: import('yt-dlp-wrap').default
+  private binaryReady = false
+  private downloadPath: string
 
   private onProgress: ProgressCallback
   private onComplete: CompleteCallback
   private onError: ErrorCallback
 
   constructor(
+    downloadPath: string,
     onProgress: ProgressCallback,
     onComplete: CompleteCallback,
     onError: ErrorCallback
   ) {
+    this.downloadPath = downloadPath
     this.ytDlp = new YtDlpWrap()
     this.onProgress = onProgress
     this.onComplete = onComplete
     this.onError = onError
   }
 
+  async ensureBinary(): Promise<void> {
+    if (this.binaryReady) return
+    const isWin = process.platform === 'win32'
+    const binaryName = isWin ? 'yt-dlp.exe' : 'yt-dlp'
+    const ytDlpPath = join(app.getPath('userData'), binaryName)
+    try {
+      this.ytDlp.getBinaryPath()
+      this.binaryReady = true
+    } catch {
+      await YtDlpWrap.downloadFromGithub(ytDlpPath)
+      this.ytDlp.setBinaryPath(ytDlpPath)
+      this.binaryReady = true
+    }
+  }
+
   async addToQueue(options: DownloadOptions): Promise<DownloadItem> {
+    await this.ensureBinary()
+
     const item: DownloadItem = {
       id: randomUUID(),
       url: options.url,
-      title: 'Fetching info...',
+      title: 'Queued...',
       status: 'queued',
       progress: 0,
       speed: '',
@@ -53,12 +77,12 @@ export class DownloadManager {
     const item = this.queue.find(i => i.id === itemId)
     if (!item) return
 
-    if (this.currentItem?.id === itemId && this.currentProcess) {
+    if (this.currentItem?.id === itemId && this.currentEmitter) {
       this.cancelled = true
-      this.currentProcess.kill('SIGTERM')
+      this.currentEmitter.ytDlpProcess?.kill('SIGTERM')
       item.status = 'cancelled'
       this.currentItem = null
-      this.currentProcess = null
+      this.currentEmitter = null
       this.onComplete(item)
       this.processQueue()
     } else {
@@ -69,9 +93,9 @@ export class DownloadManager {
   }
 
   cancelAll(): void {
-    if (this.currentProcess) {
+    if (this.currentEmitter) {
       this.cancelled = true
-      this.currentProcess.kill('SIGTERM')
+      this.currentEmitter.ytDlpProcess?.kill('SIGTERM')
     }
     this.queue.forEach(item => {
       if (item.status === 'queued') {
@@ -81,7 +105,7 @@ export class DownloadManager {
     })
     this.queue = []
     this.currentItem = null
-    this.currentProcess = null
+    this.currentEmitter = null
   }
 
   getQueue(): DownloadItem[] {
@@ -98,103 +122,86 @@ export class DownloadManager {
     item.status = 'downloading'
 
     try {
-      const ytDlpOptions = buildDownloadOptions({
+      this.cancelled = false
+      const opts = buildDownloadOptions({
         url: item.url,
         format: item.format,
         quality: item.quality,
-        outputDir: undefined
+        outputDir: this.downloadPath
       })
 
-      this.cancelled = false
-      this.currentProcess = this.ytDlp
-
-      const progressRegex = /\[download\]\s+([\d.]+)%/
-
-      const stream = this.ytDlp.exec([
+      const args = [
         item.url,
         '--no-warnings',
         '--newline',
         '--progress',
-        '-f', String(ytDlpOptions.format),
-        '-o', String(ytDlpOptions.outtmpl),
+        '-f', String(opts.format),
+        '-o', String(opts.outtmpl),
         ...(item.format === 'audio'
           ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
           : [])
-      ])
+      ]
 
-      stream.stdout?.on('data', (data: Buffer) => {
+      const emitter = this.ytDlp.exec(args)
+      this.currentEmitter = emitter
+
+      emitter.on('progress', (progress) => {
         if (this.cancelled) return
-        const line = data.toString().trim()
+        const pct = progress.percent ?? 0
+        item.progress = pct
+        item.speed = progress.currentSpeed ?? ''
+        item.eta = progress.eta ?? ''
 
-        const progressMatch = line.match(progressRegex)
-        if (progressMatch) {
-          const percentage = parseFloat(progressMatch[1])
-          item.progress = percentage
-
-          const speedMatch = line.match(/at\s+([\d.]+[KMG]?i?B\/s)/)
-          const etaMatch = line.match(/ETA\s+(\S+)/)
-          const sizeMatch = line.match(/of\s+([\d.]+)\s*(MiB|GiB|KiB)/)
-
-          if (speedMatch) item.speed = speedMatch[1]
-          if (etaMatch) item.eta = etaMatch[1]
+        if (progress.totalSize) {
+          const sizeStr = progress.totalSize.replace('~', '')
+          const sizeMatch = sizeStr.match(/^([\d.]+)\s*(MiB|GiB|KiB)/)
           if (sizeMatch) {
-            const sizeVal = parseFloat(sizeMatch[1])
+            const val = parseFloat(sizeMatch[1])
             const unit = sizeMatch[2]
-            item.totalBytes = unit === 'GiB' ? sizeVal * 1024 * 1024 * 1024
-              : unit === 'MiB' ? sizeVal * 1024 * 1024
-              : sizeVal * 1024
+            item.totalBytes = unit === 'GiB' ? val * 1024 * 1024 * 1024
+              : unit === 'MiB' ? val * 1024 * 1024
+              : val * 1024
           }
-
-          this.onProgress({
-            id: item.id,
-            percentage: percentage.toFixed(1),
-            speed: item.speed,
-            eta: item.eta,
-            downloaded: formatBytes(item.downloadedBytes),
-            total: formatBytes(item.totalBytes)
-          })
         }
 
-        const titleMatch = line.match(/^\[download\] Destination:\s+(.+)/)
-        if (titleMatch) {
-          const filePath = titleMatch[1]
+        this.onProgress({
+          id: item.id,
+          percentage: pct.toFixed(1),
+          speed: item.speed,
+          eta: item.eta,
+          downloaded: '',
+          total: progress.totalSize ?? ''
+        })
+      })
+
+      emitter.on('ytDlpEvent', (eventType, eventData) => {
+        if (eventType === 'Destination') {
+          const filePath = eventData.trim()
           const fileName = filePath.split(/[\\/]/).pop() || ''
           item.title = fileName.replace(/\.[^.]+$/, '')
           item.outputPath = filePath
         }
-      })
-
-      stream.stderr?.on('data', (data: Buffer) => {
-        const line = data.toString()
-        if (line.includes('ERROR:')) {
-          item.status = 'error'
-          item.error = line.replace('ERROR:', '').trim()
-          this.onError(item.id, item.error)
+        if (eventType === 'ExtractAudio') {
+          item.title = eventData.trim()
         }
       })
 
-      await new Promise<void>((resolve, reject) => {
-        stream.on('close', (code: number | null) => {
-          if (this.cancelled) {
-            resolve()
-            return
-          }
+      await new Promise<void>((resolve) => {
+        emitter.on('close', (code) => {
+          if (this.cancelled) { resolve(); return }
           if (code === 0) {
             item.status = 'completed'
             item.progress = 100
             this.onComplete(item)
-            resolve()
           } else if (item.status !== 'error') {
             item.status = 'error'
             item.error = `Process exited with code ${code}`
             this.onError(item.id, item.error)
-            resolve()
-          } else {
-            resolve()
           }
+          resolve()
         })
 
-        stream.on('error', (err: Error) => {
+        emitter.on('error', (err) => {
           if (!this.cancelled) {
             item.status = 'error'
             item.error = err.message
@@ -210,17 +217,9 @@ export class DownloadManager {
     }
 
     this.currentItem = null
-    this.currentProcess = null
+    this.currentEmitter = null
     this.queue = this.queue.filter(i => i.status !== 'completed' && i.status !== 'cancelled' && i.status !== 'error')
 
     setTimeout(() => this.processQueue(), 100)
   }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const k = 1024
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${units[i]}`
 }

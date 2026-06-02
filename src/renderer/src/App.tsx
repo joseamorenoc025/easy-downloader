@@ -27,8 +27,8 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-6">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col px-4 py-6">
+      <header className="shrink-0 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">EasyDownloader</h1>
           <p className="text-sm text-muted-foreground">
@@ -49,19 +49,21 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 space-y-6">
+      <main className="flex min-h-0 flex-1 flex-col gap-4 pt-4">
         <DownloadForm onAdd={handleAdd} isLoading={isLoading} />
 
-        <div className="border-t pt-6">
-          <QueueList
-            items={queue}
-            onCancel={cancelDownload}
-            onCancelAll={cancelAll}
-          />
+        <div className="min-h-0 flex-1 border-t pt-4">
+          <div className="queue-scroll h-full overflow-y-auto">
+            <QueueList
+              items={queue}
+              onCancel={cancelDownload}
+              onCancelAll={cancelAll}
+            />
+          </div>
         </div>
       </main>
 
-      <footer className="mt-8 border-t pt-4 text-center">
+      <footer className="shrink-0 border-t pt-3 text-center">
         <p className="text-xs text-muted-foreground">
           <a
             href="https://github.com/joseamorenoc025/easy-downloader"

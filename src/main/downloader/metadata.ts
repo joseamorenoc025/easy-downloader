@@ -1,22 +1,37 @@
-import YtDlpWrap from 'yt-dlp-wrap'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { default: YtDlpWrap } = require('yt-dlp-wrap')
 import type { MetadataResult } from '../../src/types'
 
-const ytDlp = new YtDlpWrap()
-
 export async function fetchMetadata(url: string): Promise<MetadataResult> {
-  try {
-    const raw = await ytDlp.getVideoInfo(url)
-    const data = typeof raw === 'string' ? JSON.parse(raw) : raw
+  const ytDlp = new YtDlpWrap()
 
-    const isPlaylist = !!(data._type === 'playlist' || data.entries)
+  try {
+    const stdout = await ytDlp.execPromise([
+      '--dump-json',
+      '--flat-playlist',
+      '--no-warnings',
+      url
+    ])
+
+    const lines = stdout.trim().split('\n')
+    const firstLine = lines[0]
+    if (!firstLine) throw new Error('No metadata returned')
+
+    const data = JSON.parse(firstLine)
+
+    const isPlaylist = data._type === 'playlist' || !!data.entries || lines.length > 1
 
     if (isPlaylist) {
+      const entries = lines.map(l => {
+        try { return JSON.parse(l) } catch { return null }
+      }).filter(Boolean)
+
       return {
         title: data.title || 'Playlist',
         duration: data.duration || 0,
         uploader: data.uploader,
         isPlaylist: true,
-        playlistCount: data.playlist_count || data.entries?.length || 0,
+        playlistCount: data.playlist_count || entries.length,
         thumbnail: data.thumbnail
       }
     }

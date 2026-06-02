@@ -1,7 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import Store from 'electron-store'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { default: Store } = require('electron-store')
 import { DownloadManager } from './downloader/manager'
 import { fetchMetadata } from './downloader/metadata'
 import { checkFfmpegInstalled } from './downloader/ffmpeg'
@@ -102,7 +103,9 @@ function setupIPC(): void {
 }
 
 function initDownloadManager(): void {
+  const dlPath = (store.get('downloadPath') as string) || join(app.getPath('downloads'), 'EasyDownloader')
   downloadManager = new DownloadManager(
+    dlPath,
     (progress) => {
       mainWindow?.webContents.send('download-progress', progress)
     },
