@@ -64,6 +64,7 @@
         "nsis"
       ],
       "icon": "resources/icon.ico",
+      "signAndEditExecutable": false,
       "extraResources": [
         {
           "from": "node_modules/@ffmpeg-installer/win32-x64",
