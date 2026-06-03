@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Button } from './ui/button'
 import { isValidUrl } from '../lib/utils'
+import { useI18n } from '../i18n/context'
+import { MetadataPreview } from './metadata-preview'
 import type { DownloadOptions, MetadataResult } from '@/types'
 import '../lib/ipc'
 
@@ -12,6 +14,7 @@ interface DownloadFormProps {
 }
 
 export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: DownloadFormProps) {
+  const { t } = useI18n()
   const [url, setUrl] = useState('')
   const [source, setSource] = useState<'youtube' | 'spotify'>('youtube')
   const [format, setFormat] = useState<'video' | 'audio'>('video')
@@ -41,17 +44,17 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
 
     const trimmedUrl = url.trim()
     if (!trimmedUrl) {
-      setError('Enter a URL')
+      setError(t('form.error.emptyUrl'))
       return
     }
     if (!isValidUrl(trimmedUrl)) {
-      setError('Invalid URL format')
+      setError(t('form.error.invalidUrl'))
       return
     }
 
     if (source === 'spotify') {
       if (!trimmedUrl.includes('open.spotify.com')) {
-        setError('Enter a valid Spotify URL')
+        setError(t('form.error.invalidSpotifyUrl'))
         return
       }
       onAddSpotify?.(trimmedUrl)
@@ -89,18 +92,18 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
           value={url}
           onChange={e => { setUrl(e.target.value); setError('') }}
           placeholder={source === 'youtube'
-            ? 'https://youtube.com/watch?v=...'
-            : 'https://open.spotify.com/track/...'}
+            ? t('form.placeholder.youtube')
+            : t('form.placeholder.spotify')}
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button type="submit" disabled={isLoading || !url.trim()}>
-          {isLoading ? 'Adding...' : 'Download'}
+          {isLoading ? t('form.adding') : t('form.download')}
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
       {spotdlMissing && source === 'spotify' && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
-          spotdl no está instalado. Ejecuta: <code className="rounded bg-muted px-1">pip install spotdl</code>
+          {t('form.error.spotdlMissing')} <code className="rounded bg-muted px-1">pip install spotdl</code>
         </p>
       )}
       <div className="flex flex-wrap gap-4">
@@ -114,7 +117,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            YouTube
+            {t('source.youtube')}
           </button>
           <button
             type="button"
@@ -129,7 +132,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Spotify
+            {t('source.spotify')}
           </button>
         </div>
 
@@ -145,7 +148,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Video
+                {t('form.video')}
               </button>
               <button
                 type="button"
@@ -156,7 +159,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Audio
+                {t('form.audio')}
               </button>
             </div>
             <select
@@ -173,6 +176,17 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
           </>
         )}
       </div>
+
+      {url && isValidUrl(url) && source === 'youtube' && (
+        <MetadataPreview
+          url={url}
+          source={source}
+          onDownload={() => {
+            onAdd({ url: url.trim(), format, quality, playlistFolder: true })
+            setUrl('')
+          }}
+        />
+      )}
     </form>
   )
 }

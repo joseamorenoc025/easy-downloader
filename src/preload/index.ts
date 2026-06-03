@@ -20,6 +20,9 @@ const api: EasyDownloaderAPI = {
   getSavedQueue: () => ipcRenderer.invoke('get-saved-queue'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
+  getHistory: () => ipcRenderer.invoke('get-history'),
+  addHistoryEntry: (entry) => ipcRenderer.invoke('add-history-entry', entry),
+  clearHistory: () => ipcRenderer.invoke('clear-history'),
   onDownloadProgress: (callback) => {
     ipcRenderer.on('download-progress', (_event, data) => callback(data))
   },
