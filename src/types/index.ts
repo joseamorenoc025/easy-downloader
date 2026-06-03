@@ -10,6 +10,7 @@ export interface DownloadItem {
   downloadedBytes: number
   format: 'video' | 'audio'
   quality: string
+  source: 'youtube' | 'spotify'
   outputPath?: string
   error?: string
 }
@@ -60,13 +61,20 @@ export interface Settings {
 export interface EasyDownloaderAPI {
   fetchMetadata: (url: string) => Promise<MetadataResult>
   addDownload: (options: DownloadOptions) => Promise<DownloadItem | null>
+  addSpotifyDownload: (url: string) => Promise<DownloadItem | null>
   cancelDownload: (itemId: string) => Promise<void>
   cancelAll: () => Promise<void>
   getQueue: () => Promise<DownloadItem[]>
   selectDirectory: () => Promise<string | null>
+  openFolder: (folderPath?: string) => Promise<void>
   getSettings: () => Promise<Settings>
   setTheme: (mode: 'light' | 'dark' | 'system') => Promise<void>
   checkFfmpeg: () => Promise<boolean>
+  checkSpotdl: () => Promise<boolean>
+  saveQueue: (queue: Array<{ url: string; format: string; quality: string; source: string }>) => Promise<void>
+  getSavedQueue: () => Promise<Array<{ url: string; format: string; quality: string; source: string }>>
+  checkForUpdates: () => Promise<{ updateInfo: { version: string } } | null>
+  quitAndInstall: () => Promise<void>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
   onDownloadComplete: (callback: (item: DownloadItem) => void) => void
   onDownloadError: (callback: (data: { itemId: string; error: string }) => void) => void

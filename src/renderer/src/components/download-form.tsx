@@ -6,15 +6,18 @@ import '../lib/ipc'
 
 interface DownloadFormProps {
   onAdd: (options: DownloadOptions) => void
+  onAddSpotify?: (url: string) => void
   isLoading: boolean
   onMetadata?: (meta: MetadataResult) => void
 }
 
-export function DownloadForm({ onAdd, isLoading, onMetadata }: DownloadFormProps) {
+export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: DownloadFormProps) {
   const [url, setUrl] = useState('')
+  const [source, setSource] = useState<'youtube' | 'spotify'>('youtube')
   const [format, setFormat] = useState<'video' | 'audio'>('video')
   const [quality, setQuality] = useState('best')
   const [error, setError] = useState('')
+  const [spotdlMissing, setSpotdlMissing] = useState(false)
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,6 +30,16 @@ export function DownloadForm({ onAdd, isLoading, onMetadata }: DownloadFormProps
     }
     if (!isValidUrl(trimmedUrl)) {
       setError('Invalid URL format')
+      return
+    }
+
+    if (source === 'spotify') {
+      if (!trimmedUrl.includes('open.spotify.com')) {
+        setError('Enter a valid Spotify URL')
+        return
+      }
+      onAddSpotify?.(trimmedUrl)
+      setUrl('')
       return
     }
 
@@ -45,13 +58,12 @@ export function DownloadForm({ onAdd, isLoading, onMetadata }: DownloadFormProps
       quality
     })
     setUrl('')
-  }, [url, format, quality, onAdd, onMetadata])
+  }, [url, format, quality, source, onAdd, onAddSpotify, onMetadata])
 
   const videoQualities = ['best', '1080p', '720p', '480p']
   const audioQualities = ['320', '256', '192', '128']
 
   const qualities = format === 'video' ? videoQualities : audioQualities
-  const qualityLabel = format === 'video' ? 'Resolution' : 'Bitrate'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,7 +72,9 @@ export function DownloadForm({ onAdd, isLoading, onMetadata }: DownloadFormProps
           type="text"
           value={url}
           onChange={e => { setUrl(e.target.value); setError('') }}
-          placeholder="https://youtube.com/watch?v=..."
+          placeholder={source === 'youtube'
+            ? 'https://youtube.com/watch?v=...'
+            : 'https://open.spotify.com/track/...'}
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button type="submit" disabled={isLoading || !url.trim()}>
@@ -68,42 +82,80 @@ export function DownloadForm({ onAdd, isLoading, onMetadata }: DownloadFormProps
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex gap-4">
+      {spotdlMissing && source === 'spotify' && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          spotdl no está instalado. Ejecuta: <code className="rounded bg-muted px-1">pip install spotdl</code>
+        </p>
+      )}
+      <div className="flex flex-wrap gap-4">
         <div className="flex items-center gap-2 rounded-lg border p-1">
           <button
             type="button"
-            onClick={() => { setFormat('video'); setQuality('best') }}
+            onClick={() => { setSource('youtube'); setFormat('video'); setQuality('best') }}
             className={`rounded-md px-3 py-1 text-sm transition-colors ${
-              format === 'video'
+              source === 'youtube'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Video
+            YouTube
           </button>
           <button
             type="button"
-            onClick={() => { setFormat('audio'); setQuality('320') }}
+            onClick={async () => {
+              setSource('spotify'); setFormat('audio'); setQuality('320')
+              const ok = await window.easyDownloader.checkSpotdl()
+              setSpotdlMissing(!ok)
+            }}
             className={`rounded-md px-3 py-1 text-sm transition-colors ${
-              format === 'audio'
+              source === 'spotify'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Audio
+            Spotify
           </button>
         </div>
-        <select
-          value={quality}
-          onChange={e => setQuality(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-1 text-sm"
-        >
-          {qualities.map(q => (
-            <option key={q} value={q}>
-              {q}{format === 'audio' ? ' kbps' : ''}
-            </option>
-          ))}
-        </select>
+
+        {source === 'youtube' && (
+          <>
+            <div className="flex items-center gap-2 rounded-lg border p-1">
+              <button
+                type="button"
+                onClick={() => { setFormat('video'); setQuality('best') }}
+                className={`rounded-md px-3 py-1 text-sm transition-colors ${
+                  format === 'video'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Video
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFormat('audio'); setQuality('320') }}
+                className={`rounded-md px-3 py-1 text-sm transition-colors ${
+                  format === 'audio'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Audio
+              </button>
+            </div>
+            <select
+              value={quality}
+              onChange={e => setQuality(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+            >
+              {qualities.map(q => (
+                <option key={q} value={q}>
+                  {q}{format === 'audio' ? ' kbps' : ''}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
     </form>
   )

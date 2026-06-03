@@ -1,10 +1,11 @@
 import { Progress } from './ui/progress'
 import type { DownloadItem } from '@/types'
-import { formatBytes } from '../lib/utils'
+import '../lib/ipc'
 
 interface QueueItemProps {
   item: DownloadItem
   onCancel: (id: string) => void
+  onOpenFolder?: (item: DownloadItem) => void
 }
 
 const statusLabels: Record<string, string> = {
@@ -23,7 +24,7 @@ const statusColors: Record<string, string> = {
   cancelled: 'text-muted-foreground'
 }
 
-export function QueueItem({ item, onCancel }: QueueItemProps) {
+export function QueueItem({ item, onCancel, onOpenFolder }: QueueItemProps) {
   return (
     <div className="rounded-lg border bg-card p-3 transition-colors">
       <div className="flex items-start justify-between gap-2">
@@ -59,8 +60,14 @@ export function QueueItem({ item, onCancel }: QueueItemProps) {
       )}
 
       {item.status === 'completed' && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-          <span>Downloaded</span>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs text-green-600 dark:text-green-400">Downloaded</span>
+          <button
+            onClick={() => onOpenFolder?.(item)}
+            className="text-xs text-primary underline-offset-4 hover:underline transition-colors"
+          >
+            Open folder
+          </button>
         </div>
       )}
 

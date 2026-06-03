@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto'
 import { join } from 'path'
 import { app } from 'electron'
 import { buildDownloadOptions } from './options'
+import { getFfmpegPath } from './ffmpeg'
 import type { DownloadItem, DownloadOptions, DownloadProgress } from '../../src/types'
 
 type ProgressCallback = (progress: DownloadProgress) => void
@@ -135,6 +136,7 @@ export class DownloadManager {
         '--no-warnings',
         '--newline',
         '--progress',
+        '--ffmpeg-location', getFfmpegPath(),
         '-f', String(opts.format),
         '-o', String(opts.outtmpl),
         ...(item.format === 'audio'

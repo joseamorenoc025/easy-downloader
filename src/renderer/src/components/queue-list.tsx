@@ -1,25 +1,20 @@
 import type { DownloadItem } from '@/types'
 import { QueueItem } from './queue-item'
+import { InfoSection } from './info-section'
 import { Button } from './ui/button'
 
 interface QueueListProps {
   items: DownloadItem[]
   onCancel: (id: string) => void
   onCancelAll: () => void
+  onOpenFolder?: (item: DownloadItem) => void
 }
 
-export function QueueList({ items, onCancel, onCancelAll }: QueueListProps) {
+export function QueueList({ items, onCancel, onCancelAll, onOpenFolder }: QueueListProps) {
   const activeItems = items.filter(i => i.status !== 'cancelled')
 
   if (activeItems.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-lg text-muted-foreground">No downloads yet</p>
-        <p className="text-sm text-muted-foreground/60">
-          Paste a URL above and click Add
-        </p>
-      </div>
-    )
+    return <InfoSection />
   }
 
   return (
@@ -40,7 +35,7 @@ export function QueueList({ items, onCancel, onCancelAll }: QueueListProps) {
         </div>
       )}
       {activeItems.map(item => (
-        <QueueItem key={item.id} item={item} onCancel={onCancel} />
+        <QueueItem key={item.id} item={item} onCancel={onCancel} onOpenFolder={onOpenFolder} />
       ))}
     </div>
   )
