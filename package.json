@@ -2,6 +2,7 @@
   "name": "easy-downloader",
   "version": "2.0.0",
   "description": "Desktop app to download videos and extract audio from YouTube and other sites",
+  "author": "Jose Amoreno <joseamorenoc025@gmail.com>",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
