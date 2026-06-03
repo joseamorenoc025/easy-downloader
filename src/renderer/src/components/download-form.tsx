@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Button } from './ui/button'
 import { isValidUrl } from '../lib/utils'
 import type { DownloadOptions, MetadataResult } from '@/types'
@@ -18,6 +18,22 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
   const [quality, setQuality] = useState('best')
   const [error, setError] = useState('')
   const [spotdlMissing, setSpotdlMissing] = useState(false)
+
+  // Listen for paste events from App.tsx
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const url = (e as CustomEvent).detail as string
+      setUrl(url)
+      setError('')
+      if (url.includes('open.spotify.com')) {
+        setSource('spotify')
+      } else {
+        setSource('youtube')
+      }
+    }
+    window.addEventListener('paste-url', handler)
+    return () => window.removeEventListener('paste-url', handler)
+  }, [])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,7 +94,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button type="submit" disabled={isLoading || !url.trim()}>
-          {isLoading ? 'Adding...' : 'Add'}
+          {isLoading ? 'Adding...' : 'Download'}
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}

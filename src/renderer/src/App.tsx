@@ -53,21 +53,18 @@ export default function App() {
     e.preventDefault()
   }, [])
 
-  // Global paste handler (Ctrl+V)
+  // Global paste handler (Ctrl+V) - only populate URL field, don't auto-download
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain')
-      if (text && isValidUrl(text) && !isLoading) {
-        if (text.includes('open.spotify.com')) {
-          addSpotifyDownload(text)
-        } else {
-          addDownload({ url: text, format: 'video', quality: 'best' })
-        }
+      if (text && isValidUrl(text)) {
+        // Dispatch custom event to fill the URL input
+        window.dispatchEvent(new CustomEvent('paste-url', { detail: text }))
       }
     }
     document.addEventListener('paste', handlePaste)
     return () => document.removeEventListener('paste', handlePaste)
-  }, [addDownload, addSpotifyDownload, isLoading])
+  }, [])
 
   return (
     <div
