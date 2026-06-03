@@ -1,16 +1,26 @@
-# Environments
-venv/
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
 .env
 
-# Python caches
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# CustomTkinter caches
-.customtkinter_theme.json
-
-# Logs and temp files
+# Logs
 *.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
 *.tmp
+
+downloads/
