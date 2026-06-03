@@ -53,6 +53,18 @@ export interface DownloadProgress {
   total: string
 }
 
+export interface HistoryEntry {
+  id: string
+  url: string
+  title: string
+  format: 'video' | 'audio'
+  quality: string
+  source: 'youtube' | 'spotify'
+  outputPath?: string
+  completedAt: string
+  fileSize?: number
+}
+
 export interface Settings {
   downloadPath: string
   themeMode: 'light' | 'dark' | 'system'
@@ -75,6 +87,9 @@ export interface EasyDownloaderAPI {
   getSavedQueue: () => Promise<Array<{ url: string; format: string; quality: string; source: string }>>
   checkForUpdates: () => Promise<{ updateInfo: { version: string } } | null>
   quitAndInstall: () => Promise<void>
+  getHistory: () => Promise<HistoryEntry[]>
+  addHistoryEntry: (entry: HistoryEntry) => Promise<void>
+  clearHistory: () => Promise<void>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
   onDownloadComplete: (callback: (item: DownloadItem) => void) => void
   onDownloadError: (callback: (data: { itemId: string; error: string }) => void) => void

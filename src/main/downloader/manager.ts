@@ -11,11 +11,15 @@ type ProgressCallback = (progress: DownloadProgress) => void
 type CompleteCallback = (item: DownloadItem) => void
 type ErrorCallback = (itemId: string, error: string) => void
 
+interface ActiveDownload {
+  item: DownloadItem
+  emitter: import('yt-dlp-wrap').YTDlpEventEmitter
+}
+
 export class DownloadManager {
   private queue: DownloadItem[] = []
-  private currentItem: DownloadItem | null = null
-  private currentEmitter: import('yt-dlp-wrap').YTDlpEventEmitter | null = null
-  private cancelled = false
+  private activeItems: Map<string, ActiveDownload> = new Map()
+  private maxConcurrent = 3
   private ytDlp: import('yt-dlp-wrap').default
   private binaryReady = false
   private downloadPath: string
@@ -75,18 +79,19 @@ export class DownloadManager {
   }
 
   cancelItem(itemId: string): void {
-    const item = this.queue.find(i => i.id === itemId)
-    if (!item) return
+    const active = this.activeItems.get(itemId)
+    if (active) {
+      active.emitter.ytDlpProcess?.kill('SIGTERM')
+      active.item.status = 'cancelled'
+      this.onComplete(active.item)
+      this.activeItems.delete(itemId)
+      this.cleanQueue()
+      setTimeout(() => this.processQueue(), 100)
+      return
+    }
 
-    if (this.currentItem?.id === itemId && this.currentEmitter) {
-      this.cancelled = true
-      this.currentEmitter.ytDlpProcess?.kill('SIGTERM')
-      item.status = 'cancelled'
-      this.currentItem = null
-      this.currentEmitter = null
-      this.onComplete(item)
-      this.processQueue()
-    } else {
+    const item = this.queue.find(i => i.id === itemId)
+    if (item) {
       item.status = 'cancelled'
       this.onComplete(item)
       this.queue = this.queue.filter(i => i.id !== itemId)
@@ -94,10 +99,13 @@ export class DownloadManager {
   }
 
   cancelAll(): void {
-    if (this.currentEmitter) {
-      this.cancelled = true
-      this.currentEmitter.ytDlpProcess?.kill('SIGTERM')
+    for (const [, active] of this.activeItems) {
+      active.emitter.ytDlpProcess?.kill('SIGTERM')
+      active.item.status = 'cancelled'
+      this.onComplete(active.item)
     }
+    this.activeItems.clear()
+
     this.queue.forEach(item => {
       if (item.status === 'queued') {
         item.status = 'cancelled'
@@ -105,50 +113,60 @@ export class DownloadManager {
       }
     })
     this.queue = []
-    this.currentItem = null
-    this.currentEmitter = null
   }
 
   getQueue(): DownloadItem[] {
     return [...this.queue]
   }
 
-  private async processQueue(): Promise<void> {
-    if (this.currentItem || this.queue.length === 0) return
+  private cleanQueue(): void {
+    this.queue = this.queue.filter(
+      i => i.status !== 'completed' && i.status !== 'cancelled' && i.status !== 'error'
+    )
+  }
 
-    const item = this.queue.find(i => i.status === 'queued')
-    if (!item) return
+  private processQueue(): void {
+    const slots = this.maxConcurrent - this.activeItems.size
+    if (slots <= 0) return
 
-    this.currentItem = item
+    const queued = this.queue.filter(i => i.status === 'queued').slice(0, slots)
+    if (queued.length === 0) return
+
+    for (const item of queued) {
+      this.startDownload(item)
+    }
+  }
+
+  private startDownload(item: DownloadItem): void {
     item.status = 'downloading'
 
+    const opts = buildDownloadOptions({
+      url: item.url,
+      format: item.format,
+      quality: item.quality,
+      outputDir: this.downloadPath
+    })
+
+    const args = [
+      ...(item.url.includes('list=') ? ['--yes-playlist'] : ['--no-playlist']),
+      item.url,
+      '--no-warnings',
+      '--newline',
+      '--progress',
+      '--ffmpeg-location', getFfmpegPath(),
+      '-f', String(opts.format),
+      '-o', String(opts.outtmpl),
+      ...(item.format === 'audio'
+        ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
+        : [])
+    ]
+
     try {
-      this.cancelled = false
-      const opts = buildDownloadOptions({
-        url: item.url,
-        format: item.format,
-        quality: item.quality,
-        outputDir: this.downloadPath
-      })
-
-      const args = [
-        item.url,
-        '--no-warnings',
-        '--newline',
-        '--progress',
-        '--ffmpeg-location', getFfmpegPath(),
-        '-f', String(opts.format),
-        '-o', String(opts.outtmpl),
-        ...(item.format === 'audio'
-          ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
-          : [])
-      ]
-
       const emitter = this.ytDlp.exec(args)
-      this.currentEmitter = emitter
+
+      this.activeItems.set(item.id, { item, emitter })
 
       emitter.on('progress', (progress) => {
-        if (this.cancelled) return
         const pct = progress.percent ?? 0
         item.progress = pct
         item.speed = progress.currentSpeed ?? ''
@@ -188,40 +206,35 @@ export class DownloadManager {
         }
       })
 
-      await new Promise<void>((resolve) => {
-        emitter.on('close', (code) => {
-          if (this.cancelled) { resolve(); return }
-          if (code === 0) {
-            item.status = 'completed'
-            item.progress = 100
-            this.onComplete(item)
-          } else if (item.status !== 'error') {
-            item.status = 'error'
-            item.error = `Process exited with code ${code}`
-            this.onError(item.id, item.error)
-          }
-          resolve()
-        })
+      emitter.on('close', (code) => {
+        this.activeItems.delete(item.id)
 
-        emitter.on('error', (err) => {
-          if (!this.cancelled) {
-            item.status = 'error'
-            item.error = err.message
-            this.onError(item.id, err.message)
-          }
-          resolve()
-        })
+        if (code === 0) {
+          item.status = 'completed'
+          item.progress = 100
+          this.onComplete(item)
+        } else if (item.status !== 'cancelled') {
+          item.status = 'error'
+          item.error = `Process exited with code ${code}`
+          this.onError(item.id, item.error)
+        }
+
+        this.cleanQueue()
+        setTimeout(() => this.processQueue(), 100)
+      })
+
+      emitter.on('error', (err) => {
+        this.activeItems.delete(item.id)
+        item.status = 'error'
+        item.error = err.message
+        this.onError(item.id, err.message)
+        this.cleanQueue()
+        setTimeout(() => this.processQueue(), 100)
       })
     } catch (err) {
       item.status = 'error'
       item.error = (err as Error).message
       this.onError(item.id, (err as Error).message)
     }
-
-    this.currentItem = null
-    this.currentEmitter = null
-    this.queue = this.queue.filter(i => i.status !== 'completed' && i.status !== 'cancelled' && i.status !== 'error')
-
-    setTimeout(() => this.processQueue(), 100)
   }
 }

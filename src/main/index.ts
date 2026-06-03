@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, Notification } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, Notification, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -21,6 +21,8 @@ const store = new Store({
 let mainWindow: BrowserWindow | null = null
 let downloadManager: DownloadManager | null = null
 let spotifyManager: SpotifyDownloadManager | null = null
+let tray: Tray | null = null
+let isQuitting = false
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -142,6 +144,25 @@ function setupIPC(): void {
   ipcMain.handle('quit-and-install', async () => {
     autoUpdater.quitAndInstall()
   })
+
+  ipcMain.handle('get-history', async () => {
+    return store.get('downloadHistory', [])
+  })
+
+  ipcMain.handle('add-history-entry', async (_event, entry) => {
+    const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
+    history.unshift(entry)
+    store.set('downloadHistory', history.slice(0, 200))
+  })
+
+  ipcMain.handle('clear-history', async () => {
+    store.set('downloadHistory', [])
+  })
+
+  ipcMain.handle('quit-app', async () => {
+    isQuitting = true
+    app.quit()
+  })
 }
 
 function initDownloadManager(): void {
@@ -154,13 +175,28 @@ function initDownloadManager(): void {
     (item) => {
       mainWindow?.webContents.send('download-complete', item)
 
-      if (item.status === 'completed' && Notification.isSupported()) {
-        const notif = new Notification({
-          title: 'Download Complete',
-          body: item.title || 'Your download has finished',
-          silent: true
+      if (item.status === 'completed') {
+        const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
+        history.unshift({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          format: item.format,
+          quality: item.quality,
+          source: item.source,
+          outputPath: item.outputPath,
+          completedAt: new Date().toISOString()
         })
-        notif.show()
+        store.set('downloadHistory', history.slice(0, 200))
+
+        if (Notification.isSupported()) {
+          const notif = new Notification({
+            title: 'Download Complete',
+            body: item.title || 'Your download has finished',
+            silent: true
+          })
+          notif.show()
+        }
       }
     },
     (itemId, error) => {
@@ -174,19 +210,75 @@ function initSpotifyManager(): void {
     (item) => {
       mainWindow?.webContents.send('download-complete', item)
 
-      if (item.status === 'completed' && Notification.isSupported()) {
-        const notif = new Notification({
-          title: 'Spotify Download Complete',
-          body: item.title || 'Your Spotify download has finished',
-          silent: true
+      if (item.status === 'completed') {
+        const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
+        history.unshift({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          format: item.format,
+          quality: item.quality,
+          source: item.source,
+          outputPath: item.outputPath,
+          completedAt: new Date().toISOString()
         })
-        notif.show()
+        store.set('downloadHistory', history.slice(0, 200))
+
+        if (Notification.isSupported()) {
+          const notif = new Notification({
+            title: 'Spotify Download Complete',
+            body: item.title || 'Your Spotify download has finished',
+            silent: true
+          })
+          notif.show()
+        }
       }
     },
     (itemId, error) => {
       mainWindow?.webContents.send('download-error', { itemId, error })
     }
   )
+}
+
+function setupTray(): void {
+  const iconPath = join(__dirname, '../../resources/icon.png')
+
+  try {
+    tray = new Tray(iconPath)
+    tray.setToolTip('EasyDownloader')
+
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Show EasyDownloader',
+        click: () => {
+          mainWindow?.show()
+          mainWindow?.focus()
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Exit',
+        click: () => {
+          tray?.destroy()
+          tray = null
+          app.quit()
+        }
+      }
+    ])
+
+    tray.setContextMenu(contextMenu)
+
+    tray.on('double-click', () => {
+      if (mainWindow?.isVisible()) {
+        mainWindow.hide()
+      } else {
+        mainWindow?.show()
+        mainWindow?.focus()
+      }
+    })
+  } catch {
+    // Tray not supported (Linux without libappindicator)
+  }
 }
 
 app.whenReady().then(() => {
@@ -203,8 +295,17 @@ app.whenReady().then(() => {
 
   setupIPC()
   createWindow()
+  setupTray()
   initDownloadManager()
   initSpotifyManager()
+
+  // Minimize to tray on close
+  mainWindow?.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault()
+      mainWindow?.hide()
+    }
+  })
 
   // Auto-updater
   autoUpdater.autoDownload = true
