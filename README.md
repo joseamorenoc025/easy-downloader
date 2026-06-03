@@ -1,105 +1,83 @@
-# 🚀 EasyDownloader
+# EasyDownloader
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![CustomTkinter](https://img.shields.io/badge/GUI-CustomTkinter-brightgreen.svg)
-![yt-dlp](https://img.shields.io/badge/Backend-yt--dlp-red.svg)
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
+Desktop app to download videos and extract audio from YouTube and Spotify. Built with Electron + React + Tailwind.
 
-**EasyDownloader** es una aplicación de escritorio sencilla, robusta y con una interfaz moderna para descargar videos y extraer audio de YouTube (y otros sitios soportados). Está construida en Python utilizando `CustomTkinter` para una interfaz de usuario elegante y minimalista, y `yt-dlp` junto con `ffmpeg` para un rendimiento de descarga y conversión de alta calidad.
+## Features
 
----
+- **YouTube**: Download videos up to 4K, extract MP3 audio, full playlist support
+- **Spotify**: Download tracks and playlists as MP3 (requires spotdl)
+- **Queue**: Add multiple downloads, up to 3 concurrent
+- **Metadata Preview**: See thumbnail, title, duration before downloading
+- **History**: Searchable history with re-download and open folder
+- **i18n**: Spanish and English UI
+- **Dark/Light theme**: System-aware theme toggle
+- **System tray**: Minimizes to tray, double-click to toggle
+- **Auto-updater**: Checks GitHub Releases on startup
+- **Drag & drop**: Paste or drag URLs, Ctrl+V auto-fills the input
+- **Persistent queue**: Queue survives app restarts
 
-## ✨ Características Principales
+## Download
 
-- 📥 **Sistema de Cola (Queue)**: Añade múltiples videos o listas de reproducción para descargar de forma secuencial, sin congelar ni sobrecargar tu PC.
-- 🎵 **Modos de Audio y Video**: Descarga videos en formato **MP4** o extrae únicamente el audio en formato **MP3**.
-- ⚙️ **Selección de Calidad**: Elige tu resolución preferida para videos (ej. 1080p, 720p) o la mejor calidad de audio disponible.
-- 📊 **Estimaciones en Tiempo Real**: Visualiza el tamaño estimado del archivo, el progreso y la velocidad de descarga en tiempo real.
-- 🦋 **Diseño Ligero y Moderno**: Interfaz de usuario con modo oscuro/claro y bajo consumo de recursos gracias a `CustomTkinter`.
+Download the latest installer from [Releases](https://github.com/joseamorenoc025/easy-downloader/releases).
 
----
+| Platform | Format |
+|----------|--------|
+| Windows | `EasyDownloader-Setup-*.exe` (NSIS) |
+| Linux | `EasyDownloader-*.AppImage` or `.deb` |
 
-## 🛠️ Requisitos del Sistema
+## Requirements
 
-- **Python**: Versión 3.10 o superior.
-- **FFmpeg**: Es **obligatorio** tener `ffmpeg` instalado y agregado al PATH de tu sistema operativo. Es necesario para la extracción de audio y el ensamblaje de video y audio de alta calidad.
-  - [Descargar FFmpeg](https://ffmpeg.org/download.html)
+| Dependency | Needed for | How to get |
+|------------|-----------|------------|
+| **yt-dlp** | YouTube downloads | Auto-downloaded on first launch |
+| **ffmpeg** | Audio conversion to MP3 | Bundled with the installer |
+| **spotdl** | Spotify downloads | `pip install spotdl` |
 
----
+## Development
 
-## 🚀 Instalación y Configuración
-
-Sigue estos pasos para ejecutar el proyecto en tu máquina local:
-
-1. **Clonar el repositorio**:
-   ```bash
-   git clone https://github.com/tu-usuario/EasyDownloader.git
-   cd EasyDownloader
-   ```
-
-2. **Crear un entorno virtual** (Recomendado):
-   ```bash
-   python -m venv venv
-   ```
-
-3. **Activar el entorno virtual**:
-   - **Windows**:
-     ```bash
-     venv\Scripts\activate
-     ```
-   - **Linux/Mac**:
-     ```bash
-     source venv/bin/activate
-     ```
-
-4. **Instalar las dependencias**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. **Configuración opcional**:
-   Puedes copiar el archivo de ejemplo de variables de entorno para personalizar ajustes básicos:
-   ```bash
-   cp .env.example .env
-   ```
-   *(Nota: La aplicación funciona perfectamente sin esto, utilizando tu carpeta de 'Descargas' por defecto).*
-
-6. **Ejecutar la aplicación**:
-   ```bash
-   python src/main.py
-   ```
-
----
-
-## 📁 Estructura del Proyecto
-
-```text
-EasyDownloader/
-├── src/
-│   ├── main.py          # Punto de entrada de la aplicación
-│   ├── config/          # Configuraciones y variables de entorno
-│   ├── core/            # Lógica de descarga e integración con yt-dlp
-│   ├── ui/              # Componentes de la interfaz gráfica (CustomTkinter)
-│   └── utils/           # Funciones de utilidad y helpers
-├── .env.example         # Ejemplo de variables de entorno
-├── .gitignore           # Archivos y carpetas ignorados por Git
-├── requirements.txt     # Dependencias de Python
-└── README.md            # Este archivo
+```bash
+git clone https://github.com/joseamorenoc025/easy-downloader.git
+cd easy-downloader
+npm install
+npm run dev
 ```
 
----
+### Build for distribution
 
-## 🤝 Contribuciones
+```bash
+npm run dist:win      # Windows (NSIS)
+npm run dist:linux    # Linux (AppImage + deb)
+```
 
-¡Las contribuciones son bienvenidas! Si deseas mejorar este proyecto:
-1. Haz un *Fork* del repositorio.
-2. Crea una rama para tu nueva característica (`git checkout -b feature/NuevaCaracteristica`).
-3. Haz *Commit* de tus cambios (`git commit -m 'Añade nueva característica'`).
-4. Haz *Push* a la rama (`git push origin feature/NuevaCaracteristica`).
-5. Abre un *Pull Request*.
+### Tech stack
 
----
+- **Frontend**: React 18 + TypeScript + Tailwind CSS
+- **Backend**: Electron 42 + electron-vite
+- **Downloads**: yt-dlp-wrap (yt-dlp), spotdl (Spotify)
+- **Packaging**: electron-builder + electron-updater
+- **Storage**: electron-store
 
-## 📄 Licencia
+## Project structure
 
-Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+```
+easy-downloader/
+├── src/
+│   ├── main/           # Electron main process
+│   │   ├── downloader/ # yt-dlp/spotdl/ffmpeg management
+│   │   ├── index.ts    # Window, tray, IPC setup
+│   │   └── ...
+│   ├── preload/        # Context bridge (IPC)
+│   ├── renderer/       # React UI
+│   │   ├── components/ # UI components
+│   │   ├── i18n/       # es.json, en.json
+│   │   ├── hooks/      # Custom React hooks
+│   │   └── ...
+│   └── types/          # TypeScript type definitions
+├── resources/          # App icons
+├── package.json
+└── README.md
+```
+
+## License
+
+MIT

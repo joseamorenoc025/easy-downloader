@@ -12,7 +12,7 @@ import { checkFfmpegInstalled } from './downloader/ffmpeg'
 
 const store = new Store({
   defaults: {
-    downloadPath: join(app.getPath('downloads'), 'EasyDownloader'),
+    downloadPath: app.getPath('downloads'),
     themeMode: 'system' as 'light' | 'dark' | 'system',
     downloadQueue: [] as Array<{ url: string; format: string; quality: string; source: string }>
   }
@@ -110,12 +110,12 @@ function setupIPC(): void {
 
   ipcMain.handle('add-spotify-download', async (_event, url: string) => {
     if (!spotifyManager) return null
-    const dlPath = (store.get('downloadPath') as string) || join(app.getPath('downloads'), 'EasyDownloader')
+    const dlPath = (store.get('downloadPath') as string) || app.getPath('downloads')
     return spotifyManager.addToQueue(url, dlPath)
   })
 
   ipcMain.handle('open-folder', async (_event, folderPath?: string) => {
-    const path = folderPath || (store.get('downloadPath') as string) || join(app.getPath('downloads'), 'EasyDownloader')
+    const path = folderPath || (store.get('downloadPath') as string) || app.getPath('downloads')
     shell.openPath(path)
   })
 
@@ -139,6 +139,38 @@ function setupIPC(): void {
 
   ipcMain.handle('check-for-updates', async () => {
     return autoUpdater.checkForUpdates().catch(() => null)
+  })
+
+  ipcMain.handle('check-ytdlp', async () => {
+    if (!downloadManager) return false
+    try {
+      await downloadManager.ensureBinary()
+      return true
+    } catch {
+      return false
+    }
+  })
+
+  ipcMain.handle('check-dependencies', async () => {
+    const ffmpegOk = checkFfmpegInstalled()
+    const spotdlOk = await (async () => {
+      try {
+        const { execSync } = require('child_process')
+        execSync('spotdl --version', { stdio: 'ignore' })
+        return true
+      } catch {
+        return false
+      }
+    })()
+    const ytdlpOk = downloadManager ? await (async () => {
+      try {
+        await downloadManager.ensureBinary()
+        return true
+      } catch {
+        return false
+      }
+    })() : false
+    return { ffmpeg: ffmpegOk, spotdl: spotdlOk, ytdlp: ytdlpOk }
   })
 
   ipcMain.handle('quit-and-install', async () => {
@@ -166,7 +198,7 @@ function setupIPC(): void {
 }
 
 function initDownloadManager(): void {
-  const dlPath = (store.get('downloadPath') as string) || join(app.getPath('downloads'), 'EasyDownloader')
+  const dlPath = (store.get('downloadPath') as string) || app.getPath('downloads')
   downloadManager = new DownloadManager(
     dlPath,
     (progress) => {
@@ -241,7 +273,9 @@ function initSpotifyManager(): void {
 }
 
 function setupTray(): void {
-  const iconPath = join(__dirname, '../../resources/icon.png')
+  const iconPath = app.isPackaged
+    ? join(process.resourcesPath, 'icon.png')
+    : join(__dirname, '../../resources/icon.png')
 
   try {
     tray = new Tray(iconPath)
@@ -298,6 +332,13 @@ app.whenReady().then(() => {
   setupTray()
   initDownloadManager()
   initSpotifyManager()
+
+  // Eager check: verify yt-dlp binary on startup
+  if (downloadManager) {
+    downloadManager.ensureBinary().catch(() => {
+      console.error('Failed to download yt-dlp binary')
+    })
+  }
 
   // Minimize to tray on close
   mainWindow?.on('close', (event) => {

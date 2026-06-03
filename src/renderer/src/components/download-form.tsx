@@ -101,11 +101,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      {spotdlMissing && source === 'spotify' && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          {t('form.error.spotdlMissing')} <code className="rounded bg-muted px-1">pip install spotdl</code>
-        </p>
-      )}
+      {spotdlMissing && source === 'spotify' && <SpotdlMissingAlert />}
       <div className="flex flex-wrap gap-4">
         <div className="flex items-center gap-2 rounded-lg border p-1">
           <button
@@ -188,5 +184,59 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
         />
       )}
     </form>
+  )
+}
+
+function SpotdlMissingAlert() {
+  const { t } = useI18n()
+  const [showHelp, setShowHelp] = useState(false)
+
+  return (
+    <div className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            {t('deps.spotdl.missing')}
+          </p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            {t('deps.spotdl.what')}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowHelp(!showHelp)}
+          className="shrink-0 rounded px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:text-amber-400 dark:hover:bg-amber-900"
+        >
+          {showHelp ? t('deps.spotdl.hide') : t('deps.spotdl.help')}
+        </button>
+      </div>
+
+      {showHelp && (
+        <div className="mt-2 space-y-1 text-xs text-amber-800 dark:text-amber-300">
+          <p>
+            <strong>pip:</strong>{' '}
+            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">pip install spotdl</code>
+          </p>
+          <p>
+            <strong>pip (alt):</strong>{' '}
+            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">python -m pip install spotdl</code>
+          </p>
+          <p>
+            <strong>Scoop (Windows):</strong>{' '}
+            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">scoop install spotdl</code>
+          </p>
+          <p>
+            <a
+              href="https://github.com/spotDL/spotify-downloader"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100"
+            >
+              {t('deps.learnMore')}
+            </a>
+          </p>
+        </div>
+      )}
+    </div>
   )
 }

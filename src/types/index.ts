@@ -70,6 +70,12 @@ export interface Settings {
   themeMode: 'light' | 'dark' | 'system'
 }
 
+export interface DependencyStatus {
+  ffmpeg: boolean
+  spotdl: boolean
+  ytdlp: boolean
+}
+
 export interface EasyDownloaderAPI {
   fetchMetadata: (url: string) => Promise<MetadataResult>
   addDownload: (options: DownloadOptions) => Promise<DownloadItem | null>
@@ -83,6 +89,8 @@ export interface EasyDownloaderAPI {
   setTheme: (mode: 'light' | 'dark' | 'system') => Promise<void>
   checkFfmpeg: () => Promise<boolean>
   checkSpotdl: () => Promise<boolean>
+  checkYtdlp: () => Promise<boolean>
+  checkDependencies: () => Promise<DependencyStatus>
   saveQueue: (queue: Array<{ url: string; format: string; quality: string; source: string }>) => Promise<void>
   getSavedQueue: () => Promise<Array<{ url: string; format: string; quality: string; source: string }>>
   checkForUpdates: () => Promise<{ updateInfo: { version: string } } | null>
