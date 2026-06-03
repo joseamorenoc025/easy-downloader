@@ -1,4 +1,6 @@
 import type { DownloadOptions } from '../../src/types'
+import { app } from 'electron'
+import { mkdirSync, existsSync } from 'fs'
 
 const VIDEO_FORMAT_MAP: Record<string, string> = {
   'best': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -14,6 +16,10 @@ const AUDIO_FORMAT_MAP: Record<string, string> = {
   '128': 'bestaudio[abr<=128]/bestaudio'
 }
 
+function getDefaultOutputDir(): string {
+  return app.getPath('downloads')
+}
+
 export function buildDownloadOptions(
   options: DownloadOptions
 ): Record<string, unknown> {
@@ -21,9 +27,20 @@ export function buildDownloadOptions(
   const formatMap = isAudio ? AUDIO_FORMAT_MAP : VIDEO_FORMAT_MAP
   const formatStr = formatMap[options.quality] || formatMap['best']
 
+  const outputDir = options.outputDir || getDefaultOutputDir()
+
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true })
+  }
+
+  const isPlaylist = options.url.includes('list=')
+  const outtmpl = isPlaylist
+    ? `${outputDir}/%(playlist_title)s/%(title)s.%(ext)s`
+    : `${outputDir}/%(title)s.%(ext)s`
+
   const ytDlpOptions: Record<string, unknown> = {
     format: formatStr,
-    outtmpl: `${options.outputDir || 'downloads'}/%(title)s.%(ext)s`,
+    outtmpl,
     progress_hooks: [],
     quiet: true,
     no_warnings: true,

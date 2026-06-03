@@ -3,10 +3,11 @@ import { DownloadForm } from './components/download-form'
 import { QueueList } from './components/queue-list'
 import { History } from './components/history'
 import { ThemeToggle } from './components/theme-toggle'
+import { DependencyBanner } from './components/dependency-banner'
 import { useDownloads } from './hooks/use-downloads'
 import { useSettings } from './hooks/use-settings'
 import { I18nProvider, useI18n } from './i18n/context'
-import type { DownloadOptions, HistoryEntry } from '@/types'
+import type { DownloadOptions, HistoryEntry, DependencyStatus } from '@/types'
 import { isValidUrl } from './lib/utils'
 import './lib/ipc'
 
@@ -15,6 +16,17 @@ function AppContent() {
   const { settings, updateTheme, selectDirectory } = useSettings()
   const { t, locale, setLocale } = useI18n()
   const [view, setView] = useState<'queue' | 'history'>('queue')
+  const [deps, setDeps] = useState<DependencyStatus | null>(null)
+  const [depsDismissed, setDepsDismissed] = useState(false)
+
+  useEffect(() => {
+    window.easyDownloader.checkDependencies().then(setDeps)
+  }, [])
+
+  const handleRetryYtdlp = useCallback(async () => {
+    const result = await window.easyDownloader.checkDependencies()
+    setDeps(result)
+  }, [])
 
   useEffect(() => {
     const mode = settings.themeMode
@@ -71,12 +83,17 @@ function AppContent() {
   }, [])
 
   return (
-    <div
-      className="mx-auto flex h-dvh w-full max-w-2xl flex-col px-4 py-6"
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-    >
-      <header className="shrink-0 flex items-center justify-between">
+      <div
+        className="mx-auto flex h-dvh w-full max-w-2xl flex-col px-4 py-6"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      >
+        {deps && !depsDismissed && (
+          <div className="mb-4">
+            <DependencyBanner deps={deps} onDismiss={() => setDepsDismissed(true)} onRetryYtdlp={handleRetryYtdlp} />
+          </div>
+        )}
+        <header className="shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={handleOpenFolder}

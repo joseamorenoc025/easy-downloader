@@ -3,44 +3,40 @@ import { join } from 'path'
 import { app } from 'electron'
 import { existsSync } from 'fs'
 
-let bundledFfmpegPath: string | null = null
+let cachedFfmpegPath: string | null = null
 
-function getBundledFfmpegPath(): string | null {
-  if (bundledFfmpegPath) return bundledFfmpegPath
+function findBundledFfmpeg(): string | null {
+  if (cachedFfmpegPath) return cachedFfmpegPath
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
-    if (ffmpegPath && existsSync(ffmpegPath)) {
-      bundledFfmpegPath = ffmpegPath
-      return ffmpegPath
+  if (app.isPackaged) {
+    const ext = process.platform === 'win32' ? '.exe' : ''
+    const resourcePath = join(process.resourcesPath, 'ffmpeg', `ffmpeg${ext}`)
+    if (existsSync(resourcePath)) {
+      cachedFfmpegPath = resourcePath
+      return resourcePath
     }
-  } catch {
-    // Package not available
-  }
-
-  // Check in app resources
-  const resourcePath = app.isPackaged
-    ? join(process.resourcesPath, 'ffmpeg')
-    : join(__dirname, '../../../resources/ffmpeg')
-
-  const ext = process.platform === 'win32' ? '.exe' : ''
-  const fullPath = resourcePath + ext
-
-  if (existsSync(fullPath)) {
-    bundledFfmpegPath = fullPath
-    return fullPath
+  } else {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
+      if (ffmpegPath && existsSync(ffmpegPath)) {
+        cachedFfmpegPath = ffmpegPath
+        return ffmpegPath
+      }
+    } catch {
+      // Package not available
+    }
   }
 
   return null
 }
 
 export function getFfmpegPath(): string {
-  return getBundledFfmpegPath() || 'ffmpeg'
+  return findBundledFfmpeg() || 'ffmpeg'
 }
 
 export function checkFfmpegInstalled(): boolean {
-  const ffmpegPath = getBundledFfmpegPath()
+  const ffmpegPath = findBundledFfmpeg()
   if (ffmpegPath) return true
 
   try {

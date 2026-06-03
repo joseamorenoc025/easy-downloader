@@ -76,5 +76,31 @@
   "update.downloading": "Downloading new version...",
   "update.ready": "Update ready. Restart to apply.",
   "update.checking": "Checking for updates...",
-  "update.notFound": "You're up to date"
+  "update.notFound": "You're up to date",
+
+  "deps.banner.title": "Missing dependencies",
+  "deps.banner.text": "Some features require additional tools:",
+  "deps.banner.dismiss": "Got it",
+
+  "deps.spotdl.missing": "spotdl is not installed",
+  "deps.spotdl.what": "Required for Spotify downloads",
+  "deps.spotdl.install": "pip install spotdl",
+  "deps.spotdl.help": "How to install",
+  "deps.spotdl.hide": "Hide",
+
+  "deps.ffmpeg.missing": "ffmpeg is not installed",
+  "deps.ffmpeg.what": "Required for audio conversion to MP3",
+  "deps.ffmpeg.installWin": "Download from ffmpeg.org and add to PATH",
+  "deps.ffmpeg.installLinux": "sudo apt install ffmpeg",
+  "deps.ffmpeg.help": "How to install",
+  "deps.ffmpeg.hide": "Hide",
+
+  "deps.ytdlp.missing": "yt-dlp could not be downloaded",
+  "deps.ytdlp.what": "Required for YouTube downloads",
+  "deps.ytdlp.install": "Auto-downloaded on first launch",
+  "deps.ytdlp.retry": "Retry",
+
+  "deps.howto.spotdl": "To install spotdl:\n• Windows/Mac/Linux: pip install spotdl\n• If pip is not available: python -m pip install spotdl\n• Windows alternative: scoop install spotdl\n• More info: https://github.com/spotDL/spotify-downloader",
+  "deps.howto.ffmpeg": "To install ffmpeg:\n• Windows: https://ffmpeg.org/download.html (add to PATH)\n• Linux (Debian/Ubuntu): sudo apt install ffmpeg\n• Linux (Fedora): sudo dnf install ffmpeg\n• Mac: brew install ffmpeg",
+  "deps.learnMore": "More info"
 }
