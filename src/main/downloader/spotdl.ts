@@ -2,6 +2,7 @@ import { spawn, ChildProcess } from 'child_process'
 import { randomUUID } from 'crypto'
 import { mkdirSync, existsSync } from 'fs'
 import { getFfmpegPath } from './ffmpeg'
+import { isValidHttpUrl } from '../utils/url'
 import type { DownloadItem } from '../../src/types'
 
 type CompleteCallback = (item: DownloadItem) => void
@@ -89,13 +90,29 @@ export class SpotifyDownloadManager {
     const spotdlCmd = isWin ? 'spotdl' : 'spotdl'
 
     try {
+      // Defense in depth: validate URL before spawn. The IPC handler also
+      // validates, but a direct call to addToQueue (e.g. from queue restore)
+      // would bypass that — this guard is the last line of defense.
+      // Also fixes the "Spotify saves to project root" bug: with `shell: true`,
+      // downloadPath containing spaces (e.g. "C:\Users\José\Mi Música\") gets
+      // split by the shell and spotdl falls back to the cwd. `shell: false`
+      // sends args literally so the path arrives intact.
+      if (!isValidHttpUrl(item.url)) {
+        item.status = 'error'
+        item.error = `URL inválida: solo se permiten http y https`
+        this.onError(item.id, item.error)
+        this.currentItem = null
+        this.currentProcess = null
+        this.queue = this.queue.filter(i => i.id !== item.id)
+        return
+      }
       this.currentProcess = spawn(spotdlCmd, [
         item.url,
         '--output', downloadPath,
         '--format', 'mp3',
         '--bitrate', '128k',
         '--ffmpeg', getFfmpegPath()
-      ], { shell: true })
+      ], { shell: false })
 
       let fullOutput = ''
 
@@ -122,9 +139,11 @@ export class SpotifyDownloadManager {
           item.status = 'completed'
           item.progress = 100
           this.onComplete(item)
+          this.currentItem = null
+          this.currentProcess = null
+          this.queue = this.queue.filter(i => i.id !== item.id)
+          setTimeout(() => this.processQueue(downloadPath), 100)
         } else {
-          item.status = 'error'
-
           const lower = fullOutput.toLowerCase()
           const notFound = lower.includes('not recognized') ||
             lower.includes('no se reconoce') ||
@@ -132,28 +151,65 @@ export class SpotifyDownloadManager {
             lower.includes('not found') ||
             lower.includes('no encontrado')
 
-          item.error = notFound
-            ? 'spotdl is not installed. Run: pip install spotdl'
-            : fullOutput.split('\n').filter(l => l.trim()).slice(-3).join('; ') || `Process exited with code ${code}`
-
-          this.onError(item.id, item.error)
+          if (notFound) {
+            item.status = 'error'
+            item.error = 'spotdl is not installed. Run: pip install spotdl'
+            this.onError(item.id, item.error)
+            this.currentItem = null
+            this.currentProcess = null
+            this.queue = this.queue.filter(i => i.id !== item.id)
+            setTimeout(() => this.processQueue(downloadPath), 100)
+          } else {
+            const retries = (item as any).retries || 0
+            if (retries < 3) {
+              ;(item as any).retries = retries + 1
+              item.status = 'queued'
+              this.currentItem = null
+              this.currentProcess = null
+              setTimeout(() => this.processQueue(downloadPath), 3000)
+            } else {
+              item.status = 'error'
+              item.error = fullOutput.split('\n').filter(l => l.trim()).slice(-3).join('; ') || `Process exited with code ${code}`
+              this.onError(item.id, item.error)
+              this.currentItem = null
+              this.currentProcess = null
+              this.queue = this.queue.filter(i => i.id !== item.id)
+              setTimeout(() => this.processQueue(downloadPath), 100)
+            }
+          }
         }
-
-        this.currentItem = null
-        this.currentProcess = null
-        this.queue = this.queue.filter(i => i.id !== item.id)
-        setTimeout(() => this.processQueue(downloadPath), 100)
       })
 
       this.currentProcess.on('error', (err) => {
         if (item.status === 'cancelled') return
-        item.status = 'error'
-        item.error = err.message.includes('ENOENT')
-          ? 'spotdl is not installed. Run: pip install spotdl'
-          : err.message
-        this.onError(item.id, item.error)
-        this.currentItem = null
-        this.currentProcess = null
+        
+        const isEnoent = err.message.includes('ENOENT')
+        if (isEnoent) {
+          item.status = 'error'
+          item.error = 'spotdl is not installed. Run: pip install spotdl'
+          this.onError(item.id, item.error)
+          this.currentItem = null
+          this.currentProcess = null
+          this.queue = this.queue.filter(i => i.id !== item.id)
+          setTimeout(() => this.processQueue(downloadPath), 100)
+        } else {
+          const retries = (item as any).retries || 0
+          if (retries < 3) {
+            ;(item as any).retries = retries + 1
+            item.status = 'queued'
+            this.currentItem = null
+            this.currentProcess = null
+            setTimeout(() => this.processQueue(downloadPath), 3000)
+          } else {
+            item.status = 'error'
+            item.error = err.message
+            this.onError(item.id, item.error)
+            this.currentItem = null
+            this.currentProcess = null
+            this.queue = this.queue.filter(i => i.id !== item.id)
+            setTimeout(() => this.processQueue(downloadPath), 100)
+          }
+        }
       })
     } catch (err) {
       item.status = 'error'

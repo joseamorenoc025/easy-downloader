@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, Notification, Tray, Menu } from 'electron'
-import { join } from 'path'
+import { join, resolve, sep } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { default: Store } = require('electron-store')
@@ -9,6 +9,16 @@ import { DownloadManager } from './downloader/manager'
 import { SpotifyDownloadManager } from './downloader/spotdl'
 import { fetchMetadata } from './downloader/metadata'
 import { checkFfmpegInstalled } from './downloader/ffmpeg'
+import { isValidHttpUrl } from './utils/url'
+
+// Global error handlers — log and continue. In production these should surface
+// a user-facing dialog; for now a single point of visibility is enough.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason)
+})
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err)
+})
 
 const store = new Store({
   defaults: {
@@ -35,7 +45,9 @@ function createWindow(): void {
     title: 'EasyDownloader',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -43,8 +55,16 @@ function createWindow(): void {
     mainWindow?.show()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const parsed = new URL(url)
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return { action: 'deny' }
+      }
+    } catch {
+      return { action: 'deny' }
+    }
+    shell.openExternal(url)
     return { action: 'deny' }
   })
 
@@ -57,10 +77,16 @@ function createWindow(): void {
 
 function setupIPC(): void {
   ipcMain.handle('fetch-metadata', async (_event, url: string) => {
+    if (!isValidHttpUrl(url)) {
+      throw new Error('URL inválida: solo http/https')
+    }
     return fetchMetadata(url)
   })
 
   ipcMain.handle('add-download', async (_event, options) => {
+    if (!options || !isValidHttpUrl(options?.url)) {
+      throw new Error('URL inválida')
+    }
     if (!downloadManager) return null
     return downloadManager.addToQueue(options)
   })
@@ -109,14 +135,29 @@ function setupIPC(): void {
   })
 
   ipcMain.handle('add-spotify-download', async (_event, url: string) => {
+    if (!isValidHttpUrl(url)) {
+      throw new Error('URL inválida: solo http/https')
+    }
     if (!spotifyManager) return null
     const dlPath = (store.get('downloadPath') as string) || app.getPath('downloads')
     return spotifyManager.addToQueue(url, dlPath)
   })
 
   ipcMain.handle('open-folder', async (_event, folderPath?: string) => {
-    const path = folderPath || (store.get('downloadPath') as string) || app.getPath('downloads')
-    shell.openPath(path)
+    const storedPath = (store.get('downloadPath') as string) || app.getPath('downloads')
+    const target = folderPath || storedPath
+    // Si el renderer pasa un path, debe estar dentro de storedPath
+    if (folderPath && folderPath !== storedPath) {
+      const resolved = resolve(folderPath)
+      const root = resolve(storedPath)
+      if (!resolved.startsWith(root + sep) && resolved !== root) {
+        return
+      }
+    }
+    const result = await shell.openPath(target)
+    if (result) {
+      console.error('Failed to open path:', result)
+    }
   })
 
   ipcMain.handle('check-spotdl', async () => {
@@ -322,6 +363,18 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // Set application menu to enable standard keyboard shortcuts (Ctrl+C / Ctrl+V)
+  const template = [
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' }
+  ]
+  if (process.platform === 'darwin') {
+    template.unshift({ role: 'appMenu' })
+  }
+  const menu = Menu.buildFromTemplate(template as any)
+  Menu.setApplicationMenu(menu)
+
   const themeMode = store.get('themeMode') as string
   if (themeMode === 'dark') nativeTheme.themeSource = 'dark'
   else if (themeMode === 'light') nativeTheme.themeSource = 'light'
@@ -395,4 +448,29 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// Ensure child processes (yt-dlp, spotdl, ffmpeg) are killed on quit.
+// Without this, downloads started moments before closing the app leave zombies.
+app.on('before-quit', (event) => {
+  if (isQuitting) return
+  isQuitting = true
+  event.preventDefault()
+  try {
+    downloadManager?.cancelAll()
+    spotifyManager?.cancelAll()
+  } catch (e) {
+    console.error('Error during cancelAll on quit:', e)
+  }
+  // Give children a moment to actually die before the main process exits.
+  setTimeout(() => app.quit(), 500)
+})
+
+process.on('SIGTERM', () => {
+  isQuitting = true
+  app.quit()
+})
+process.on('SIGINT', () => {
+  isQuitting = true
+  app.quit()
 })

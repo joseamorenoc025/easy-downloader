@@ -5,6 +5,7 @@ import { join } from 'path'
 import { app } from 'electron'
 import { buildDownloadOptions } from './options'
 import { getFfmpegPath } from './ffmpeg'
+import { isValidHttpUrl } from '../utils/url'
 import type { DownloadItem, DownloadOptions, DownloadProgress } from '../../src/types'
 
 type ProgressCallback = (progress: DownloadProgress) => void
@@ -137,7 +138,18 @@ export class DownloadManager {
     }
   }
 
-  private startDownload(item: DownloadItem): void {
+  private startDownload(item: DownloadItem, attempt = 1): void {
+    // Defense in depth: the IPC handler already validates, but addToQueue is
+    // also reachable via queue restore and other internal paths. A non-http(s)
+    // URL would be forwarded as a single argv to yt-dlp (no shell), so this is
+    // not a command-injection risk here — but it can cause SSRF via fetchMetadata
+    // and weird behavior in yt-dlp. Reject early.
+    if (!isValidHttpUrl(item.url)) {
+      item.status = 'error'
+      item.error = 'URL inválida: solo se permiten http y https'
+      this.onError(item.id, item.error)
+      return
+    }
     item.status = 'downloading'
 
     const opts = buildDownloadOptions({
@@ -153,6 +165,8 @@ export class DownloadManager {
       '--no-warnings',
       '--newline',
       '--progress',
+      '--socket-timeout', '20',
+      '--retries', '3',
       '--ffmpeg-location', getFfmpegPath(),
       '-f', String(opts.format),
       '-o', String(opts.outtmpl),
@@ -203,6 +217,42 @@ export class DownloadManager {
         }
         if (eventType === 'ExtractAudio') {
           item.title = eventData.trim()
+          item.speed = 'Procesando audio...'
+          item.eta = 'FFmpeg'
+          this.onProgress({
+            id: item.id,
+            percentage: '100',
+            speed: item.speed,
+            eta: item.eta,
+            downloaded: '',
+            total: ''
+          })
+        }
+        if (eventType === 'Merger') {
+          item.speed = 'Fusionando (FFmpeg)...'
+          item.eta = 'FFmpeg'
+          this.onProgress({
+            id: item.id,
+            percentage: '100',
+            speed: item.speed,
+            eta: item.eta,
+            downloaded: '',
+            total: ''
+          })
+        }
+        if (eventType === 'download' && eventData.includes('Downloading video')) {
+          const match = eventData.match(/Downloading video (\d+) of (\d+)/)
+          if (match) {
+            item.title = `[Video ${match[1]}/${match[2]}] ${item.title.replace(/^\[Video \d+\/\d+\] /, '')}`
+            this.onProgress({
+              id: item.id,
+              percentage: item.progress.toString(),
+              speed: item.speed,
+              eta: item.eta,
+              downloaded: '',
+              total: ''
+            })
+          }
         }
       })
 
@@ -213,23 +263,52 @@ export class DownloadManager {
           item.status = 'completed'
           item.progress = 100
           this.onComplete(item)
+          this.cleanQueue()
+          setTimeout(() => this.processQueue(), 100)
         } else if (item.status !== 'cancelled') {
-          item.status = 'error'
-          item.error = `Process exited with code ${code}`
-          this.onError(item.id, item.error)
+          if (attempt < 3) {
+            item.speed = `Reintentando (${attempt}/3)...`
+            this.onProgress({
+              id: item.id,
+              percentage: item.progress.toString(),
+              speed: item.speed,
+              eta: '',
+              downloaded: '',
+              total: ''
+            })
+            setTimeout(() => this.startDownload(item, attempt + 1), 3000)
+          } else {
+            item.status = 'error'
+            item.error = `Process exited with code ${code}`
+            this.onError(item.id, item.error)
+            this.cleanQueue()
+            setTimeout(() => this.processQueue(), 100)
+          }
         }
-
-        this.cleanQueue()
-        setTimeout(() => this.processQueue(), 100)
       })
 
       emitter.on('error', (err) => {
         this.activeItems.delete(item.id)
-        item.status = 'error'
-        item.error = err.message
-        this.onError(item.id, err.message)
-        this.cleanQueue()
-        setTimeout(() => this.processQueue(), 100)
+        if (item.status !== 'cancelled') {
+          if (attempt < 3) {
+            item.speed = `Reintentando (${attempt}/3)...`
+            this.onProgress({
+              id: item.id,
+              percentage: item.progress.toString(),
+              speed: item.speed,
+              eta: '',
+              downloaded: '',
+              total: ''
+            })
+            setTimeout(() => this.startDownload(item, attempt + 1), 3000)
+          } else {
+            item.status = 'error'
+            item.error = err.message
+            this.onError(item.id, err.message)
+            this.cleanQueue()
+            setTimeout(() => this.processQueue(), 100)
+          }
+        }
       })
     } catch (err) {
       item.status = 'error'
