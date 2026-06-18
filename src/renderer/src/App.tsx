@@ -21,25 +21,19 @@ function AppContent() {
   const [depsDismissed, setDepsDismissed] = useState(false)
 
   useEffect(() => {
-    window.easyDownloader.checkDependencies().then(setDeps)
+    window.easyDownloader.checkDependencies().then(setDeps).catch((err) => {
+      console.error('checkDependencies failed:', err)
+    })
   }, [])
 
   const handleRetryYtdlp = useCallback(async () => {
-    const result = await window.easyDownloader.checkDependencies()
-    setDeps(result)
-  }, [])
-
-  useEffect(() => {
-    const mode = settings.themeMode
-    if (mode === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else if (mode === 'light') {
-      document.documentElement.classList.remove('dark')
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      document.documentElement.classList.toggle('dark', prefersDark)
+    try {
+      const result = await window.easyDownloader.checkDependencies()
+      setDeps(result)
+    } catch (err) {
+      console.error('checkDependencies retry failed:', err)
     }
-  }, [settings.themeMode])
+  }, [])
 
   const handleAdd = (options: DownloadOptions) => {
     addDownload(options)

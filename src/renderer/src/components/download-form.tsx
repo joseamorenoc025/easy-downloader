@@ -3,17 +3,16 @@ import { Button } from './ui/button'
 import { isValidUrl } from '../lib/utils'
 import { useI18n } from '../i18n/context'
 import { MetadataPreview } from './metadata-preview'
-import type { DownloadOptions, MetadataResult } from '@/types'
+import type { DownloadOptions } from '@/types'
 import '../lib/ipc'
 
 interface DownloadFormProps {
   onAdd: (options: DownloadOptions) => void
   onAddSpotify?: (url: string) => void
   isLoading: boolean
-  onMetadata?: (meta: MetadataResult) => void
 }
 
-export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: DownloadFormProps) {
+export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormProps) {
   const { t } = useI18n()
   const [url, setUrl] = useState('')
   const [source, setSource] = useState<'youtube' | 'spotify'>('youtube')
@@ -62,22 +61,13 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
       return
     }
 
-    if (onMetadata) {
-      try {
-        const meta = await window.easyDownloader.fetchMetadata(trimmedUrl)
-        onMetadata(meta)
-      } catch {
-        // Continue anyway
-      }
-    }
-
     onAdd({
       url: trimmedUrl,
       format,
       quality
     })
     setUrl('')
-  }, [url, format, quality, source, onAdd, onAddSpotify, onMetadata])
+  }, [url, format, quality, source, onAdd, onAddSpotify])
 
   const videoQualities = ['best', '1080p', '720p', '480p']
   const audioQualities = ['320', '256', '192', '128']

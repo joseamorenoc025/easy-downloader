@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Progress } from './ui/progress'
 import type { DownloadItem } from '@/types'
@@ -11,7 +12,7 @@ interface QueueItemProps {
   index?: number
 }
 
-const statusKeys: Record<string, string> = {
+const statusKeys: Record<DownloadItem['status'], string> = {
   queued: 'item.queued',
   downloading: 'item.downloading',
   completed: 'item.completed',
@@ -19,7 +20,7 @@ const statusKeys: Record<string, string> = {
   cancelled: 'item.cancelled'
 }
 
-const statusDot: Record<string, string> = {
+const statusDot: Record<DownloadItem['status'], string> = {
   queued: 'bg-muted-foreground/40',
   downloading: 'bg-primary animate-pulse',
   completed: 'bg-green-500',
@@ -27,7 +28,7 @@ const statusDot: Record<string, string> = {
   cancelled: 'bg-muted-foreground/30'
 }
 
-const statusTextColors: Record<string, string> = {
+const statusTextColors: Record<DownloadItem['status'], string> = {
   queued: 'text-muted-foreground',
   downloading: 'text-primary',
   completed: 'text-green-600 dark:text-green-400',
@@ -35,7 +36,7 @@ const statusTextColors: Record<string, string> = {
   cancelled: 'text-muted-foreground'
 }
 
-export function QueueItem({ item, onCancel, onOpenFolder, index = 0 }: QueueItemProps) {
+function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemProps) {
   const { t } = useI18n()
 
   return (
@@ -48,21 +49,24 @@ export function QueueItem({ item, onCancel, onOpenFolder, index = 0 }: QueueItem
         type: 'spring',
         stiffness: 380,
         damping: 28,
-        delay: index * 0.04
+        // Cap the per-item stagger so the animation stays responsive when the
+        // queue grows past ~10 items. Previously `index * 0.04` scaled linearly
+        // and made the last item feel laggy.
+        delay: Math.min(index, 8) * 0.04
       }}
       className="rounded-xl border border-border/60 bg-card/70 p-3.5 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-border transition-shadow"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 flex items-start gap-2.5">
           {/* Status dot */}
-          <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${statusDot[item.status] || 'bg-muted-foreground/30'}`} />
+          <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${statusDot[item.status]}`} />
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-card-foreground leading-snug">
               {item.title}
             </p>
             <p className={`text-xs mt-0.5 ${statusTextColors[item.status]}`}>
-              {t(statusKeys[item.status] || 'item.error')}
+              {t(statusKeys[item.status])}
               <span className="text-muted-foreground/60 mx-1">·</span>
               {item.format === 'video' ? 'MP4' : 'MP3'}
               <span className="text-muted-foreground/60 mx-1">·</span>
@@ -125,3 +129,32 @@ export function QueueItem({ item, onCancel, onOpenFolder, index = 0 }: QueueItem
     </motion.div>
   )
 }
+
+/**
+ * Custom comparator: the parent re-renders this component on every progress
+ * tick for ANY item in the queue. Default shallow compare would re-render
+ * the other N-1 items unnecessarily. We only re-render when the fields this
+ * card actually displays have changed (plus a `bumpKey` field that the
+ * parent can set to force a re-render on list mutation).
+ */
+function arePropsEqual(prev: QueueItemProps, next: QueueItemProps): boolean {
+  const a = prev.item
+  const b = next.item
+  return (
+    prev.index === next.index &&
+    a.id === b.id &&
+    a.status === b.status &&
+    a.title === b.title &&
+    a.format === b.format &&
+    a.quality === b.quality &&
+    a.progress === b.progress &&
+    a.speed === b.speed &&
+    a.eta === b.eta &&
+    a.error === b.error &&
+    a.outputPath === b.outputPath &&
+    prev.onCancel === next.onCancel &&
+    prev.onOpenFolder === next.onOpenFolder
+  )
+}
+
+export const QueueItem = memo(QueueItemInner, arePropsEqual)

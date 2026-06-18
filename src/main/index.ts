@@ -215,6 +215,11 @@ function setupIPC(): void {
   })
 
   ipcMain.handle('quit-and-install', async () => {
+    if (!isUpdateDownloaded) {
+      console.warn('quit-and-install called but no update is downloaded; ignoring')
+      return
+    }
+    isUpdateDownloaded = false
     autoUpdater.quitAndInstall()
   })
 
@@ -402,8 +407,13 @@ app.whenReady().then(() => {
   })
 
   // Auto-updater
-  autoUpdater.autoDownload = true
-  autoUpdater.autoInstallOnAppQuit = true
+  // In dev / unpackaged builds, electron-updater throws or no-ops because there
+  // is no app-update.yml. Skip the check entirely to avoid noisy error logs.
+  const isPackaged = app.isPackaged
+  let isUpdateDownloaded = false
+
+  autoUpdater.autoDownload = isPackaged
+  autoUpdater.autoInstallOnAppQuit = isPackaged
 
   autoUpdater.on('update-available', () => {
     if (mainWindow && Notification.isSupported()) {
@@ -416,7 +426,13 @@ app.whenReady().then(() => {
     }
   })
 
+  autoUpdater.on('update-not-available', () => {
+    // Quiet by design; users with manual "Check for updates" want feedback, but
+    // the silent 3s startup check shouldn't spam.
+  })
+
   autoUpdater.on('update-downloaded', () => {
+    isUpdateDownloaded = true
     if (mainWindow && Notification.isSupported()) {
       const notif = new Notification({
         title: 'Update Ready',
@@ -425,19 +441,32 @@ app.whenReady().then(() => {
       })
       notif.show()
       notif.on('click', () => {
-        autoUpdater.quitAndInstall()
+        if (isUpdateDownloaded) {
+          isUpdateDownloaded = false
+          autoUpdater.quitAndInstall()
+        }
       })
     }
   })
 
+  autoUpdater.on('update-cancelled', () => {
+    isUpdateDownloaded = false
+  })
+
   autoUpdater.on('error', (err: Error) => {
+    // Suppress the "no app-update.yml" / "no published versions" noise in dev.
+    if (!isPackaged) return
     console.error('Auto-updater error:', err)
   })
 
-  // Check for updates after 3 seconds
-  setTimeout(() => {
-    autoUpdater.checkForUpdates().catch(() => {})
-  }, 3000)
+  // Check for updates after 3 seconds — only in packaged builds.
+  if (isPackaged) {
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((err) => {
+        console.error('checkForUpdates failed:', err)
+      })
+    }, 3000)
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

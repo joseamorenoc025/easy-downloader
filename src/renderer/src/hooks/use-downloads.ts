@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { DownloadItem, DownloadOptions } from '@/types'
+import { parseBytes } from '../lib/utils'
 import '../lib/ipc'
+
+function saveToStorage(queue: DownloadItem[]): void {
+  const pending = queue
+    .filter(i => i.status === 'queued' || i.status === 'downloading')
+    .map(i => ({ url: i.url, format: i.format, quality: i.quality, source: i.source }))
+  window.easyDownloader.saveQueue(pending)
+}
 
 export function useDownloads() {
   const [queue, setQueue] = useState<DownloadItem[]>([])
@@ -12,12 +20,22 @@ export function useDownloads() {
   }, [queue])
 
   useEffect(() => {
-    window.easyDownloader.getQueue().then(setQueue)
+    // Track liveness so async work after the component unmounts doesn't
+    // touch state (avoids React 18 dev warnings on fast HMR / tests).
+    let isMounted = true
 
-    // Restore saved queue on startup
+    window.easyDownloader.getQueue().then((q) => {
+      if (isMounted) setQueue(q)
+    })
+
+    // Restore saved queue on startup. Run sequentially so addDownload / addSpotifyDownload
+    // resolve in a stable order; clear the saved queue at the end so we don't
+    // re-add the same items on every mount.
     window.easyDownloader.getSavedQueue().then(async (saved) => {
-      if (saved && saved.length > 0) {
+      if (!isMounted || !saved || saved.length === 0) return
+      try {
         for (const item of saved) {
+          if (!isMounted) return
           if (item.source === 'spotify') {
             await window.easyDownloader.addSpotifyDownload(item.url)
           } else {
@@ -28,7 +46,11 @@ export function useDownloads() {
             })
           }
         }
-        await window.easyDownloader.saveQueue([])
+        if (isMounted) {
+          await window.easyDownloader.saveQueue([])
+        }
+      } catch (err) {
+        console.error('Saved queue restore failed:', err)
       }
     })
 
@@ -70,6 +92,7 @@ export function useDownloads() {
     })
 
     return () => {
+      isMounted = false
       window.easyDownloader.removeAllListeners('download-progress')
       window.easyDownloader.removeAllListeners('download-complete')
       window.easyDownloader.removeAllListeners('download-error')
@@ -117,25 +140,4 @@ export function useDownloads() {
   }, [])
 
   return { queue, isLoading, addDownload, addSpotifyDownload, cancelDownload, cancelAll, openFolder }
-}
-
-function parseBytes(str: string): number {
-  const match = str.match(/^([\d.]+)\s*(B|KB|MB|GB|TB)/)
-  if (!match) return 0
-  const val = parseFloat(match[1])
-  const unit = match[2]
-  switch (unit) {
-    case 'TB': return val * 1024 * 1024 * 1024 * 1024
-    case 'GB': return val * 1024 * 1024 * 1024
-    case 'MB': return val * 1024 * 1024
-    case 'KB': return val * 1024
-    default: return val
-  }
-}
-
-function saveToStorage(queue: import('@/types').DownloadItem[]): void {
-  const pending = queue
-    .filter(i => i.status === 'queued' || i.status === 'downloading')
-    .map(i => ({ url: i.url, format: i.format, quality: i.quality, source: i.source }))
-  window.easyDownloader.saveQueue(pending)
 }

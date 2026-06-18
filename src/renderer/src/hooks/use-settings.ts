@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Settings, ThemeMode } from '@/types'
 import '../lib/ipc'
 
-const CUSTOM_THEMES = ['dracula', 'nord', 'cyberpunk'] as const
-
+/**
+ * Centralized theme application. This is the single source of truth for
+ * which CSS classes land on <html>. Both the initial bootstrap and runtime
+ * `updateTheme` calls flow through here, so we never have two effects
+ * fighting over `documentElement.classList` (which produced a visible
+ * flash of wrong theme at app start).
+ */
 function applyTheme(mode: ThemeMode) {
   const root = document.documentElement
-
-  // Remove all theme classes
   root.classList.remove('dark', 'theme-dracula', 'theme-nord', 'theme-cyberpunk')
 
   if (mode === 'dark') {
@@ -15,10 +18,12 @@ function applyTheme(mode: ThemeMode) {
   } else if (mode === 'system') {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     root.classList.toggle('dark', prefersDark)
-  } else if (CUSTOM_THEMES.includes(mode as any)) {
-    root.classList.add('dark', `theme-${mode}`)
   }
-  // 'light' → no classes needed
+  // 'light' -> no class
+}
+
+function isThemeMode(value: unknown): value is ThemeMode {
+  return value === 'light' || value === 'dark' || value === 'system'
 }
 
 export function useSettings() {
@@ -28,25 +33,33 @@ export function useSettings() {
   })
 
   useEffect(() => {
+    let cancelled = false
     window.easyDownloader.getSettings().then((s) => {
-      setSettings(s)
-      applyTheme(s.themeMode)
+      if (cancelled) return
+      // Defensive narrowing: persisted values from older versions may still
+      // contain the removed dracula/nord/cyberpunk literals.
+      const mode: ThemeMode = isThemeMode(s.themeMode) ? s.themeMode : 'system'
+      setSettings({ ...s, themeMode: mode })
+      applyTheme(mode)
     })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const updateTheme = async (mode: ThemeMode) => {
-    await window.easyDownloader.setTheme(mode as any)
-    setSettings(prev => ({ ...prev, themeMode: mode }))
+  const updateTheme = useCallback(async (mode: ThemeMode) => {
+    await window.easyDownloader.setTheme(mode)
+    setSettings((prev) => ({ ...prev, themeMode: mode }))
     applyTheme(mode)
-  }
+  }, [])
 
-  const selectDirectory = async () => {
+  const selectDirectory = useCallback(async () => {
     const dir = await window.easyDownloader.selectDirectory()
     if (dir) {
-      setSettings(prev => ({ ...prev, downloadPath: dir }))
+      setSettings((prev) => ({ ...prev, downloadPath: dir }))
     }
     return dir
-  }
+  }, [])
 
   return { settings, updateTheme, selectDirectory }
 }

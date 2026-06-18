@@ -30,3 +30,23 @@ export function isValidUrl(url: string): boolean {
     return false
   }
 }
+
+/**
+ * Parses yt-dlp-style byte strings like "2.4 MB" / "1 KB" into a raw byte count.
+ * Returns 0 for unparseable input. Mirrors what `useDownloads` needs to track
+ * downloaded/total in the queue.
+ */
+export function parseBytes(str: string): number {
+  const match = str.match(/^([\d.]+)\s*(B|KB|MB|GB|TB)/)
+  if (!match) return 0
+  const val = parseFloat(match[1])
+  const unit = match[2]
+  switch (unit) {
+    case 'TB': return val * 1024 * 1024 * 1024 * 1024
+    case 'GB': return val * 1024 * 1024 * 1024
+    case 'MB': return val * 1024 * 1024
+    case 'KB': return val * 1024
+    case 'B':  return val
+    default:   return 0
+  }
+}

@@ -65,7 +65,7 @@ export interface HistoryEntry {
   fileSize?: number
 }
 
-export type ThemeMode = 'light' | 'dark' | 'system' | 'dracula' | 'nord' | 'cyberpunk'
+export type ThemeMode = 'light' | 'dark' | 'system'
 
 export interface Settings {
   downloadPath: string
