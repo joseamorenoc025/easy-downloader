@@ -65,9 +65,11 @@ export interface HistoryEntry {
   fileSize?: number
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system' | 'dracula' | 'nord' | 'cyberpunk'
+
 export interface Settings {
   downloadPath: string
-  themeMode: 'light' | 'dark' | 'system'
+  themeMode: ThemeMode
 }
 
 export interface DependencyStatus {
@@ -86,7 +88,7 @@ export interface EasyDownloaderAPI {
   selectDirectory: () => Promise<string | null>
   openFolder: (folderPath?: string) => Promise<void>
   getSettings: () => Promise<Settings>
-  setTheme: (mode: 'light' | 'dark' | 'system') => Promise<void>
+  setTheme: (mode: ThemeMode) => Promise<void>
   checkFfmpeg: () => Promise<boolean>
   checkSpotdl: () => Promise<boolean>
   checkYtdlp: () => Promise<boolean>

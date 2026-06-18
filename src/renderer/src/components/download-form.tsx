@@ -85,7 +85,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
   const qualities = format === 'video' ? videoQualities : audioQualities
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3.5">
       <div className="flex gap-2">
         <input
           type="text"
@@ -94,22 +94,22 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
           placeholder={source === 'youtube'
             ? t('form.placeholder.youtube')
             : t('form.placeholder.spotify')}
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 rounded-xl border border-input bg-background/80 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none"
         />
-        <Button type="submit" disabled={isLoading || !url.trim()}>
+        <Button type="submit" disabled={isLoading || !url.trim()} className="rounded-xl px-4">
           {isLoading ? t('form.adding') : t('form.download')}
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
       {spotdlMissing && source === 'spotify' && <SpotdlMissingAlert />}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2 rounded-lg border p-1">
+      <div className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
           <button
             type="button"
             onClick={() => { setSource('youtube'); setFormat('video'); setQuality('best') }}
-            className={`rounded-md px-3 py-1 text-sm transition-colors ${
+            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               source === 'youtube'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -122,9 +122,9 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
               const ok = await window.easyDownloader.checkSpotdl()
               setSpotdlMissing(!ok)
             }}
-            className={`rounded-md px-3 py-1 text-sm transition-colors ${
+            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               source === 'spotify'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -134,13 +134,13 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
 
         {source === 'youtube' && (
           <>
-            <div className="flex items-center gap-2 rounded-lg border p-1">
+            <div className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
               <button
                 type="button"
                 onClick={() => { setFormat('video'); setQuality('best') }}
-                className={`rounded-md px-3 py-1 text-sm transition-colors ${
+                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                   format === 'video'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-card text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -149,9 +149,9 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
               <button
                 type="button"
                 onClick={() => { setFormat('audio'); setQuality('320') }}
-                className={`rounded-md px-3 py-1 text-sm transition-colors ${
+                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                   format === 'audio'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-card text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -161,7 +161,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading, onMetadata }: Dow
             <select
               value={quality}
               onChange={e => setQuality(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+              className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
             >
               {qualities.map(q => (
                 <option key={q} value={q}>

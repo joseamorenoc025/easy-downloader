@@ -4,44 +4,64 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 230 25% 97%;
+    --foreground: 230 25% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --card-foreground: 230 25% 8%;
+    --primary: 250 84% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 230 20% 92%;
+    --secondary-foreground: 230 25% 20%;
+    --muted: 230 18% 94%;
+    --muted-foreground: 230 12% 52%;
+    --accent: 250 84% 96%;
+    --accent-foreground: 250 84% 40%;
+    --destructive: 0 84% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 18% 88%;
+    --input: 230 18% 88%;
+    --ring: 250 84% 60%;
+    --radius: 0.75rem;
+
+    /* Glass tokens */
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --glass-shadow: 0 8px 32px rgba(80, 60, 200, 0.10);
+
+    /* Gradient orbs */
+    --orb-1: radial-gradient(ellipse at 20% 30%, hsla(250, 90%, 72%, 0.28) 0%, transparent 60%);
+    --orb-2: radial-gradient(ellipse at 80% 70%, hsla(195, 90%, 65%, 0.22) 0%, transparent 60%);
+    --orb-3: radial-gradient(ellipse at 55% 10%, hsla(320, 80%, 68%, 0.16) 0%, transparent 55%);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 232 28% 8%;
+    --foreground: 220 20% 95%;
+    --card: 232 25% 11%;
+    --card-foreground: 220 20% 95%;
+    --primary: 258 90% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 232 22% 16%;
+    --secondary-foreground: 220 20% 80%;
+    --muted: 232 22% 14%;
+    --muted-foreground: 220 12% 55%;
+    --accent: 258 60% 20%;
+    --accent-foreground: 258 90% 80%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 232 22% 18%;
+    --input: 232 22% 18%;
+    --ring: 258 90% 68%;
+
+    /* Glass tokens dark */
+    --glass-bg: rgba(20, 18, 38, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+
+    /* Gradient orbs dark */
+    --orb-1: radial-gradient(ellipse at 20% 30%, hsla(258, 80%, 55%, 0.22) 0%, transparent 60%);
+    --orb-2: radial-gradient(ellipse at 80% 70%, hsla(195, 80%, 45%, 0.16) 0%, transparent 60%);
+    --orb-3: radial-gradient(ellipse at 55% 10%, hsla(320, 70%, 50%, 0.12) 0%, transparent 55%);
   }
 }
 
@@ -49,27 +69,82 @@
   * {
     @apply border-border;
   }
+
   html, body, #root {
     @apply h-dvh overflow-hidden;
   }
+
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    position: relative;
   }
+
+  /* Animated gradient background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      var(--orb-1),
+      var(--orb-2),
+      var(--orb-3);
+    pointer-events: none;
+    z-index: 0;
+    animation: orb-shift 14s ease-in-out infinite alternate;
+  }
+
   #root {
     @apply flex flex-col;
+    position: relative;
+    z-index: 1;
   }
 }
 
-/* Custom scrollbar for the queue list */
+/* Orb animation */
+@keyframes orb-shift {
+  0%   { opacity: 1; transform: scale(1) translate(0, 0); }
+  33%  { opacity: 0.85; transform: scale(1.04) translate(1%, -1%); }
+  66%  { opacity: 0.95; transform: scale(0.97) translate(-1%, 1%); }
+  100% { opacity: 1; transform: scale(1.02) translate(0.5%, 0.5%); }
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Custom scrollbar */
 .queue-scroll::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .queue-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 .queue-scroll::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 3px;
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 4px;
+}
+.queue-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* Subtle inner glow on focus */
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.5), inset 0 0 0 1px hsl(var(--ring) / 0.25);
+}
+
+/* Smooth transitions globally */
+button, a, input, select {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

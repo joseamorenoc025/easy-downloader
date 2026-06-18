@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'framer-motion'
 import type { DownloadItem } from '@/types'
 import { QueueItem } from './queue-item'
 import { InfoSection } from './info-section'
@@ -19,26 +20,36 @@ export function QueueList({ items, onCancel, onCancelAll, onOpenFolder }: QueueL
     return <InfoSection />
   }
 
+  const pendingCount = activeItems.filter(i => i.status === 'queued' || i.status === 'downloading').length
+
   return (
-    <div className="space-y-3">
-      {activeItems.some(i => i.status === 'queued' || i.status === 'downloading') && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {activeItems.filter(i => i.status === 'queued' || i.status === 'downloading').length} {t('queue.active')}
+    <div className="space-y-2.5">
+      {pendingCount > 0 && (
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs font-medium text-muted-foreground">
+            {pendingCount} {t('queue.active')}
           </p>
           <Button
             variant="ghost"
             size="sm"
             onClick={onCancelAll}
-            className="text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive text-xs h-7 px-2"
           >
             {t('queue.cancelAll')}
           </Button>
         </div>
       )}
-      {activeItems.map(item => (
-        <QueueItem key={item.id} item={item} onCancel={onCancel} onOpenFolder={onOpenFolder} />
-      ))}
+      <AnimatePresence initial={false}>
+        {activeItems.map((item, index) => (
+          <QueueItem
+            key={item.id}
+            item={item}
+            index={index}
+            onCancel={onCancel}
+            onOpenFolder={onOpenFolder}
+          />
+        ))}
+      </AnimatePresence>
     </div>
   )
 }

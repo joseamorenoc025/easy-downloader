@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { Progress } from './ui/progress'
 import type { DownloadItem } from '@/types'
 import { useI18n } from '../i18n/context'
@@ -7,6 +8,7 @@ interface QueueItemProps {
   item: DownloadItem
   onCancel: (id: string) => void
   onOpenFolder?: (item: DownloadItem) => void
+  index?: number
 }
 
 const statusKeys: Record<string, string> = {
@@ -17,7 +19,15 @@ const statusKeys: Record<string, string> = {
   cancelled: 'item.cancelled'
 }
 
-const statusColors: Record<string, string> = {
+const statusDot: Record<string, string> = {
+  queued: 'bg-muted-foreground/40',
+  downloading: 'bg-primary animate-pulse',
+  completed: 'bg-green-500',
+  error: 'bg-destructive',
+  cancelled: 'bg-muted-foreground/30'
+}
+
+const statusTextColors: Record<string, string> = {
   queued: 'text-muted-foreground',
   downloading: 'text-primary',
   completed: 'text-green-600 dark:text-green-400',
@@ -25,26 +35,46 @@ const statusColors: Record<string, string> = {
   cancelled: 'text-muted-foreground'
 }
 
-export function QueueItem({ item, onCancel, onOpenFolder }: QueueItemProps) {
+export function QueueItem({ item, onCancel, onOpenFolder, index = 0 }: QueueItemProps) {
   const { t } = useI18n()
 
   return (
-    <div className="rounded-lg border bg-card p-3 transition-colors">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+      transition={{
+        type: 'spring',
+        stiffness: 380,
+        damping: 28,
+        delay: index * 0.04
+      }}
+      className="rounded-xl border border-border/60 bg-card/70 p-3.5 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-border transition-shadow"
+    >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-card-foreground">
-            {item.title}
-          </p>
-          <p className={`text-xs ${statusColors[item.status]}`}>
-            {t(statusKeys[item.status] || 'item.error')}
-            {item.format === 'video' ? ' · MP4' : ' · MP3'}
-            {' · '}{item.quality}{item.format === 'audio' ? ' kbps' : ''}
-          </p>
+        <div className="min-w-0 flex-1 flex items-start gap-2.5">
+          {/* Status dot */}
+          <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${statusDot[item.status] || 'bg-muted-foreground/30'}`} />
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-card-foreground leading-snug">
+              {item.title}
+            </p>
+            <p className={`text-xs mt-0.5 ${statusTextColors[item.status]}`}>
+              {t(statusKeys[item.status] || 'item.error')}
+              <span className="text-muted-foreground/60 mx-1">·</span>
+              {item.format === 'video' ? 'MP4' : 'MP3'}
+              <span className="text-muted-foreground/60 mx-1">·</span>
+              {item.quality}{item.format === 'audio' ? ' kbps' : ''}
+            </p>
+          </div>
         </div>
+
         {(item.status === 'queued' || item.status === 'downloading') && (
           <button
             onClick={() => onCancel(item.id)}
-            className="shrink-0 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+            className="shrink-0 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           >
             {t('item.cancel')}
           </button>
@@ -52,33 +82,46 @@ export function QueueItem({ item, onCancel, onOpenFolder }: QueueItemProps) {
       </div>
 
       {item.status === 'downloading' && (
-        <div className="mt-2 space-y-1">
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mt-3 space-y-1.5"
+        >
           <Progress value={item.progress} />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{item.progress.toFixed(1)}%</span>
             <span>{item.speed}</span>
             <span>{item.eta ? `${t('item.eta')}: ${item.eta}` : ''}</span>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {item.status === 'completed' && (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-xs text-green-600 dark:text-green-400">{t('item.downloaded')}</span>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-2 flex items-center gap-2"
+        >
+          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {t('item.downloaded')}
+          </span>
           <button
             onClick={() => onOpenFolder?.(item)}
-            className="text-xs text-primary underline-offset-4 hover:underline transition-colors"
+            className="text-xs text-primary underline-offset-4 hover:underline"
           >
             {t('item.openFolder')}
           </button>
-        </div>
+        </motion.div>
       )}
 
       {item.status === 'error' && item.error && (
-        <p className="mt-1 text-xs text-destructive truncate">
+        <p className="mt-1.5 text-xs text-destructive truncate">
           {item.error}
         </p>
       )}
-    </div>
+    </motion.div>
   )
 }
