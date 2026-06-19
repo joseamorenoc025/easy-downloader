@@ -80,6 +80,8 @@
       ],
       "icon": "resources/icon.png",
       "category": "AudioVideo",
+      "synopsis": "Download videos and audio from YouTube, Spotify and more",
+      "description": "EasyDownloader is a cross-platform desktop app to download videos and extract audio. Uses yt-dlp under the hood (supports ~1700 sites) and spotdl for Spotify.",
       "mimeTypes": [
         "x-scheme-handler/youtube",
         "x-scheme-handler/spotify"
@@ -89,7 +91,22 @@
           "from": "node_modules/@ffmpeg-installer/linux-x64",
           "to": "ffmpeg"
         }
-      ]
+      ],
+      "deb": {
+        "depends": [
+          "libgtk-3-0",
+          "libnotify4",
+          "libnss3",
+          "libxss1",
+          "libxtst6",
+          "xdg-utils",
+          "libatspi2.0-0",
+          "libuuid1",
+          "libsecret-1-0"
+        ],
+        "priority": "optional",
+        "compression": "xz"
+      }
     },
     "nsis": {
       "oneClick": false,
