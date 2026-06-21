@@ -13,7 +13,7 @@ const detectLocale = (): string => {
 
 interface I18nContextType {
   locale: string
-  t: (key: string, params?: Record<string, string | number>) => string
+  t: (key: string, params?: Record<string, string | number> & { count?: number }) => string
   setLocale: (locale: string) => void
 }
 
@@ -31,12 +31,29 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('locale', newLocale)
   }, [])
 
-  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+  const t = useCallback((key: string, params?: Record<string, string | number> & { count?: number }) => {
     const map = locales[locale] || en
-    let text = map[key] ?? key
+
+    // Pluralization (CLDR-style ad-hoc): if params.count is provided, prefer
+    // `<key>.one` for count===1 and `<key>.other` otherwise. Falls back to the
+    // bare key if the suffixed variant is missing, so partial translations
+    // don't break the UI.
+    let resolvedKey = key
+    if (params && typeof params.count === 'number') {
+      const suffix = params.count === 1 ? 'one' : 'other'
+      const pluralKey = `${key}.${suffix}`
+      if (map[pluralKey] != null) resolvedKey = pluralKey
+    }
+
+    let text = map[resolvedKey] ?? map[key] ?? key
+
     if (params) {
       for (const [k, v] of Object.entries(params)) {
-        text = text.replace(`{${k}}`, String(v))
+        if (k === 'count') continue // don't interpolate the count back into the text
+        // Use replaceAll so a translation that references the same placeholder
+        // twice (e.g. "{count} files in {count} folders") doesn't silently
+        // leave the second occurrence literal.
+        text = text.replaceAll(`{${k}}`, String(v))
       }
     }
     return text

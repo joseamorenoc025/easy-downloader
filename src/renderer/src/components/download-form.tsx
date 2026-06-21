@@ -12,6 +12,19 @@ interface DownloadFormProps {
   isLoading: boolean
 }
 
+// Human-readable labels for the video quality selector. Uses i18n keys so
+// "best" becomes "Best (max quality)", "2160p" becomes "2160p (4K)", etc.
+// Audio bitrates already render as "320 kbps" inline.
+function qualityLabel(q: string, t: (key: string) => string): string {
+  if (q === 'best') return t('form.quality.best')
+  if (q === '2160p') return t('form.quality.2160p')
+  if (q === '1440p') return t('form.quality.1440p')
+  if (q === '1080p') return t('form.quality.1080p')
+  if (q === '720p') return t('form.quality.720p')
+  if (q === '480p') return t('form.quality.480p')
+  return q
+}
+
 export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormProps) {
   const { t } = useI18n()
   const [url, setUrl] = useState('')
@@ -69,7 +82,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
     setUrl('')
   }, [url, format, quality, source, onAdd, onAddSpotify])
 
-  const videoQualities = ['best', '1080p', '720p', '480p']
+  const videoQualities = ['best', '2160p', '1440p', '1080p', '720p', '480p']
   const audioQualities = ['320', '256', '192', '128']
 
   const qualities = format === 'video' ? videoQualities : audioQualities
@@ -155,7 +168,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
             >
               {qualities.map(q => (
                 <option key={q} value={q}>
-                  {q}{format === 'audio' ? ' kbps' : ''}
+                  {format === 'audio' ? `${q} kbps` : qualityLabel(q, t)}
                 </option>
               ))}
             </select>

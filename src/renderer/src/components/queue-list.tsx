@@ -27,7 +27,7 @@ export function QueueList({ items, onCancel, onCancelAll, onOpenFolder }: QueueL
       {pendingCount > 0 && (
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs font-medium text-muted-foreground">
-            {pendingCount} {t('queue.active')}
+            {t('queue.active', { count: pendingCount })}
           </p>
           <Button
             variant="ghost"

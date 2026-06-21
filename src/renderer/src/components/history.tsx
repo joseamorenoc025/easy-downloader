@@ -25,7 +25,7 @@ function getSpotifyColor(url: string): string {
   return `hsl(${hues[sum % hues.length]}, 65%, 40%)`
 }
 
-function groupByDate(entries: HistoryEntry[]) {
+function groupByDate(entries: HistoryEntry[], t: (key: string) => string) {
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekStart = new Date(todayStart)
@@ -34,10 +34,10 @@ function groupByDate(entries: HistoryEntry[]) {
   monthStart.setDate(monthStart.getDate() - 30)
 
   const groups: { label: string; entries: HistoryEntry[] }[] = [
-    { label: 'Hoy', entries: [] },
-    { label: 'Esta semana', entries: [] },
-    { label: 'Este mes', entries: [] },
-    { label: 'Más antiguo', entries: [] }
+    { label: t('history.today'), entries: [] },
+    { label: t('history.thisWeek'), entries: [] },
+    { label: t('history.thisMonth'), entries: [] },
+    { label: t('history.older'), entries: [] }
   ]
 
   for (const e of entries) {
@@ -58,11 +58,19 @@ function formatDuration(s: number) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-function relativeTime(iso: string) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000
-  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`
-  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`
-  return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+/**
+ * Format a past ISO timestamp as a localized relative time, e.g.
+ * "hace 5 min" / "5 min ago". Falls back to a localized date for anything
+ * older than a day.
+ */
+function relativeTime(iso: string, locale: string): string {
+  const diffSeconds = (Date.now() - new Date(iso).getTime()) / 1000
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  if (diffSeconds < 60) return rtf.format(-Math.round(diffSeconds), 'second')
+  if (diffSeconds < 3600) return rtf.format(-Math.round(diffSeconds / 60), 'minute')
+  if (diffSeconds < 86400) return rtf.format(-Math.round(diffSeconds / 3600), 'hour')
+  if (diffSeconds < 86400 * 7) return rtf.format(-Math.round(diffSeconds / 86400), 'day')
+  return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
 }
 
 // ── Thumbnail card ────────────────────────────────────────────────────────────
@@ -76,6 +84,7 @@ function HistoryCard({
   onOpenFolder: (path?: string) => void
   onRedownload: (entry: HistoryEntry) => void
 }) {
+  const { t, locale } = useI18n()
   const thumb = entry.source === 'youtube' ? getYouTubeThumbnail(entry.url) : null
   const spotifyBg = entry.source === 'spotify' ? getSpotifyColor(entry.url) : ''
   const [hovered, setHovered] = useState(false)
@@ -148,7 +157,7 @@ function HistoryCard({
           <p className="text-white text-xs font-semibold leading-snug line-clamp-2 drop-shadow">
             {entry.title}
           </p>
-          <p className="text-white/55 text-[10px] mt-0.5">{qualityLabel} · {relativeTime(entry.completedAt)}</p>
+          <p className="text-white/55 text-[10px] mt-0.5">{qualityLabel} · {relativeTime(entry.completedAt, locale)}</p>
         </div>
 
         {/* ── Hover overlay ── */}
@@ -215,7 +224,7 @@ function HistorySection({
       <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-0.5">
         {label}
         <span className="ml-2 text-muted-foreground/40 normal-case tracking-normal font-normal">
-          {entries.length} archivo{entries.length !== 1 ? 's' : ''}
+          {t('history.filesCount', { count: entries.length })}
         </span>
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -260,7 +269,7 @@ export function History({ onOpenFolder, onRedownload }: HistoryProps) {
     return result
   }, [entries, filter, search])
 
-  const groups = useMemo(() => groupByDate(filtered), [filtered])
+  const groups = useMemo(() => groupByDate(filtered, t), [filtered, t])
 
   // ── Empty state ──
   if (entries.length === 0) {
@@ -318,7 +327,7 @@ export function History({ onOpenFolder, onRedownload }: HistoryProps) {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {f === 'all' ? 'Todo' : f === 'video' ? 'Video' : 'Audio'}
+              {f === 'all' ? t('history.filterAll') : f === 'video' ? t('history.filterVideo') : t('history.filterAudio')}
             </button>
           ))}
         </div>
@@ -344,7 +353,7 @@ export function History({ onOpenFolder, onRedownload }: HistoryProps) {
             exit={{ opacity: 0 }}
             className="py-10 text-center text-sm text-muted-foreground"
           >
-            Sin resultados para «{search}»
+            {t('history.noResults', { search })}
           </motion.p>
         )}
       </AnimatePresence>
