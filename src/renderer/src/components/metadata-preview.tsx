@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../i18n/context'
 import { Button } from './ui/button'
+import { useSettings } from '../hooks/use-settings'
 import type { MetadataResult } from '@/types'
 import '../lib/ipc'
 
@@ -12,6 +13,7 @@ interface MetadataPreviewProps {
 
 export function MetadataPreview({ url, source, onDownload }: MetadataPreviewProps) {
   const { t } = useI18n()
+  const { settings } = useSettings()
   const [meta, setMeta] = useState<MetadataResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -20,6 +22,8 @@ export function MetadataPreview({ url, source, onDownload }: MetadataPreviewProp
   useEffect(() => {
     if (!url) { setMeta(null); setError(''); return }
     if (source === 'spotify') { setMeta(null); setError(''); return }
+    // Skip metadata fetch if disabled in settings
+    if (!settings.fetchMetadata) { setMeta(null); setError(''); return }
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(async () => {
@@ -36,10 +40,11 @@ export function MetadataPreview({ url, source, onDownload }: MetadataPreviewProp
     }, 500)
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [url, source, t])
+  }, [url, source, t, settings.fetchMetadata])
 
   if (!url) return null
   if (source === 'spotify') return null
+  if (!settings.fetchMetadata) return null
 
   return (
     <div className="rounded-lg border bg-card p-3 transition-colors">

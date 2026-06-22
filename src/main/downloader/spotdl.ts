@@ -14,13 +14,20 @@ export class SpotifyDownloadManager {
   private currentProcess: ChildProcess | null = null
   private onComplete: CompleteCallback
   private onError: ErrorCallback
+  private paused = false // Nuevo: estado de pausa global
+  
+  // Throttling para output de spotdl - evita floods en Windows
+  // Reducir intervalo mejora la percepción de velocidad en playlists grandes
+  private outputBuffer: string[] = []
+  private flushTimer: ReturnType<typeof setTimeout> | null = null
+  private readonly FLUSH_INTERVAL_MS = 150 // Más rápido para mejor feedback en Windows
 
   constructor(onComplete: CompleteCallback, onError: ErrorCallback) {
     this.onComplete = onComplete
     this.onError = onError
   }
 
-  async addToQueue(url: string, downloadPath: string): Promise<DownloadItem> {
+  async addToQueue(url: string, downloadPath: string, incognito = false): Promise<DownloadItem> {
     const item: DownloadItem = {
       id: `spot-${randomUUID()}`,
       url,
@@ -33,7 +40,8 @@ export class SpotifyDownloadManager {
       downloadedBytes: 0,
       format: 'audio',
       quality: '128',
-      source: 'spotify'
+      source: 'spotify',
+      incognito // Marcar como incógnito si corresponde
     }
 
     this.queue.push(item)
@@ -62,6 +70,26 @@ export class SpotifyDownloadManager {
     this.queue = []
     this.currentItem = null
     this.currentProcess = null
+  }
+
+  // Nuevo: pausar descarga activa de Spotify
+  pauseAll(): void {
+    this.paused = true
+    if (this.currentProcess && this.currentItem) {
+      this.currentProcess.kill('SIGTERM')
+      this.currentItem.status = 'queued'
+      this.currentItem.speed = 'Pausado'
+    }
+  }
+
+  // Nuevo: reanudar descarga de Spotify
+  resumeAll(): void {
+    this.paused = false
+    if (this.currentItem && this.currentItem.speed === 'Pausado') {
+      this.currentItem.status = 'queued'
+      this.currentItem.speed = ''
+      // El processQueue se encargará de reiniciar
+    }
   }
 
   private processQueue(downloadPath: string): void {
@@ -118,18 +146,29 @@ export class SpotifyDownloadManager {
 
       this.currentProcess.stdout?.on('data', (data: Buffer) => {
         const text = data.toString()
-        fullOutput += text
-
+        
+        // Buffer output para evitar floods de eventos en Windows
+        this.outputBuffer.push(text)
+        
         if (item.title === 'Fetching from Spotify...') {
           const match = text.match(/:?\s*(.+?)\s*$/m)
           if (match && match[1].trim()) {
             item.title = match[1].trim()
           }
         }
+        
+        // Flush throttled
+        if (!this.flushTimer) {
+          this.flushTimer = setTimeout(() => {
+            this.outputBuffer = []
+            this.flushTimer = null
+          }, this.FLUSH_INTERVAL_MS)
+        }
       })
 
       this.currentProcess.stderr?.on('data', (data: Buffer) => {
-        fullOutput += data.toString()
+        // Buffer stderr también
+        this.outputBuffer.push(data.toString())
       })
 
       this.currentProcess.on('close', (code) => {

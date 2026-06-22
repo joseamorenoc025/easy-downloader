@@ -1,26 +1,39 @@
+```
 # Dependencies
 node_modules/
 
-# Build output
+# Build outputs
 out/
-dist/
 
-# IDE
-.vscode/
-.idea/
+# Logs and temp files
+*.log
+*.tmp
 
 # Environment
 .env
+.env.local
+*.env.*
 
-# Logs
-*.log
-npm-debug.log*
+# Editors
+.vscode/
+.idea/
 
-# OS
-.DS_Store
-Thumbs.db
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Temp
-*.tmp
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
-downloads/
+# Distribution / packaging
+.dist/
+*.tar.gz
+*.whl
+
+# Testing
+.vitest/
+```

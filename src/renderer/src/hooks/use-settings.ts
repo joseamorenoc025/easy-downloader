@@ -29,7 +29,9 @@ function isThemeMode(value: unknown): value is ThemeMode {
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>({
     downloadPath: '',
-    themeMode: 'system'
+    themeMode: 'system',
+    fetchMetadata: true,
+    incognitoMode: false
   })
 
   useEffect(() => {
@@ -53,6 +55,16 @@ export function useSettings() {
     applyTheme(mode)
   }, [])
 
+  const setFetchMetadata = useCallback(async (enabled: boolean) => {
+    await window.easyDownloader.setFetchMetadata(enabled)
+    setSettings((prev) => ({ ...prev, fetchMetadata: enabled }))
+  }, [])
+
+  const setIncognitoMode = useCallback(async (enabled: boolean) => {
+    await window.easyDownloader.setIncognitoMode(enabled)
+    setSettings((prev) => ({ ...prev, incognitoMode: enabled }))
+  }, [])
+
   const selectDirectory = useCallback(async () => {
     const dir = await window.easyDownloader.selectDirectory()
     if (dir) {
@@ -61,5 +73,5 @@ export function useSettings() {
     return dir
   }, [])
 
-  return { settings, updateTheme, selectDirectory }
+  return { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory }
 }

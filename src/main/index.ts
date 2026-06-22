@@ -24,7 +24,10 @@ const store = new Store({
   defaults: {
     downloadPath: app.getPath('downloads'),
     themeMode: 'system' as 'light' | 'dark' | 'system',
-    downloadQueue: [] as Array<{ url: string; format: string; quality: string; source: string }>
+    downloadQueue: [] as Array<{ url: string; format: string; quality: string; source: string }>,
+    fetchMetadata: true,
+    incognitoMode: false,
+    globalPause: false // Nuevo: estado inicial del toggle global pause
   }
 })
 
@@ -88,7 +91,11 @@ function setupIPC(): void {
       throw new Error('URL inválida')
     }
     if (!downloadManager) return null
-    return downloadManager.addToQueue(options)
+    
+    const settings = store.get('settings') as any
+    const incognito = settings?.incognitoMode || false
+    
+    return downloadManager.addToQueue({ ...options, incognito })
   })
 
   ipcMain.handle('cancel-download', async (_event, itemId: string) => {
@@ -117,7 +124,10 @@ function setupIPC(): void {
   ipcMain.handle('get-settings', async () => {
     return {
       downloadPath: store.get('downloadPath') as string,
-      themeMode: store.get('themeMode') as string
+      themeMode: store.get('themeMode') as string,
+      fetchMetadata: store.get('fetchMetadata') as boolean,
+      incognitoMode: store.get('incognitoMode') as boolean,
+      globalPause: store.get('globalPause') as boolean
     }
   })
 
@@ -130,6 +140,38 @@ function setupIPC(): void {
     }
   })
 
+  ipcMain.handle('set-fetch-metadata', async (_event, enabled: boolean) => {
+    store.set('fetchMetadata', enabled)
+  })
+
+  ipcMain.handle('set-incognito-mode', async (_event, enabled: boolean) => {
+    store.set('incognitoMode', enabled)
+  })
+
+  ipcMain.handle('set-global-pause', async (_event, enabled: boolean) => {
+    store.set('globalPause', enabled)
+    // Pausar/reanudar descargas activas
+    if (enabled) {
+      downloadManager?.pauseAll()
+      spotifyManager?.pauseAll()
+    } else {
+      downloadManager?.resumeAll()
+      spotifyManager?.resumeAll()
+    }
+  })
+
+  ipcMain.handle('pause-all', async () => {
+    store.set('globalPause', true)
+    downloadManager?.pauseAll()
+    spotifyManager?.pauseAll()
+  })
+
+  ipcMain.handle('resume-all', async () => {
+    store.set('globalPause', false)
+    downloadManager?.resumeAll()
+    spotifyManager?.resumeAll()
+  })
+
   ipcMain.handle('check-ffmpeg', async () => {
     return checkFfmpegInstalled()
   })
@@ -139,8 +181,12 @@ function setupIPC(): void {
       throw new Error('URL inválida: solo http/https')
     }
     if (!spotifyManager) return null
+    
+    const settings = store.get('settings') as any
+    const incognito = settings?.incognitoMode || false
     const dlPath = (store.get('downloadPath') as string) || app.getPath('downloads')
-    return spotifyManager.addToQueue(url, dlPath)
+    
+    return spotifyManager.addToQueue(url, dlPath, incognito)
   })
 
   ipcMain.handle('open-folder', async (_event, folderPath?: string) => {
@@ -253,6 +299,11 @@ function initDownloadManager(): void {
     (item) => {
       mainWindow?.webContents.send('download-complete', item)
 
+      // Incognito mode: don't save to history if item is marked as incognito OR global setting is on
+      const settings = store.get('settings') as any
+      const globalIncognito = settings?.incognitoMode || false
+      if (item.incognito || globalIncognito) return
+
       if (item.status === 'completed') {
         const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
         history.unshift({
@@ -287,6 +338,11 @@ function initSpotifyManager(): void {
   spotifyManager = new SpotifyDownloadManager(
     (item) => {
       mainWindow?.webContents.send('download-complete', item)
+
+      // Incognito mode: don't save to history if item is marked as incognito OR global setting is on
+      const settings = store.get('settings') as any
+      const globalIncognito = settings?.incognitoMode || false
+      if (item.incognito || globalIncognito) return
 
       if (item.status === 'completed') {
         const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>

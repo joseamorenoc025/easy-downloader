@@ -13,6 +13,7 @@ export interface DownloadItem {
   source: 'youtube' | 'spotify'
   outputPath?: string
   error?: string
+  incognito?: boolean
 }
 
 export interface FormatInfo {
@@ -70,6 +71,9 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export interface Settings {
   downloadPath: string
   themeMode: ThemeMode
+  fetchMetadata: boolean
+  incognitoMode: boolean
+  globalPause: boolean // Nuevo: toggle para pausar/reanudar todas las descargas
 }
 
 export interface DependencyStatus {
@@ -84,11 +88,16 @@ export interface EasyDownloaderAPI {
   addSpotifyDownload: (url: string) => Promise<DownloadItem | null>
   cancelDownload: (itemId: string) => Promise<void>
   cancelAll: () => Promise<void>
+  pauseAll: () => Promise<void> // Nuevo: pausar todas las descargas
+  resumeAll: () => Promise<void> // Nuevo: reanudar todas las descargas
   getQueue: () => Promise<DownloadItem[]>
   selectDirectory: () => Promise<string | null>
   openFolder: (folderPath?: string) => Promise<void>
   getSettings: () => Promise<Settings>
   setTheme: (mode: ThemeMode) => Promise<void>
+  setFetchMetadata: (enabled: boolean) => Promise<void>
+  setIncognitoMode: (enabled: boolean) => Promise<void>
+  setGlobalPause: (enabled: boolean) => Promise<void> // Nuevo: toggle global pause
   checkFfmpeg: () => Promise<boolean>
   checkSpotdl: () => Promise<boolean>
   checkYtdlp: () => Promise<boolean>
