@@ -24,10 +24,17 @@ export class DownloadManager {
   private ytDlp: import('yt-dlp-wrap').default
   private binaryReady = false
   private downloadPath: string
+  private paused = false // Nuevo: estado de pausa global
 
   private onProgress: ProgressCallback
   private onComplete: CompleteCallback
   private onError: ErrorCallback
+  
+  // Throttling para eventos de progreso - balance entre rendimiento y feedback visual
+  // En Windows con múltiples descargas, reducir a 100ms mejora la percepción de velocidad
+  private progressTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  private lastProgressUpdate: Map<string, number> = new Map()
+  private readonly PROGRESS_THROTTLE_MS = 100 // 10 actualizaciones/segundo - óptimo para Windows
 
   constructor(
     downloadPath: string,
@@ -57,7 +64,7 @@ export class DownloadManager {
     }
   }
 
-  async addToQueue(options: DownloadOptions): Promise<DownloadItem> {
+  async addToQueue(options: DownloadOptions & { incognito?: boolean }): Promise<DownloadItem> {
     await this.ensureBinary()
 
     const item: DownloadItem = {
@@ -71,7 +78,8 @@ export class DownloadManager {
       totalBytes: 0,
       downloadedBytes: 0,
       format: options.format,
-      quality: options.quality
+      quality: options.quality,
+      incognito: options.incognito || false // Marcar como incógnito si corresponde
     }
 
     this.queue.push(item)
@@ -114,6 +122,35 @@ export class DownloadManager {
       }
     })
     this.queue = []
+  }
+
+  // Nuevo: pausar todas las descargas activas
+  pauseAll(): void {
+    this.paused = true
+    for (const [, active] of this.activeItems) {
+      active.emitter.ytDlpProcess?.kill('SIGTERM')
+      active.item.status = 'queued'
+      active.item.speed = 'Pausado'
+      this.onProgress({
+        id: active.item.id,
+        percentage: active.item.progress.toString(),
+        speed: 'Pausado',
+        eta: '',
+        downloaded: '',
+        total: ''
+      })
+    }
+  }
+
+  // Nuevo: reanudar todas las descargas pausadas
+  resumeAll(): void {
+    this.paused = false
+    const queuedItems = this.queue.filter(i => i.status === 'queued' && i.speed === 'Pausado')
+    for (const item of queuedItems) {
+      item.status = 'queued'
+      item.speed = ''
+    }
+    this.processQueue()
   }
 
   getQueue(): DownloadItem[] {
@@ -180,6 +217,19 @@ export class DownloadManager {
 
       this.activeItems.set(item.id, { item, emitter })
 
+      // Throttled progress handler - evita floods de eventos IPC
+      const sendProgress = () => {
+        this.lastProgressUpdate.delete(item.id)
+        this.onProgress({
+          id: item.id,
+          percentage: item.progress.toFixed(1),
+          speed: item.speed,
+          eta: item.eta,
+          downloaded: '',
+          total: ''
+        })
+      }
+
       emitter.on('progress', (progress) => {
         const pct = progress.percent ?? 0
         item.progress = pct
@@ -198,14 +248,23 @@ export class DownloadManager {
           }
         }
 
-        this.onProgress({
-          id: item.id,
-          percentage: pct.toFixed(1),
-          speed: item.speed,
-          eta: item.eta,
-          downloaded: '',
-          total: progress.totalSize ?? ''
-        })
+        // Throttle: solo enviar si pasó el tiempo mínimo desde el último envío
+        const now = Date.now()
+        const lastUpdate = this.lastProgressUpdate.get(item.id) || 0
+        if (now - lastUpdate >= this.PROGRESS_THROTTLE_MS) {
+          // Enviar inmediatamente
+          this.lastProgressUpdate.set(item.id, now)
+          sendProgress()
+        } else {
+          // Programar envío diferido
+          const existingTimer = this.progressTimers.get(item.id)
+          if (existingTimer) clearTimeout(existingTimer)
+          const timer = setTimeout(() => {
+            this.lastProgressUpdate.set(item.id, Date.now())
+            sendProgress()
+          }, this.PROGRESS_THROTTLE_MS - (now - lastUpdate))
+          this.progressTimers.set(item.id, timer)
+        }
       })
 
       emitter.on('ytDlpEvent', (eventType, eventData) => {
