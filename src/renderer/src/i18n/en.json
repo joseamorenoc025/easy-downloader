@@ -14,7 +14,6 @@
   "form.error.emptyUrl": "Enter a URL",
   "form.error.invalidUrl": "Invalid URL format",
   "form.error.invalidSpotifyUrl": "Enter a valid Spotify URL",
-  "form.error.spotdlMissing": "spotdl is not installed. Run:",
   "form.video": "Video",
   "form.audio": "Audio",
   "form.resolution": "Resolution",
@@ -53,7 +52,7 @@
   "info.spotifyTitle": "Spotify",
   "info.spotifyTracks": "Single tracks",
   "info.spotifyAlbums": "Albums & playlists",
-  "info.spotifyRequires": "Requires spotdl",
+  "info.spotifyRequires": "",
 
   "preview.loading": "Fetching info...",
   "preview.error": "Failed to fetch metadata",
@@ -99,11 +98,8 @@
   "deps.banner.text": "Some features require additional tools:",
   "deps.banner.dismiss": "Got it",
 
-  "deps.spotdl.missing": "spotdl is not installed",
-  "deps.spotdl.what": "Required for Spotify downloads",
-  "deps.spotdl.install": "pip install spotdl",
-  "deps.spotdl.help": "How to install",
-  "deps.spotdl.hide": "Hide",
+  "deps.help": "How to install",
+  "deps.hide": "Hide",
 
   "deps.ffmpeg.missing": "ffmpeg is not installed",
   "deps.ffmpeg.what": "Required for audio conversion to MP3",
@@ -117,7 +113,9 @@
   "deps.ytdlp.install": "Auto-downloaded on first launch",
   "deps.ytdlp.retry": "Retry",
 
-  "deps.howto.spotdl": "To install spotdl:\n• Windows/Mac/Linux: pip install spotdl\n• If pip is not available: python -m pip install spotdl\n• Windows alternative: scoop install spotdl\n• More info: https://github.com/spotDL/spotify-downloader",
   "deps.howto.ffmpeg": "To install ffmpeg:\n• Windows: https://ffmpeg.org/download.html (add to PATH)\n• Linux (Debian/Ubuntu): sudo apt install ffmpeg\n• Linux (Fedora): sudo dnf install ffmpeg\n• Mac: brew install ffmpeg",
-  "deps.learnMore": "More info"
+  "deps.learnMore": "More info",
+
+  "toast.trackFailed": "Could not download",
+  "toast.trackSkipped": "Skipping track"
 }

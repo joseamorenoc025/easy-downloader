@@ -32,7 +32,6 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
   const [format, setFormat] = useState<'video' | 'audio'>('video')
   const [quality, setQuality] = useState('best')
   const [error, setError] = useState('')
-  const [spotdlMissing, setSpotdlMissing] = useState(false)
 
   // Listen for paste events from App.tsx
   useEffect(() => {
@@ -94,6 +93,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
           type="text"
           value={url}
           onChange={e => { setUrl(e.target.value); setError('') }}
+          aria-label={t('a11y.urlInput')}
           placeholder={source === 'youtube'
             ? t('form.placeholder.youtube')
             : t('form.placeholder.spotify')}
@@ -104,11 +104,12 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      {spotdlMissing && source === 'spotify' && <SpotdlMissingAlert />}
       <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
+        <div role="radiogroup" aria-label={t('a11y.sourceToggle')} className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
           <button
             type="button"
+            role="radio"
+            aria-checked={source === 'youtube'}
             onClick={() => { setSource('youtube'); setFormat('video'); setQuality('best') }}
             className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               source === 'youtube'
@@ -120,10 +121,10 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
           </button>
           <button
             type="button"
-            onClick={async () => {
+            role="radio"
+            aria-checked={source === 'spotify'}
+            onClick={() => {
               setSource('spotify'); setFormat('audio'); setQuality('320')
-              const ok = await window.easyDownloader.checkSpotdl()
-              setSpotdlMissing(!ok)
             }}
             className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               source === 'spotify'
@@ -137,9 +138,11 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
 
         {source === 'youtube' && (
           <>
-            <div className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
+            <div role="radiogroup" aria-label={t('a11y.formatToggle')} className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
               <button
                 type="button"
+                role="radio"
+                aria-checked={format === 'video'}
                 onClick={() => { setFormat('video'); setQuality('best') }}
                 className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                   format === 'video'
@@ -151,6 +154,8 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={format === 'audio'}
                 onClick={() => { setFormat('audio'); setQuality('320') }}
                 className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                   format === 'audio'
@@ -164,6 +169,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
             <select
               value={quality}
               onChange={e => setQuality(e.target.value)}
+              aria-label={format === 'audio' ? t('form.bitrate') : t('form.resolution')}
               className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
             >
               {qualities.map(q => (
@@ -187,59 +193,5 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         />
       )}
     </form>
-  )
-}
-
-function SpotdlMissingAlert() {
-  const { t } = useI18n()
-  const [showHelp, setShowHelp] = useState(false)
-
-  return (
-    <div className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-            {t('deps.spotdl.missing')}
-          </p>
-          <p className="text-xs text-amber-700 dark:text-amber-400">
-            {t('deps.spotdl.what')}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowHelp(!showHelp)}
-          className="shrink-0 rounded px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:text-amber-400 dark:hover:bg-amber-900"
-        >
-          {showHelp ? t('deps.spotdl.hide') : t('deps.spotdl.help')}
-        </button>
-      </div>
-
-      {showHelp && (
-        <div className="mt-2 space-y-1 text-xs text-amber-800 dark:text-amber-300">
-          <p>
-            <strong>pip:</strong>{' '}
-            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">pip install spotdl</code>
-          </p>
-          <p>
-            <strong>pip (alt):</strong>{' '}
-            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">python -m pip install spotdl</code>
-          </p>
-          <p>
-            <strong>Scoop (Windows):</strong>{' '}
-            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">scoop install spotdl</code>
-          </p>
-          <p>
-            <a
-              href="https://github.com/spotDL/spotify-downloader"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100"
-            >
-              {t('deps.learnMore')}
-            </a>
-          </p>
-        </div>
-      )}
-    </div>
   )
 }

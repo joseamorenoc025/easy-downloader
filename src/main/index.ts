@@ -6,7 +6,7 @@ const { default: Store } = require('electron-store')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { autoUpdater } = require('electron-updater')
 import { DownloadManager } from './downloader/manager'
-import { SpotifyDownloadManager } from './downloader/spotdl'
+import { SpotifyDownloadManager } from './downloader/spotify-native'
 import { fetchMetadata } from './downloader/metadata'
 import { checkFfmpegInstalled } from './downloader/ffmpeg'
 import { isValidHttpUrl } from './utils/url'
@@ -99,15 +99,22 @@ function setupIPC(): void {
   })
 
   ipcMain.handle('cancel-download', async (_event, itemId: string) => {
-    downloadManager?.cancelItem(itemId)
+    if (itemId.startsWith('spot-')) {
+      spotifyManager?.cancelItem(itemId)
+    } else {
+      downloadManager?.cancelItem(itemId)
+    }
   })
 
   ipcMain.handle('cancel-all', async () => {
     downloadManager?.cancelAll()
+    spotifyManager?.cancelAll()
   })
 
   ipcMain.handle('get-queue', async () => {
-    return downloadManager?.getQueue() || []
+    const ytQueue = downloadManager?.getQueue() || []
+    const spotQueue = spotifyManager?.getQueue() || []
+    return [...ytQueue, ...spotQueue]
   })
 
   ipcMain.handle('select-directory', async () => {
@@ -181,12 +188,7 @@ function setupIPC(): void {
       throw new Error('URL inválida: solo http/https')
     }
     if (!spotifyManager) return null
-    
-    const settings = store.get('settings') as any
-    const incognito = settings?.incognitoMode || false
-    const dlPath = (store.get('downloadPath') as string) || app.getPath('downloads')
-    
-    return spotifyManager.addToQueue(url, dlPath, incognito)
+    return spotifyManager.addSpotifyUrl(url)
   })
 
   ipcMain.handle('open-folder', async (_event, folderPath?: string) => {
@@ -207,13 +209,7 @@ function setupIPC(): void {
   })
 
   ipcMain.handle('check-spotdl', async () => {
-    try {
-      const { execSync } = require('child_process')
-      execSync('spotdl --version', { stdio: 'ignore' })
-      return true
-    } catch {
-      return false
-    }
+    return true
   })
 
   ipcMain.handle('save-queue', async (_event, queue: Array<{ url: string; format: string; quality: string; source: string }>) => {
@@ -240,15 +236,7 @@ function setupIPC(): void {
 
   ipcMain.handle('check-dependencies', async () => {
     const ffmpegOk = checkFfmpegInstalled()
-    const spotdlOk = await (async () => {
-      try {
-        const { execSync } = require('child_process')
-        execSync('spotdl --version', { stdio: 'ignore' })
-        return true
-      } catch {
-        return false
-      }
-    })()
+    const spotdlOk = true
     const ytdlpOk = downloadManager ? await (async () => {
       try {
         await downloadManager.ensureBinary()
@@ -335,7 +323,12 @@ function initDownloadManager(): void {
 }
 
 function initSpotifyManager(): void {
+  const dlPath = (store.get('downloadPath') as string) || app.getPath('downloads')
   spotifyManager = new SpotifyDownloadManager(
+    dlPath,
+    (progress) => {
+      mainWindow?.webContents.send('download-progress', progress)
+    },
     (item) => {
       mainWindow?.webContents.send('download-complete', item)
 
@@ -370,6 +363,9 @@ function initSpotifyManager(): void {
     },
     (itemId, error) => {
       mainWindow?.webContents.send('download-error', { itemId, error })
+    },
+    (itemId, trackTitle) => {
+      mainWindow?.webContents.send('spotify-track-error', { itemId, trackTitle })
     }
   )
 }

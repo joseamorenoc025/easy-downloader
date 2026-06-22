@@ -25,7 +25,7 @@ function DepItem({ missing, label, what, children }: { missing: boolean; label: 
           onClick={() => setExpanded(!expanded)}
           className="shrink-0 rounded px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 dark:text-amber-400 dark:hover:bg-amber-900"
         >
-          {expanded ? t('deps.spotdl.hide') : t('deps.spotdl.help')}
+          {expanded ? t('deps.hide') : t('deps.help')}
         </button>
       </div>
       {expanded && (
@@ -39,7 +39,7 @@ function DepItem({ missing, label, what, children }: { missing: boolean; label: 
 
 export function DependencyBanner({ deps, onDismiss, onRetryYtdlp }: DepBannerProps) {
   const { t } = useI18n()
-  const missing = !deps.ffmpeg || !deps.spotdl || !deps.ytdlp
+  const missing = !deps.ffmpeg || !deps.ytdlp
 
   if (!missing) return null
 
@@ -63,19 +63,6 @@ export function DependencyBanner({ deps, onDismiss, onRetryYtdlp }: DepBannerPro
       </div>
 
       <div className="space-y-2">
-        {!deps.spotdl && (
-          <DepItem
-            missing={deps.spotdl}
-            label={t('deps.spotdl.missing')}
-            what={t('deps.spotdl.what')}
-          >
-            <p><strong>pip:</strong> <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">pip install spotdl</code></p>
-            <p className="mt-1"><strong>pip (alternativo):</strong> <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">python -m pip install spotdl</code></p>
-            <p className="mt-1"><strong>Scoop (Windows):</strong> <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-800/50">scoop install spotdl</code></p>
-            <p className="mt-1"><a href="https://github.com/spotDL/spotify-downloader" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100">{t('deps.learnMore')}</a></p>
-          </DepItem>
-        )}
-
         {!deps.ffmpeg && (
           <DepItem
             missing={deps.ffmpeg}

@@ -78,6 +78,7 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
         {(item.status === 'queued' || item.status === 'downloading') && (
           <button
             onClick={() => onCancel(item.id)}
+            aria-label={t('a11y.cancelDownload', { title: item.title })}
             className="shrink-0 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           >
             {t('item.cancel')}
@@ -91,7 +92,7 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
           animate={{ opacity: 1, height: 'auto' }}
           className="mt-3 space-y-1.5"
         >
-          <Progress value={item.progress} />
+          <Progress value={item.progress} label={t('a11y.downloadProgress', { title: item.title })} />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{item.progress.toFixed(1)}%</span>
             <span>{item.speed}</span>
@@ -122,7 +123,7 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
       )}
 
       {item.status === 'error' && item.error && (
-        <p className="mt-1.5 text-xs text-destructive truncate">
+        <p className="mt-1.5 text-xs text-destructive whitespace-pre-wrap">
           {item.error}
         </p>
       )}

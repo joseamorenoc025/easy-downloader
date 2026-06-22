@@ -5,6 +5,7 @@ import { QueueList } from './components/queue-list'
 import { History } from './components/history'
 import { ThemeToggle } from './components/theme-toggle'
 import { DependencyBanner } from './components/dependency-banner'
+import { ToastProvider, useToast } from './components/toast'
 import { useDownloads } from './hooks/use-downloads'
 import { useSettings } from './hooks/use-settings'
 import { I18nProvider, useI18n } from './i18n/context'
@@ -16,6 +17,7 @@ function AppContent() {
   const { queue, isLoading, addDownload, addSpotifyDownload, cancelDownload, cancelAll, openFolder } = useDownloads()
   const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } = useSettings()
   const { t, locale, setLocale } = useI18n()
+  const { toast } = useToast()
   const [view, setView] = useState<'queue' | 'history'>('queue')
   const [deps, setDeps] = useState<DependencyStatus | null>(null)
   const [depsDismissed, setDepsDismissed] = useState(false)
@@ -25,6 +27,15 @@ function AppContent() {
       console.error('checkDependencies failed:', err)
     })
   }, [])
+
+  useEffect(() => {
+    window.easyDownloader.onSpotifyTrackError(({ trackTitle }) => {
+      toast(`${t('toast.trackFailed')} «${trackTitle}»`, 'error')
+    })
+    return () => {
+      window.easyDownloader.removeAllListeners('spotify-track-error')
+    }
+  }, [toast, t])
 
   const handleRetryYtdlp = useCallback(async () => {
     try {
@@ -198,10 +209,12 @@ function AppContent() {
           </button>
 
           {/* Queue / History toggle */}
-          <div className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
+          <div role="tablist" aria-label={t('a11y.viewTabs')} className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
             {(['queue', 'history'] as const).map((v) => (
               <button
                 key={v}
+                role="tab"
+                aria-selected={view === v}
                 onClick={() => setView(v)}
                 className={`relative rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                   view === v
@@ -217,6 +230,7 @@ function AppContent() {
           {/* Language toggle */}
           <button
             onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+            aria-label={locale === 'es' ? t('a11y.switchToEnglish') : t('a11y.switchToSpanish')}
             className="rounded-lg px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             title={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
           >
@@ -226,6 +240,7 @@ function AppContent() {
           {/* Download path */}
           <button
             onClick={selectDirectory}
+            aria-label={t('a11y.changeDownloadFolder')}
             className="max-w-[110px] truncate text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
             title={settings.downloadPath || 'Default download folder'}
           >
@@ -290,6 +305,21 @@ function AppContent() {
         </AnimatePresence>
       </main>
 
+      {/* Polite live region for screen readers: announces download
+          progress changes without stealing focus. Updates are throttled
+          to one announcement per few seconds by callers (queue-item renders). */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {queue
+          .filter(i => i.status === 'downloading')
+          .map(i => `${i.title}: ${i.progress.toFixed(0)}%`)
+          .join(' | ')}
+      </div>
+
       {/* ─── Footer ─────────────────────────────────────────────────── */}
       <footer className="shrink-0 text-center">
         <p className="text-[10px] text-muted-foreground/70">
@@ -311,7 +341,9 @@ function AppContent() {
 export default function App() {
   return (
     <I18nProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </I18nProvider>
   )
 }

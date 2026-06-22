@@ -115,11 +115,11 @@ export function useDownloads() {
   const addSpotifyDownload = useCallback(async (url: string) => {
     setIsLoading(true)
     try {
-      const item = await window.easyDownloader.addSpotifyDownload(url)
-      if (item) {
-        setQueue(prev => [...prev, item])
+      const items = await window.easyDownloader.addSpotifyDownload(url)
+      if (items && items.length > 0) {
+        setQueue(prev => [...prev, ...items])
       }
-      return item
+      return items
     } finally {
       setIsLoading(false)
     }

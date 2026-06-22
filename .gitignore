@@ -1,4 +1,3 @@
-```
 # Dependencies
 node_modules/
 
@@ -36,4 +35,10 @@ htmlcov/
 
 # Testing
 .vitest/
-```
+
+# Downloads
+downloads/
+
+# Tool config
+.opencode/
+.mavis/

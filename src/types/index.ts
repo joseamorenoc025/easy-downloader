@@ -85,7 +85,7 @@ export interface DependencyStatus {
 export interface EasyDownloaderAPI {
   fetchMetadata: (url: string) => Promise<MetadataResult>
   addDownload: (options: DownloadOptions) => Promise<DownloadItem | null>
-  addSpotifyDownload: (url: string) => Promise<DownloadItem | null>
+  addSpotifyDownload: (url: string) => Promise<DownloadItem[]>
   cancelDownload: (itemId: string) => Promise<void>
   cancelAll: () => Promise<void>
   pauseAll: () => Promise<void> // Nuevo: pausar todas las descargas
@@ -112,5 +112,6 @@ export interface EasyDownloaderAPI {
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
   onDownloadComplete: (callback: (item: DownloadItem) => void) => void
   onDownloadError: (callback: (data: { itemId: string; error: string }) => void) => void
+  onSpotifyTrackError: (callback: (data: { itemId: string; trackTitle: string }) => void) => void
   removeAllListeners: (channel: string) => void
 }
