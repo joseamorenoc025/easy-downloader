@@ -124,7 +124,7 @@ export class DownloadManager {
     this.queue = []
   }
 
-  // Nuevo: pausar todas las descargas activas
+  // Pausa: detiene descargas activas y las marca para reanudar después
   pauseAll(): void {
     this.paused = true
     for (const [, active] of this.activeItems) {

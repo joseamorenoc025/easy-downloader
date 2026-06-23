@@ -151,7 +151,7 @@ function AppContent() {
                 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`}
-            title={settings.globalPause ? 'Pausar todo - Click para reanudar' : 'Reanudar todo - Click para pausar'}
+            title={settings.globalPause ? t('header.pauseResume') : t('header.resumePause')}
           >
             {settings.globalPause ? (
               <>
@@ -159,14 +159,14 @@ function AppContent() {
                   <rect x="6" y="4" width="4" height="16"/>
                   <rect x="14" y="4" width="4" height="16"/>
                 </svg>
-                PAUSE
+                {t('header.pause')}
               </>
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1">
                   <polygon points="5 3 19 12 5 21 5 3"/>
                 </svg>
-                PLAY
+                {t('header.play')}
               </>
             )}
           </button>
@@ -179,7 +179,7 @@ function AppContent() {
                 ? 'bg-red-500/10 text-red-600 dark:text-red-400'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`}
-            title={settings.incognitoMode ? 'Incognito ON - No history saved' : 'Incognito OFF'}
+            title={settings.incognitoMode ? t('header.incognitoOnDesc') : t('header.incognitoOffDesc')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1">
               <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
@@ -187,7 +187,7 @@ function AppContent() {
               <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
               <line x1="2" x2="22" y1="2" y2="22"/>
             </svg>
-            {settings.incognitoMode ? 'ON' : 'OFF'}
+            {settings.incognitoMode ? t('header.incognitoOn') : t('header.incognitoOff')}
           </button>
 
           {/* Fetch metadata toggle */}
@@ -198,14 +198,14 @@ function AppContent() {
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`}
-            title={settings.fetchMetadata ? 'Metadata preview ON' : 'Metadata preview OFF (faster)'}
+            title={settings.fetchMetadata ? t('header.metadataOn') : t('header.metadataOff')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" x2="12" y1="16" y2="12"/>
               <line x1="12" x2="12.01" y1="8" y2="8"/>
             </svg>
-            Meta
+            {t('header.meta')}
           </button>
 
           {/* Queue / History toggle */}
@@ -222,7 +222,7 @@ function AppContent() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {v === 'queue' ? 'Queue' : t('history.title')}
+                {v === 'queue' ? t('header.queue') : t('history.title')}
               </button>
             ))}
           </div>
@@ -232,7 +232,7 @@ function AppContent() {
             onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
             aria-label={locale === 'es' ? t('a11y.switchToEnglish') : t('a11y.switchToSpanish')}
             className="rounded-lg px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            title={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+            title={locale === 'es' ? t('header.switchToEn') : t('header.switchToEs')}
           >
             {locale === 'es' ? 'EN' : 'ES'}
           </button>
@@ -242,11 +242,11 @@ function AppContent() {
             onClick={selectDirectory}
             aria-label={t('a11y.changeDownloadFolder')}
             className="max-w-[110px] truncate text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-            title={settings.downloadPath || 'Default download folder'}
+            title={settings.downloadPath || t('header.defaultFolder')}
           >
             {settings.downloadPath
               ? settings.downloadPath.split(/[\\/]/).pop()
-              : 'Downloads'}
+              : t('header.downloads')}
           </button>
 
           <ThemeToggle theme={settings.themeMode} onThemeChange={updateTheme} />
@@ -330,7 +330,7 @@ function AppContent() {
             rel="noopener noreferrer"
             className="underline-offset-4 hover:underline hover:text-muted-foreground"
           >
-            EasyDownloader v2.0.0
+            EasyDownloader v2.2.0
           </a>
         </p>
         <p className="text-[10px] text-muted-foreground/50">

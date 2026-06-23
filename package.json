@@ -1,6 +1,6 @@
 {
   "name": "easy-downloader",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "description": "Desktop app to download videos and audio from YouTube, Spotify and ~1700 sites",
   "author": "Jose Amoreno <joseamorenoc025@gmail.com>",
   "main": "./out/main/index.js",
@@ -27,6 +27,8 @@
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
@@ -36,6 +38,7 @@
     "electron": "^42.5.0",
     "electron-builder": "26.8.1",
     "electron-vite": "^5.0.0",
+    "happy-dom": "^20.10.6",
     "postcss": "^8.4.49",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -43,7 +46,8 @@
     "tailwindcss": "^3.4.15",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.6.3",
-    "vite": "^7.3.5"
+    "vite": "^7.3.5",
+    "vitest": "^4.1.9"
   },
   "build": {
     "appId": "com.easydownloader.app",

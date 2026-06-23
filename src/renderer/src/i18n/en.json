@@ -119,5 +119,23 @@
   "deps.learnMore": "More info",
 
   "toast.trackFailed": "Could not download",
-  "toast.trackSkipped": "Skipping track"
+  "toast.trackSkipped": "Skipping track",
+
+  "header.pause": "Pause all",
+  "header.pauseResume": "Pause all - Click to resume",
+  "header.resumePause": "Resume all - Click to pause",
+  "header.play": "PLAY",
+  "header.pause": "PAUSE",
+  "header.incognitoOn": "Incognito ON",
+  "header.incognitoOff": "Incognito OFF",
+  "header.incognitoOnDesc": "Incognito ON - No history saved",
+  "header.incognitoOffDesc": "Incognito OFF",
+  "header.metadataOn": "Metadata preview ON",
+  "header.metadataOff": "Metadata preview OFF (faster)",
+  "header.meta": "Meta",
+  "header.queue": "Queue",
+  "header.defaultFolder": "Default download folder",
+  "header.downloads": "Downloads",
+  "header.switchToEn": "Switch to English",
+  "header.switchToEs": "Cambiar a Español"
 }

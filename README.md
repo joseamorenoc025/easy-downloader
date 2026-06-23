@@ -1,7 +1,6 @@
 # EasyDownloader
 
-![Build](https://img.shields.io/github/actions/workflow/status/joseamorenoc025/easy-downloader/ci.yml?branch=main)
-![Build](https://img.shields.io/github/actions/workflow/status/joseamorenoc025/easy-downloader/build.yml?branch=main)
+![Build & Release](https://img.shields.io/github/actions/workflow/status/joseamorenoc025/easy-downloader/build.yml?branch=main)
 ![License](https://img.shields.io/github/license/joseamorenoc025/easy-downloader)
 ![Release](https://img.shields.io/github/v/release/joseamorenoc025/easy-downloader)
 ![Downloads](https://img.shields.io/github/downloads/joseamorenoc025/easy-downloader/total)

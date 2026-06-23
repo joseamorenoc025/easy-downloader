@@ -119,5 +119,23 @@
   "deps.learnMore": "Más información",
 
   "toast.trackFailed": "No se pudo descargar",
-  "toast.trackSkipped": "Saltando canción"
+  "toast.trackSkipped": "Saltando canción",
+
+  "header.pause": "Pausar todo",
+  "header.pauseResume": "Pausar todo - Click para reanudar",
+  "header.resumePause": "Reanudar todo - Click para pausar",
+  "header.play": "PLAY",
+  "header.pause": "PAUSE",
+  "header.incognitoOn": "Incognito ON",
+  "header.incognitoOff": "Incognito OFF",
+  "header.incognitoOnDesc": "Incognito ON - No history saved",
+  "header.incognitoOffDesc": "Incognito OFF",
+  "header.metadataOn": "Metadata preview ON",
+  "header.metadataOff": "Metadata preview OFF (faster)",
+  "header.meta": "Meta",
+  "header.queue": "Cola",
+  "header.defaultFolder": "Carpeta por defecto",
+  "header.downloads": "Descargas",
+  "header.switchToEn": "Cambiar a English",
+  "header.switchToEs": "Cambiar a Español"
 }

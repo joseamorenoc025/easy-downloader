@@ -41,9 +41,26 @@ export interface SearchResult {
 }
 
 export class YtdlpSearchProvider {
+  private cache = new Map<string, SearchResult[]>()
+  private MAX_CACHE = 100
+
   async searchFirst(artist: string, title: string): Promise<SearchResult | null> {
     const query = `${artist} - ${title}`
+    const cacheKey = query.toLowerCase()
+
+    if (this.cache.has(cacheKey)) {
+      const cached = this.cache.get(cacheKey)!
+      return cached.length > 0 ? cached[0] : null
+    }
+
     const candidates = await this.fetchCandidates(query)
+
+    if (this.cache.size >= this.MAX_CACHE) {
+      const firstKey = this.cache.keys().next().value
+      if (firstKey) this.cache.delete(firstKey)
+    }
+    this.cache.set(cacheKey, candidates)
+
     return candidates.length > 0 ? candidates[0] : null
   }
 

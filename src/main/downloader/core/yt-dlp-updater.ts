@@ -54,7 +54,10 @@ export class YtDlpUpdater {
 
   private getVersion(): string | null {
     try {
-      return execSync('yt-dlp --version', { stdio: 'pipe', timeout: 10000 })
+      const isWin = process.platform === 'win32'
+      const binaryName = isWin ? 'yt-dlp.exe' : 'yt-dlp'
+      const binaryPath = join(app.getPath('userData'), binaryName)
+      return execSync(`"${binaryPath}" --version`, { stdio: 'pipe', timeout: 10000 })
         .toString().trim()
     } catch {
       return null

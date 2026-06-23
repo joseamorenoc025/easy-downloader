@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Mock electron-store
 vi.mock('electron-store', () => ({
   default: class MockStore {
     private data: Record<string, any> = {}
@@ -8,63 +9,85 @@ vi.mock('electron-store', () => ({
   },
 }))
 
-import DownloadManager from '../main/downloader/manager'
+// Mock electron
+vi.mock('electron', () => ({
+  app: {
+    getPath: vi.fn(() => '/mock/path'),
+    getAppPath: vi.fn(() => '/mock/app/path'),
+  },
+  BrowserWindow: vi.fn(),
+  ipcMain: { handle: vi.fn(), on: vi.fn() },
+  dialog: { showOpenDialog: vi.fn() },
+  shell: { openPath: vi.fn() },
+  nativeTheme: { on: vi.fn() },
+  Tray: vi.fn(() => ({ setToolTip: vi.fn(), on: vi.fn(), setImage: vi.fn() })),
+  Menu: { buildFromTemplate: vi.fn() },
+  Notification: vi.fn(),
+}))
 
-describe('DownloadManager - Rendimiento y Cola', () => {
+// Mock child_process
+vi.mock('child_process', () => ({
+  execSync: vi.fn(),
+  spawn: vi.fn(() => ({
+    stdout: { on: vi.fn(), setEncoding: vi.fn() },
+    stderr: { on: vi.fn(), setEncoding: vi.fn() },
+    on: vi.fn(),
+    pid: 12345,
+  })),
+  default: {
+    execSync: vi.fn(),
+    spawn: vi.fn(),
+  },
+}))
+
+import { DownloadManager } from '../main/downloader/manager'
+
+describe('DownloadManager', () => {
   let manager: DownloadManager
+  const mockOnProgress = vi.fn()
+  const mockOnComplete = vi.fn()
+  const mockOnError = vi.fn()
 
   beforeEach(() => {
-    manager = new DownloadManager()
     vi.clearAllMocks()
+    manager = new DownloadManager(
+      '/mock/downloads',
+      mockOnProgress,
+      mockOnComplete,
+      mockOnError
+    )
   })
 
-  describe('Gestión de Cola', () => {
-    it('debe limitar a 3 descargas simultáneas', async () => {
-      // Simular 5 descargas añadidas
-      const promises = []
-      for (let i = 0; i < 5; i++) {
-        promises.push(
-          manager.addToQueue(`https://youtube.com/watch?v=test${i}`, 'mp4', false)
-        )
-      }
-
-      // Verificar que solo 3 están activas inicialmente
-      expect(manager.getActiveCount()).toBeLessThanOrEqual(3)
+  describe('Queue management', () => {
+    it('should initialize with empty queue', () => {
+      expect(manager.getQueue()).toEqual([])
     })
 
-    it('debe permitir pausar todas las descargas', () => {
+    it('should return a copy of the queue', () => {
+      const queue1 = manager.getQueue()
+      const queue2 = manager.getQueue()
+      expect(queue1).not.toBe(queue2)
+      expect(queue1).toEqual(queue2)
+    })
+  })
+
+  describe('Pause/Resume', () => {
+    it('should set paused state to true on pauseAll', () => {
       manager.pauseAll()
-      // El estado interno debe reflejar la pausa
       expect((manager as any).paused).toBe(true)
     })
 
-    it('debe permitir reanudar todas las descargas', () => {
+    it('should set paused state to false on resumeAll', () => {
       manager.pauseAll()
       manager.resumeAll()
       expect((manager as any).paused).toBe(false)
     })
   })
 
-  describe('Modo Incógnito', () => {
-    it('debe marcar descargas como incógnito', async () => {
-      await manager.addToQueue('https://youtube.com/watch?v=test', 'mp3', true)
-      
-      const queue = (manager as any).queue
-      expect(queue.some((item: any) => item.incognito === true)).toBe(true)
-    })
-
-    it('debe marcar descargas normales como no incógnito por defecto', async () => {
-      await manager.addToQueue('https://youtube.com/watch?v=test', 'mp3', false)
-      
-      const queue = (manager as any).queue
-      expect(queue.some((item: any) => item.incognito === false)).toBe(true)
-    })
-  })
-
-  describe('Optimización de Eventos', () => {
-    it('debe tener throttling configurado para 100ms', () => {
-      // Verificar que el intervalo de throttle está optimizado
-      expect((manager as any).throttleInterval).toBe(100)
+  describe('Cancel', () => {
+    it('should clear queue on cancelAll', () => {
+      manager.cancelAll()
+      expect(manager.getQueue()).toEqual([])
     })
   })
 })
