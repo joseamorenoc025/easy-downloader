@@ -1,0 +1,17 @@
+# Code Owners - EasyDownloader
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @joseamorenoc025
+
+# CI/CD workflows
+.github/ @joseamorenoc025
+
+# Main process (Electron)
+src/main/ @joseamorenoc025
+
+# Renderer (React UI)
+src/renderer/ @joseamorenoc025
+
+# Types
+src/types/ @joseamorenoc025
