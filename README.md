@@ -1,5 +1,11 @@
 # EasyDownloader
 
+![Build](https://img.shields.io/github/actions/workflow/status/joseamorenoc025/easy-downloader/ci.yml?branch=main)
+![Build](https://img.shields.io/github/actions/workflow/status/joseamorenoc025/easy-downloader/build.yml?branch=main)
+![License](https://img.shields.io/github/license/joseamorenoc025/easy-downloader)
+![Release](https://img.shields.io/github/v/release/joseamorenoc025/easy-downloader)
+![Downloads](https://img.shields.io/github/downloads/joseamorenoc025/easy-downloader/total)
+
 > App de escritorio para descargar videos y audio desde YouTube, Spotify y ~1700 sitios web. Sin dependencias externas para Spotify — motor nativo integrado.
 >
 > Desktop app to download videos and audio from YouTube, Spotify, and ~1700 websites. No external dependencies for Spotify — native engine built in.

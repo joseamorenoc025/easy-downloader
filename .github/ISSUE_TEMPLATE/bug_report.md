@@ -23,8 +23,7 @@ Si es aplicable, añade capturas de pantalla para ayudar a explicar tu problema.
 
 **Entorno (por favor completa esta información):**
  - Sistema Operativo: [ej. Windows 11, Ubuntu 22.04]
- - Versión de Python: [ej. 3.10.2]
- - Versión de EasyDownloader: [ej. 1.0.0]
+ - Versión de EasyDownloader: [ej. 2.2.0]
 
 **Contexto adicional**
 Añade cualquier otro contexto sobre el problema aquí.
