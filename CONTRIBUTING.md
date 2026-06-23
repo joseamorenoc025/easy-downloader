@@ -49,7 +49,6 @@ Requisitos:
 - **npm** (incluido con Node).
 - **Git**.
 - **ffmpeg** instalado en tu sistema (en Linux: `sudo apt install ffmpeg`; en Windows: descargar de ffmpeg.org y agregar al PATH; en macOS: `brew install ffmpeg`).
-- Para probar Spotify: `pip install spotdl`.
 
 Pasos:
 
@@ -166,7 +165,7 @@ Crédito en el fix release si quieres.
 easy-downloader/
 ├── src/
 │   ├── main/                 # Electron main process
-│   │   ├── downloader/       # manager.ts (yt-dlp), spotdl.ts, options.ts, ffmpeg.ts, metadata.ts
+│   │   ├── downloader/       # manager.ts (YouTube), spotify-native.ts (Spotify), options.ts, ffmpeg.ts
 │   │   ├── utils/            # url.ts (validation helper)
 │   │   └── index.ts          # Window, tray, IPC handlers, lifecycle
 │   ├── preload/              # Context bridge (exposes API via window.easyDownloader)
@@ -177,7 +176,6 @@ easy-downloader/
 │   │   └── lib/              # Shared utilities (cn, formatBytes, parseBytes, isValidUrl)
 │   └── types/                # TypeScript types compartidos main + preload + renderer
 ├── resources/                # App icons
-├── .mavis/plans/             # Sprint plans, reviews, changelogs
 ├── .github/workflows/        # CI: build.yml (release on tag)
 ├── package.json              # Dependencies, scripts, electron-builder config
 └── README.md
@@ -191,7 +189,8 @@ easy-downloader/
 | Una cadena de UI (texto en pantalla) | `src/renderer/src/i18n/es.json` y `en.json` |
 | Un IPC handler nuevo (renderer ↔ main) | `src/main/index.ts` (handler) + `src/preload/index.ts` (exponer) + `src/types/index.ts` (tipo) |
 | Cómo se descargan videos | `src/main/downloader/manager.ts` + `src/main/downloader/options.ts` |
-| Cómo se descargan de Spotify | `src/main/downloader/spotdl.ts` |
+| Cómo se descargan de Spotify | `src/main/downloader/spotify-native.ts` (wrapper nativo con spotify-url-info) |
+| Búsqueda de YouTube | `src/main/downloader/core/providers/ytdlp-search.provider.ts` (scraping de ytInitialData) |
 | Cómo se valida una URL | `src/main/utils/url.ts` (helper compartido) |
 | Config de build / packaging | `package.json` (sección `build`) + `.github/workflows/build.yml` |
 | Tema / colores | `tailwind.config.js` + `src/renderer/src/styles/globals.css` |
@@ -210,12 +209,12 @@ Sprints completados:
 - **Sprint 1** (2026-06-16): Security hardening + bug de Spotify. 8 fixes críticos/altos.
 - **Sprint 2** (2026-06-18): Tech debt stabilization (tema centralizado, `React.memo`, auto-updater hardened).
 - **Sprint 3** (2026-06-18): Instalador `.deb` para Debian/Ubuntu + README bilingüe + CONTRIBUTING actualizado.
+- **Sprint 4** (2026-06-19): Spotify nativo (spotify-url-info + yt-dlp), selector de calidad de audio, YouTube search vía scraping, toast notifications.
 
 Próximos sprints planeados:
-- a11y (ARIA roles, focus visible, `aria-live` para progreso, lang sync) — bloqueante a11y.
-- i18n: completar claves faltantes + pluralización.
-- SHA256 verification del binario yt-dlp (supply chain).
+- a11y (ARIA roles, focus visible, `aria-live` para progreso, lang sync).
 - Selector de resolución 2K/4K en la UI.
+- SHA256 verification del binario yt-dlp (supply chain).
 - Code signing NSIS (si hay cert disponible).
 
 Si quieres proponer un sprint, abre un issue con la etiqueta `sprint-proposal`.

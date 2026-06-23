@@ -33,21 +33,28 @@ export function useDownloads() {
     // re-add the same items on every mount.
     window.easyDownloader.getSavedQueue().then(async (saved) => {
       if (!isMounted || !saved || saved.length === 0) return
+      // Clear saved queue first to prevent re-adding on next mount
+      try {
+        await window.easyDownloader.saveQueue([])
+      } catch {
+        // ignore
+      }
       try {
         for (const item of saved) {
           if (!isMounted) return
-          if (item.source === 'spotify') {
-            await window.easyDownloader.addSpotifyDownload(item.url)
-          } else {
-            await window.easyDownloader.addDownload({
-              url: item.url,
-              format: item.format as 'video' | 'audio',
-              quality: item.quality
-            })
+          try {
+            if (item.source === 'spotify') {
+              await window.easyDownloader.addSpotifyDownload(item.url)
+            } else {
+              await window.easyDownloader.addDownload({
+                url: item.url,
+                format: item.format as 'video' | 'audio',
+                quality: item.quality
+              })
+            }
+          } catch (err) {
+            console.error('Failed to restore queue item:', item.url, err)
           }
-        }
-        if (isMounted) {
-          await window.easyDownloader.saveQueue([])
         }
       } catch (err) {
         console.error('Saved queue restore failed:', err)
@@ -112,10 +119,10 @@ export function useDownloads() {
     }
   }, [])
 
-  const addSpotifyDownload = useCallback(async (url: string) => {
+  const addSpotifyDownload = useCallback(async (url: string, quality?: string) => {
     setIsLoading(true)
     try {
-      const items = await window.easyDownloader.addSpotifyDownload(url)
+      const items = await window.easyDownloader.addSpotifyDownload(url, quality)
       if (items && items.length > 0) {
         setQueue(prev => [...prev, ...items])
       }

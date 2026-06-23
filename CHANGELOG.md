@@ -9,6 +9,44 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.2.0] - 2026-06-19
+
+### Added
+- **Spotify nativo**: reemplazo completo de `spotdl` con un wrapper propio usando `spotify-url-info` + `yt-dlp`. Sin dependencia de Python ni pip. Descarga tracks, álbumes y playlists directamente desde la UI.
+- **Selector de calidad de audio**: 320, 256, 192 o 128 kbps para descargas de Spotify. Pipeline completo: form → hook → IPC → yt-dlp args.
+- **YouTube search vía scraping**: búsqueda de videos usando `node:https` para parsear `ytInitialData` del HTML de resultados. Elimina la dependencia de `ytsearch` de yt-dlp (bloqueado por YouTube con 403).
+- **Toast notifications**: notificaciones visuales con `framer-motion` para errores individuales en playlists.
+- **Selector de calidad de video**: 480p hasta mejor calidad disponible.
+- **Botón "Volver a la cola"** en el estado vacío del historial.
+
+### Changed
+- Footer actualizado: "Construido por José Moreno" + enlace para dejar estrella en GitHub.
+- README reescrito con documentación del motor nativo de Spotify y diagrama de componentes.
+- CONTRIBUTING.md actualizado con estructura de archivos actualizada (spotify-native.ts, ytdlp-search.provider.ts).
+- Descripción de package.json actualizada.
+- `node:https` reemplaza `globalThis.fetch` en el scraper de YouTube para compatibilidad con Electron.
+
+### Removed
+- Eliminado `spotdl.ts` (reemplazado por `spotify-native.ts`).
+- Eliminado fuzzy matcher y search cache (ya no son necesarios).
+- Eliminado `fuse.js` de dependencias.
+
+---
+
+# English summary
+
+## [2.2.0] - 2026-06-19
+- **Native Spotify**: complete `spotdl` replacement using `spotify-url-info` + `yt-dlp`. No Python or pip needed. Downloads tracks, albums, and playlists directly from the UI.
+- **Audio quality selector**: 320, 256, 192, or 128 kbps for Spotify downloads. Full pipeline: form → hook → IPC → yt-dlp args.
+- **YouTube search via scraping**: searches videos using `node:https` to parse `ytInitialData` from result HTML. Removes dependency on yt-dlp's `ytsearch` (blocked by YouTube with 403).
+- **Toast notifications**: visual notifications with `framer-motion` for individual track errors in playlists.
+- **Video quality selector**: 480p to best available quality.
+- **"Back to queue" button** in history empty state.
+- Footer updated: "Built by José Moreno" + GitHub star prompt.
+- README rewritten with native Spotify engine documentation and component diagram.
+
+---
+
 ## [2.1.0] - 2026-06-18
 
 ### Added

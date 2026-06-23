@@ -50,8 +50,8 @@ function AppContent() {
     addDownload(options)
   }
 
-  const handleAddSpotify = (url: string) => {
-    addSpotifyDownload(url)
+  const handleAddSpotify = (url: string, quality?: string) => {
+    addSpotifyDownload(url, quality)
   }
 
   const handleOpenFolder = () => {
@@ -272,9 +272,10 @@ function AppContent() {
               <div className="queue-scroll h-full overflow-y-auto pr-1">
                 <History
                   onOpenFolder={openFolder}
+                  onBackToQueue={() => setView('queue')}
                   onRedownload={(entry: HistoryEntry) => {
                     if (entry.source === 'spotify') {
-                      handleAddSpotify(entry.url)
+                      handleAddSpotify(entry.url, entry.quality)
                     } else {
                       handleAdd({ url: entry.url, format: entry.format, quality: entry.quality })
                     }
@@ -321,7 +322,7 @@ function AppContent() {
       </div>
 
       {/* ─── Footer ─────────────────────────────────────────────────── */}
-      <footer className="shrink-0 text-center">
+      <footer className="shrink-0 text-center space-y-0.5">
         <p className="text-[10px] text-muted-foreground/70">
           <a
             href="https://github.com/joseamorenoc025/easy-downloader"
@@ -331,7 +332,20 @@ function AppContent() {
           >
             EasyDownloader v2.0.0
           </a>
-          {' · '}{t('app.footer')}
+        </p>
+        <p className="text-[10px] text-muted-foreground/50">
+          {t('app.footer')}
+        </p>
+        <p className="text-[10px] text-muted-foreground/50">
+          {t('app.starPrompt')}{' '}
+          <a
+            href="https://github.com/joseamorenoc025/easy-downloader"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline-offset-4 hover:underline hover:text-muted-foreground"
+          >
+            GitHub
+          </a>
         </p>
       </footer>
     </div>

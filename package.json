@@ -1,7 +1,7 @@
 {
   "name": "easy-downloader",
   "version": "2.0.0",
-  "description": "Desktop app to download videos and extract audio from YouTube and other sites",
+  "description": "Desktop app to download videos and audio from YouTube, Spotify and ~1700 sites",
   "author": "Jose Amoreno <joseamorenoc025@gmail.com>",
   "main": "./out/main/index.js",
   "scripts": {
@@ -20,6 +20,7 @@
     "electron-store": "^10.0.0",
     "electron-updater": "^6.3.9",
     "framer-motion": "^12.40.0",
+    "fuse.js": "^7.4.2",
     "spotify-url-info": "^3.3.1",
     "yt-dlp-wrap": "^2.3.12"
   },
@@ -85,7 +86,7 @@
       "icon": "resources/icon.png",
       "category": "AudioVideo",
       "synopsis": "Download videos and audio from YouTube, Spotify and more",
-      "description": "EasyDownloader is a cross-platform desktop app to download videos and extract audio. Uses yt-dlp under the hood (supports ~1700 sites) and spotdl for Spotify.",
+      "description": "EasyDownloader is a cross-platform desktop app to download videos and audio from YouTube, Spotify, and ~1700 other sites.",
       "mimeTypes": [
         "x-scheme-handler/youtube",
         "x-scheme-handler/spotify"

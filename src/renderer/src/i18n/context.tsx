@@ -49,7 +49,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
     if (params) {
       for (const [k, v] of Object.entries(params)) {
-        if (k === 'count') continue // don't interpolate the count back into the text
         // Use replaceAll so a translation that references the same placeholder
         // twice (e.g. "{count} files in {count} folders") doesn't silently
         // leave the second occurrence literal.

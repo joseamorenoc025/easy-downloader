@@ -6,7 +6,7 @@ export type { EasyDownloaderAPI }
 const api: EasyDownloaderAPI = {
   fetchMetadata: (url) => ipcRenderer.invoke('fetch-metadata', url),
   addDownload: (options) => ipcRenderer.invoke('add-download', options),
-  addSpotifyDownload: (url) => ipcRenderer.invoke('add-spotify-download', url),
+  addSpotifyDownload: (url, quality) => ipcRenderer.invoke('add-spotify-download', url, quality),
   cancelDownload: (itemId) => ipcRenderer.invoke('cancel-download', itemId),
   cancelAll: () => ipcRenderer.invoke('cancel-all'),
   pauseAll: () => ipcRenderer.invoke('pause-all'),

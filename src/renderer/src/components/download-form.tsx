@@ -8,7 +8,7 @@ import '../lib/ipc'
 
 interface DownloadFormProps {
   onAdd: (options: DownloadOptions) => void
-  onAddSpotify?: (url: string) => void
+  onAddSpotify?: (url: string, quality?: string) => void
   isLoading: boolean
 }
 
@@ -41,8 +41,12 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
       setError('')
       if (url.includes('open.spotify.com')) {
         setSource('spotify')
+        setFormat('audio')
+        setQuality('320')
       } else {
         setSource('youtube')
+        setFormat('video')
+        setQuality('best')
       }
     }
     window.addEventListener('paste-url', handler)
@@ -68,7 +72,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         setError(t('form.error.invalidSpotifyUrl'))
         return
       }
-      onAddSpotify?.(trimmedUrl)
+      onAddSpotify?.(trimmedUrl, quality)
       setUrl('')
       return
     }
@@ -179,6 +183,19 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
               ))}
             </select>
           </>
+        )}
+
+        {source === 'spotify' && (
+          <select
+            value={quality}
+            onChange={e => setQuality(e.target.value)}
+            aria-label={t('form.bitrate')}
+            className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+          >
+            {audioQualities.map(q => (
+              <option key={q} value={q}>{q} kbps</option>
+            ))}
+          </select>
         )}
       </div>
 

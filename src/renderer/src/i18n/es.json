@@ -1,7 +1,8 @@
 {
   "app.title": "EasyDownloader",
   "app.subtitle": "Descarga desde YouTube y Spotify",
-  "app.footer": "Construido con Electron + React",
+  "app.footer": "Construido por José Moreno",
+  "app.starPrompt": "¿Te gustó la app? Deja tu estrella en",
   "app.openFolder": "Abrir carpeta de descargas",
 
   "source.youtube": "YouTube",
@@ -61,6 +62,7 @@
 
   "history.title": "Historial",
   "history.empty": "Sin descargas anteriores",
+  "history.backToQueue": "Volver a la cola",
   "history.openFolder": "Abrir carpeta",
   "history.redownload": "Descargar de nuevo",
   "history.search": "Buscar...",

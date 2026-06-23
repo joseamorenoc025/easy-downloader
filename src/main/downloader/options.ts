@@ -11,11 +11,11 @@ const VIDEO_FORMAT_MAP: Record<string, string> = {
   '480p': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best'
 }
 
-const AUDIO_FORMAT_MAP: Record<string, string> = {
-  '320': 'bestaudio[abr<=320]/bestaudio',
-  '256': 'bestaudio[abr<=256]/bestaudio',
-  '192': 'bestaudio[abr<=192]/bestaudio',
-  '128': 'bestaudio[abr<=128]/bestaudio'
+export const AUDIO_FORMAT_MAP: Record<string, string> = {
+  '320': 'bestaudio[abr<=320]/bestaudio[ext=m4a]/best',
+  '256': 'bestaudio[abr<=256]/bestaudio[ext=m4a]/best',
+  '192': 'bestaudio[abr<=192]/bestaudio[ext=m4a]/best',
+  '128': 'bestaudio[abr<=128]/bestaudio[ext=m4a]/best'
 }
 
 function getDefaultOutputDir(): string {

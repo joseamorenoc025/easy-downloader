@@ -10,6 +10,7 @@ import { SpotifyDownloadManager } from './downloader/spotify-native'
 import { fetchMetadata } from './downloader/metadata'
 import { checkFfmpegInstalled } from './downloader/ffmpeg'
 import { isValidHttpUrl } from './utils/url'
+import { YtDlpUpdater } from './downloader/core/yt-dlp-updater'
 
 // Global error handlers — log and continue. In production these should surface
 // a user-facing dialog; for now a single point of visibility is enough.
@@ -183,12 +184,12 @@ function setupIPC(): void {
     return checkFfmpegInstalled()
   })
 
-  ipcMain.handle('add-spotify-download', async (_event, url: string) => {
+  ipcMain.handle('add-spotify-download', async (_event, url: string, quality?: string) => {
     if (!isValidHttpUrl(url)) {
       throw new Error('URL inválida: solo http/https')
     }
     if (!spotifyManager) return null
-    return spotifyManager.addSpotifyUrl(url)
+    return spotifyManager.addSpotifyUrl(url, quality)
   })
 
   ipcMain.handle('open-folder', async (_event, folderPath?: string) => {
@@ -288,8 +289,7 @@ function initDownloadManager(): void {
       mainWindow?.webContents.send('download-complete', item)
 
       // Incognito mode: don't save to history if item is marked as incognito OR global setting is on
-      const settings = store.get('settings') as any
-      const globalIncognito = settings?.incognitoMode || false
+      const globalIncognito = (store.get('incognitoMode') as boolean) || false
       if (item.incognito || globalIncognito) return
 
       if (item.status === 'completed') {
@@ -333,8 +333,7 @@ function initSpotifyManager(): void {
       mainWindow?.webContents.send('download-complete', item)
 
       // Incognito mode: don't save to history if item is marked as incognito OR global setting is on
-      const settings = store.get('settings') as any
-      const globalIncognito = settings?.incognitoMode || false
+      const globalIncognito = (store.get('incognitoMode') as boolean) || false
       if (item.incognito || globalIncognito) return
 
       if (item.status === 'completed') {
@@ -449,6 +448,13 @@ app.whenReady().then(() => {
       console.error('Failed to download yt-dlp binary')
     })
   }
+
+  // Auto-update yt-dlp binary every 24h in background
+  const ytDlpUpdater = new YtDlpUpdater()
+  ytDlpUpdater.checkAndUpdate().catch(err => console.error(err))
+  setInterval(() => {
+    ytDlpUpdater.checkAndUpdate().catch(err => console.error(err))
+  }, 24 * 60 * 60 * 1000)
 
   // Minimize to tray on close
   mainWindow?.on('close', (event) => {

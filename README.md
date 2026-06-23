@@ -1,8 +1,8 @@
 # EasyDownloader
 
-> App de escritorio para descargar videos y audio. Funciona con **yt-dlp** (no solo YouTube — soporta ~1700 sitios) y **spotdl** (Spotify).
+> App de escritorio para descargar videos y audio desde YouTube, Spotify y ~1700 sitios web. Sin dependencias externas para Spotify — motor nativo integrado.
 >
-> Cross-platform desktop app to download videos and audio. Works with **yt-dlp** (not just YouTube — supports ~1700 sites) and **spotdl** (Spotify).
+> Desktop app to download videos and audio from YouTube, Spotify, and ~1700 websites. No external dependencies for Spotify — native engine built in.
 
 [🇪🇸 Español](#español) · [🇬🇧 English](#english)
 
@@ -12,28 +12,42 @@
 
 ### ¿Qué es EasyDownloader?
 
-Una app de escritorio multiplataforma (Windows / Linux / macOS) construida con Electron + React + Tailwind. Pegas una URL, eliges formato (MP4 video o MP3 audio), y se descarga. Internamente usa [yt-dlp](https://github.com/yt-dlp/yt-dlp) — el mismo motor que youtube-dl pero mantenido y mucho más compatible — y [spotdl](https://github.com/spotDL/spotify-downloader) para Spotify.
+Una app de escritorio multiplataforma (Windows / Linux) construida con Electron + React + Tailwind. Pegas una URL, eliges formato y calidad, y se descarga. Soporta YouTube y ~1700 sitios adicionales via yt-dlp, más Spotify con un motor nativo que no requiere `spotdl` ni pip.
 
 ### Características
 
-- **~1700 sitios soportados** vía yt-dlp: YouTube, Vimeo, Twitter/X, TikTok, Reddit, SoundCloud, Twitch, Bandcamp, archive.org, bilibili, dailymotion, y muchos más.
-- **Spotify**: tracks individuales, álbumes y playlists (requiere `spotdl` instalado).
+- **~1700 sitios soportados** via yt-dlp: YouTube, Vimeo, Twitter/X, TikTok, Reddit, SoundCloud, Twitch, Bandcamp, archive.org, bilibili, dailymotion, y muchos más.
+- **Spotify nativo**: tracks, álbumes y playlists. Usa `spotify-url-info` para metadata y `yt-dlp` para descargar el audio — sin instalar `spotdl` ni Python.
+- **Selector de calidad de audio**: 320, 256, 192 o 128 kbps para descargas de Spotify.
+- **Selector de calidad de video**: desde 480p hasta mejor calidad disponible.
 - **Cola de descargas** con hasta 3 simultáneas.
-- **Metadata preview** antes de descargar (thumbnail, título, duración).
-- **Historial** con búsqueda y re-descarga.
+- **Vista previa de metadata** antes de descargar (thumbnail, título, duración).
+- **Historial** con búsqueda, filtros y re-descarga.
 - **i18n**: Español e Inglés.
 - **Tema claro / oscuro** (sigue al sistema).
 - **System tray**: minimiza a la bandeja, doble-click restaura.
 - **Auto-updater**: notifica cuando hay versión nueva en GitHub Releases.
 - **Drag & drop** y **Ctrl+V global** para pegar URLs.
 - **Cola persistente**: sobrevive reinicios.
+- **Toast notifications**: feedback visual en errores y éxitos.
+
+### Cómo funciona
+
+| Componente | Tecnología | Rol |
+|---|---|---|
+| **YouTube y otros sitios** | yt-dlp | Descarga video/audio de ~1700 fuentes |
+| **Búsqueda de YouTube** | Scraping de `ytInitialData` | Encuentra el video correcto sin API key |
+| **Spotify** | `spotify-url-info` + yt-dlp | Obtiene metadata del track y busca el audio en YouTube |
+| **Conversión de audio** | ffmpeg | Convierte a MP3 con la calidad elegida |
+| **Interfaz** | React + Tailwind + framer-motion | UI nativa con animaciones suaves |
+| **Empaquetado** | electron-builder | Instaladores NSIS (Windows) y AppImage/.deb (Linux) |
 
 ### Instalación
 
 #### Windows
 
 1. Descarga `EasyDownloader-Setup-2.x.x.exe` desde [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest).
-2. Ejecuta el instalador NSIS (es seguro pese al SmartScreen — el binario está **sin firma** porque no tengo certificado; si Windows te avisa, click "More info" → "Run anyway").
+2. Ejecuta el instalador NSIS. Si Windows muestra SmartScreen, click "More info" → "Run anyway".
 3. Listo. La app crea un acceso directo en escritorio y menú inicio.
 
 #### Debian / Ubuntu (`.deb`)
@@ -42,41 +56,39 @@ Una app de escritorio multiplataforma (Windows / Linux / macOS) construida con E
 2. Instálalo:
    ```bash
    sudo dpkg -i easy-downloader_2.x.x_amd64.deb
-   sudo apt-get install -f   # resuelve dependencias si faltan
+   sudo apt-get install -f
    ```
-   O simplemente doble-click en el archivo `.deb` y usa el instalador gráfico.
+   O doble-click en el archivo `.deb`.
 
-3. Las dependencias se instalan automáticamente via `apt` (gracias a `linux.deb.depends` en `package.json`): `libgtk-3-0`, `libnss3`, `libnotify4`, `libxss1`, etc.
-
-4. Lanza desde el menú de aplicaciones o por terminal:
+3. Lanza desde el menú de aplicaciones o por terminal:
    ```bash
    easy-downloader
    ```
 
-#### Fedora / otras distros (`.rpm` o AppImage)
+#### Fedora / otras distros (AppImage)
 
-- **AppImage**: descarga `EasyDownloader-2.x.x.AppImage`, `chmod +x`, doble-click. Es universal, no requiere instalación.
-  ```bash
-  chmod +x EasyDownloader-2.x.x.AppImage
-  ./EasyDownloader-2.x.x.AppImage
-  ```
+```bash
+chmod +x EasyDownloader-2.x.x.AppImage
+./EasyDownloader-2.x.x.AppImage
+```
 
 #### macOS
 
-> ⚠️ **No hay builds de macOS todavía.** El código tiene branching a `darwin`, pero no he generado instaladores firmados para macOS (requiere cuenta de developer de Apple y certificado de notarización, que no tengo). Si lo necesitas, mira [Sprint plan en el repo](https://github.com/joseamorenoc025/easy-downloader/issues) o ábrelo desde código (`npm run dev`).
+No hay builds de macOS. Para usar en macOS, ejecuta desde código fuente: `npm run dev`.
 
 ### Dependencias externas
 
 | Dependencia | Para qué se usa | Cómo se instala |
 |---|---|---|
-| **yt-dlp** | Descargar de YouTube y otros ~1700 sitios | Se descarga **automáticamente** la primera vez que arrancas la app |
-| **ffmpeg** | Convertir audio a MP3, mezclar video+audio | Incluido en el instalador. En Debian/Ubuntu también: `sudo apt install ffmpeg` |
-| **spotdl** (opcional) | Descargar de Spotify | `pip install spotdl` |
+| **yt-dlp** | Descargar de YouTube y otros sitios | Se descarga **automáticamente** al iniciar la app |
+| **ffmpeg** | Convertir audio a MP3 | Incluido en el instalador |
+
+No se requiere instalar `spotdl`, `pip`, `python` ni ninguna otra herramienta externa.
 
 ### Uso básico
 
 1. Arranca la app.
-2. Pega una URL en el campo de texto (o Ctrl+V en cualquier lado de la app, o arrastra el enlace).
+2. Pega una URL en el campo de texto (o Ctrl+V en cualquier lado, o arrastra el enlace).
 3. Elige formato: **Video (MP4)** o **Audio (MP3)**.
 4. Elige calidad.
 5. Click **Descargar**. El item aparece en la cola; cuando termina se mueve al historial.
@@ -87,14 +99,17 @@ Una app de escritorio multiplataforma (Windows / Linux / macOS) construida con E
 **P: ¿Solo funciona con YouTube?**
 R: No. yt-dlp soporta ~1700 sitios: YouTube, Vimeo, Twitter/X, TikTok, SoundCloud, Twitch, Reddit, Bandcamp, bilibili, archive.org, y mucho más. La UI dice "YouTube" en los toggles pero internamente cualquier URL soportada por yt-dlp funciona. Ver [lista completa](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
+**P: ¿Necesito instalar algo para Spotify?**
+R: No. La app incluye un motor nativo de Spotify que usa `spotify-url-info` para obtener metadata y `yt-dlp` para encontrar el audio. No necesitas Python ni `spotdl`.
+
+**P: ¿Qué calidad de audio puedo elegir para Spotify?**
+R: 320, 256, 192 o 128 kbps. La opción por defecto es 320 kbps.
+
 **P: ¿Por qué no veo 2K / 4K en el selector de calidad?**
-R: Porque la UI actual solo expone hasta 1080p. Para añadir 2K/4K hay que tocar `download-form.tsx` y `options.ts` — está planeado para una versión futura. Mientras tanto puedes usar el preset `best` que descarga la mejor calidad disponible (incluye 4K si el video la tiene).
+R: La UI expone hasta 1080p. Puedes usar el preset `best` que descarga la mejor calidad disponible (incluye 4K si el video la tiene).
 
 **P: ¿Por qué el `.exe` me sale warning de SmartScreen?**
-R: Porque no tengo certificado de code signing (cuesta ~$200-400/año). Es un binario legítimo pero Windows no lo sabe sin firma. Click "More info" → "Run anyway". Cuando el proyecto lo justifique, compraré un cert.
-
-**P: ¿Spotify me pide instalar `spotdl`, eso es seguro?**
-R: Sí. `spotdl` es open source (GitHub: spotDL/spotify-downloader) y se instala vía pip oficial.
+R: El binario está sin firma (no hay certificado de code signing). Es seguro — click "More info" → "Run anyway".
 
 **P: ¿Puedo contribuir?**
 R: Sí. Lee [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -102,24 +117,15 @@ R: Sí. Lee [CONTRIBUTING.md](CONTRIBUTING.md).
 ### Troubleshooting
 
 **La app no descarga nada / se queda en "queued":**
-- Revisa el banner de dependencias al inicio. Si yt-dlp está rojo, click "Retry" — la app intenta bajarlo de nuevo.
+- Revisa el banner de dependencias al inicio. Si yt-dlp está roto, click "Retry".
 - Verifica conexión a internet.
-
-**Spotify no descarga nada:**
-- Necesitas `spotdl` instalado. `pip install spotdl` en una terminal.
 
 **Audio sale sin video o viceversa:**
 - ffmpeg no está en PATH. En Windows descarga de [ffmpeg.org](https://ffmpeg.org/download.html) y agrégalo al PATH. En Linux: `sudo apt install ffmpeg`.
 
-**Error "spawn EINVAL" en Windows:**
-- Bug conocido de Node 22 + spawn en Windows. La solución es usar Node 20 LTS o esperar a que Electron 43+ traiga Node actualizado.
-
 **Linux: la app no abre / crashea al inicio:**
-- Probablemente faltan librerías. Ejecuta desde terminal para ver el error:
-  ```bash
-  easy-downloader
-  ```
-- Instala las deps listadas en `package.json:linux.deb.depends`.
+- Ejecuta desde terminal para ver el error: `easy-downloader`
+- Instala las dependencias listadas en `package.json:linux.deb.depends`.
 
 ### Licencia
 
@@ -131,28 +137,42 @@ MIT — ver [LICENSE](LICENSE).
 
 ### What is EasyDownloader?
 
-A cross-platform desktop app (Windows / Linux / macOS) built with Electron + React + Tailwind. Paste a URL, choose format (MP4 video or MP3 audio), and download. Under the hood it uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) — the same engine as youtube-dl but actively maintained and much more compatible — and [spotdl](https://github.com/spotDL/spotify-downloader) for Spotify.
+A cross-platform desktop app (Windows / Linux) built with Electron + React + Tailwind. Paste a URL, choose format and quality, and download. Supports YouTube and ~1700 additional sites via yt-dlp, plus Spotify with a native engine that doesn't require `spotdl` or pip.
 
 ### Features
 
 - **~1700 supported sites** via yt-dlp: YouTube, Vimeo, Twitter/X, TikTok, Reddit, SoundCloud, Twitch, Bandcamp, archive.org, bilibili, dailymotion, and more.
-- **Spotify**: individual tracks, albums and playlists (requires `spotdl`).
-- **Download queue** with up to 3 concurrent.
+- **Native Spotify**: tracks, albums, and playlists. Uses `spotify-url-info` for metadata and `yt-dlp` to download the audio — no `spotdl` or Python needed.
+- **Audio quality selector**: 320, 256, 192, or 128 kbps for Spotify downloads.
+- **Video quality selector**: from 480p to best available quality.
+- **Download queue** with up to 3 concurrent downloads.
 - **Metadata preview** before downloading (thumbnail, title, duration).
-- **Searchable history** with re-download.
+- **Searchable history** with filters and re-download.
 - **i18n**: Spanish and English.
 - **Light / dark theme** (follows system).
 - **System tray**: minimize to tray, double-click to restore.
 - **Auto-updater**: notifies on new GitHub Releases.
 - **Drag & drop** and **global Ctrl+V** to paste URLs.
 - **Persistent queue**: survives restarts.
+- **Toast notifications**: visual feedback for errors and successes.
+
+### How it works
+
+| Component | Technology | Role |
+|---|---|---|
+| **YouTube and other sites** | yt-dlp | Downloads video/audio from ~1700 sources |
+| **YouTube search** | `ytInitialData` scraping | Finds the right video without an API key |
+| **Spotify** | `spotify-url-info` + yt-dlp | Gets track metadata and finds the audio on YouTube |
+| **Audio conversion** | ffmpeg | Converts to MP3 at the chosen quality |
+| **Interface** | React + Tailwind + framer-motion | Native UI with smooth animations |
+| **Packaging** | electron-builder | NSIS installers (Windows) and AppImage/.deb (Linux) |
 
 ### Installation
 
 #### Windows
 
 1. Download `EasyDownloader-Setup-2.x.x.exe` from [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest).
-2. Run the NSIS installer (SmartScreen will warn because the binary is **unsigned** — I don't have a certificate; click "More info" → "Run anyway").
+2. Run the NSIS installer. If Windows shows SmartScreen, click "More info" → "Run anyway".
 3. Done. App creates a desktop shortcut and start menu entry.
 
 #### Debian / Ubuntu (`.deb`)
@@ -161,41 +181,39 @@ A cross-platform desktop app (Windows / Linux / macOS) built with Electron + Rea
 2. Install:
    ```bash
    sudo dpkg -i easy-downloader_2.x.x_amd64.deb
-   sudo apt-get install -f   # resolves missing dependencies
+   sudo apt-get install -f
    ```
-   Or just double-click the `.deb` and use the graphical installer.
+   Or double-click the `.deb` file.
 
-3. Dependencies install automatically via `apt` (declared in `package.json:linux.deb.depends`): `libgtk-3-0`, `libnss3`, `libnotify4`, `libxss1`, etc.
-
-4. Launch from the applications menu or terminal:
+3. Launch from the applications menu or terminal:
    ```bash
    easy-downloader
    ```
 
 #### Fedora / other distros (AppImage)
 
-- **AppImage**: download `EasyDownloader-2.x.x.AppImage`, `chmod +x`, double-click. Universal, no install required.
-  ```bash
-  chmod +x EasyDownloader-2.x.x.AppImage
-  ./EasyDownloader-2.x.x.AppImage
-  ```
+```bash
+chmod +x EasyDownloader-2.x.x.AppImage
+./EasyDownloader-2.x.x.AppImage
+```
 
 #### macOS
 
-> ⚠️ **No macOS builds yet.** The code has `darwin` branching but I haven't generated signed macOS installers (requires Apple Developer account + notarization cert, which I don't have). If you need it, follow the [issue tracker](https://github.com/joseamorenoc025/easy-downloader/issues) or build from source (`npm run dev`).
+No macOS builds available. To use on macOS, run from source: `npm run dev`.
 
 ### External dependencies
 
 | Dependency | Used for | How to install |
 |---|---|---|
-| **yt-dlp** | YouTube + ~1700 other sites | **Auto-downloaded** on first launch |
-| **ffmpeg** | Audio conversion to MP3, muxing | Bundled in installer. Debian/Ubuntu: `sudo apt install ffmpeg` |
-| **spotdl** (optional) | Spotify downloads | `pip install spotdl` |
+| **yt-dlp** | Download from YouTube and other sites | **Auto-downloaded** on first launch |
+| **ffmpeg** | Convert audio to MP3 | Bundled in installer |
+
+No `spotdl`, `pip`, `python`, or other external tools required.
 
 ### Basic usage
 
 1. Launch the app.
-2. Paste a URL (Ctrl+V anywhere in the app, or drag & drop).
+2. Paste a URL (Ctrl+V anywhere, or drag & drop).
 3. Choose format: **Video (MP4)** or **Audio (MP3)**.
 4. Choose quality.
 5. Click **Download**. Item appears in the queue; when done it moves to history.
@@ -206,14 +224,17 @@ A cross-platform desktop app (Windows / Linux / macOS) built with Electron + Rea
 **Q: Does this only work with YouTube?**
 A: No. yt-dlp supports ~1700 sites: YouTube, Vimeo, Twitter/X, TikTok, SoundCloud, Twitch, Reddit, Bandcamp, bilibili, archive.org, and much more. The UI says "YouTube" in toggles but internally any yt-dlp-supported URL works. See [full list](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
+**Q: Do I need to install anything for Spotify?**
+A: No. The app includes a native Spotify engine that uses `spotify-url-info` for metadata and `yt-dlp` to find the audio. No Python or `spotdl` needed.
+
+**Q: What audio quality can I choose for Spotify?**
+A: 320, 256, 192, or 128 kbps. Default is 320 kbps.
+
 **Q: Why don't I see 2K / 4K in the quality selector?**
-A: Because the current UI only exposes up to 1080p. Adding 2K/4K requires touching `download-form.tsx` and `options.ts` — planned for a future version. Meanwhile you can use the `best` preset which downloads the best available quality (including 4K if the video has it).
+A: The UI exposes up to 1080p. You can use the `best` preset which downloads the best available quality (including 4K if available).
 
 **Q: Why does the `.exe` trigger a SmartScreen warning?**
-A: Because I don't have a code signing certificate (costs ~$200-400/year). It's a legitimate binary but Windows can't verify that without a signature. Click "More info" → "Run anyway". When the project justifies it, I'll buy a cert.
-
-**Q: Is `spotdl` safe to install?**
-A: Yes. `spotdl` is open source (GitHub: spotDL/spotify-downloader) and installs via official pip.
+A: The binary is unsigned (no code signing certificate). It's safe — click "More info" → "Run anyway".
 
 **Q: Can I contribute?**
 A: Yes. See [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -221,23 +242,14 @@ A: Yes. See [CONTRIBUTING.md](CONTRIBUTING.md).
 ### Troubleshooting
 
 **App doesn't download / stuck on "queued":**
-- Check the dependencies banner at startup. If yt-dlp is red, click "Retry" — the app tries to download it again.
+- Check the dependencies banner at startup. If yt-dlp is broken, click "Retry".
 - Verify your internet connection.
-
-**Spotify doesn't download:**
-- You need `spotdl` installed. `pip install spotdl` in a terminal.
 
 **Audio comes out without video (or vice versa):**
 - ffmpeg is not in PATH. On Windows download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH. On Linux: `sudo apt install ffmpeg`.
 
-**Windows: "spawn EINVAL" error:**
-- Known issue with Node 22 + spawn on Windows. Workaround: use Node 20 LTS or wait for Electron 43+ to ship newer Node.
-
 **Linux: app won't open / crashes at launch:**
-- Probably missing libraries. Run from terminal to see the error:
-  ```bash
-  easy-downloader
-  ```
+- Run from terminal to see the error: `easy-downloader`
 - Install the deps listed in `package.json:linux.deb.depends`.
 
 ### License
@@ -248,9 +260,9 @@ MIT — see [LICENSE](LICENSE).
 
 ## Tech stack
 
-- **Frontend**: React 18 + TypeScript + Tailwind CSS
+- **Frontend**: React 18 + TypeScript + Tailwind CSS + framer-motion
 - **Backend**: Electron 42 + electron-vite
-- **Downloads**: yt-dlp-wrap (yt-dlp), spotdl (Spotify)
+- **Downloads**: yt-dlp-wrap (yt-dlp), spotify-url-info (Spotify metadata)
 - **Packaging**: electron-builder + electron-updater
 - **Storage**: electron-store
 
@@ -276,7 +288,7 @@ npm run dist:linux    # Linux (.AppImage + .deb)
 easy-downloader/
 ├── src/
 │   ├── main/              # Electron main process
-│   │   ├── downloader/    # yt-dlp / spotdl / ffmpeg management
+│   │   ├── downloader/    # yt-dlp / Spotify / ffmpeg management
 │   │   ├── index.ts       # Window, tray, IPC setup
 │   │   └── utils/         # Shared main-process helpers
 │   ├── preload/           # Context bridge (IPC)
@@ -287,7 +299,6 @@ easy-downloader/
 │   │   └── ...
 │   └── types/             # TypeScript type definitions
 ├── resources/             # App icons
-├── .mavis/plans/          # Sprint plans & changelogs
 ├── .github/workflows/     # CI: build & release
 ├── package.json
 └── README.md
