@@ -86,7 +86,6 @@
       "icon": "resources/icon.png",
       "category": "AudioVideo",
       "synopsis": "Download videos and audio from YouTube, Spotify and more",
-      "description": "EasyDownloader is a cross-platform desktop app to download videos and audio from YouTube, Spotify, and ~1700 other sites.",
       "extraResources": [
         {
           "from": "node_modules/@ffmpeg-installer/linux-x64",
