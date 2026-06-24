@@ -330,7 +330,7 @@ function AppContent() {
             rel="noopener noreferrer"
             className="underline-offset-4 hover:underline hover:text-muted-foreground"
           >
-            EasyDownloader v2.2.0
+            EasyDownloader v{__APP_VERSION__}
           </a>
         </p>
         <p className="text-[10px] text-muted-foreground/50">
