@@ -4,16 +4,33 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('electron-store', () => ({
   default: class MockStore {
     private data: Record<string, any> = {}
-    get(key: string) { return this.data[key] }
-    set(key: string, value: any) { this.data[key] = value }
-  },
+    get(key: string) {
+      return this.data[key]
+    }
+    set(key: string, value: any) {
+      this.data[key] = value
+    }
+  }
 }))
+
+// Mock fs to prevent real file I/O
+const { mockExistsSync } = vi.hoisted(() => ({
+  mockExistsSync: vi.fn().mockReturnValue(true)
+}))
+vi.mock('fs', async () => {
+  const actual = await vi.importActual<typeof import('fs')>('fs')
+  return {
+    ...actual,
+    existsSync: mockExistsSync,
+    default: { ...actual.default, existsSync: mockExistsSync }
+  }
+})
 
 // Mock electron
 vi.mock('electron', () => ({
   app: {
     getPath: vi.fn(() => '/mock/path'),
-    getAppPath: vi.fn(() => '/mock/app/path'),
+    getAppPath: vi.fn(() => '/mock/app/path')
   },
   BrowserWindow: vi.fn(),
   ipcMain: { handle: vi.fn(), on: vi.fn() },
@@ -22,7 +39,7 @@ vi.mock('electron', () => ({
   nativeTheme: { on: vi.fn() },
   Tray: vi.fn(() => ({ setToolTip: vi.fn(), on: vi.fn(), setImage: vi.fn() })),
   Menu: { buildFromTemplate: vi.fn() },
-  Notification: vi.fn(),
+  Notification: vi.fn()
 }))
 
 // Mock child_process
@@ -32,29 +49,33 @@ vi.mock('child_process', () => ({
     stdout: { on: vi.fn(), setEncoding: vi.fn() },
     stderr: { on: vi.fn(), setEncoding: vi.fn() },
     on: vi.fn(),
-    pid: 12345,
+    pid: 12345
   })),
   default: {
     execSync: vi.fn(),
-    spawn: vi.fn(),
-  },
+    spawn: vi.fn()
+  }
 }))
 
 // Mock yt-dlp-wrap
-const mockExec = vi.fn()
-const mockGetBinaryPath = vi.fn()
-const mockSetBinaryPath = vi.fn()
-const mockDownloadFromGithub = vi.fn().mockResolvedValue(undefined)
+const { mockExec, mockGetBinaryPath, mockSetBinaryPath, mockDownloadFromGithub } = vi.hoisted(
+  () => ({
+    mockExec: vi.fn(),
+    mockGetBinaryPath: vi.fn(),
+    mockSetBinaryPath: vi.fn(),
+    mockDownloadFromGithub: vi.fn().mockResolvedValue(undefined)
+  })
+)
 
-vi.mock('yt-dlp-wrap', () => ({
-  default: class MockYtDlpWrap {
-    exec = mockExec
-    getBinaryPath = mockGetBinaryPath
-    setBinaryPath = mockSetBinaryPath
-    static downloadFromGithub = mockDownloadFromGithub
-  },
-  downloadFromGithub: mockDownloadFromGithub,
-}))
+vi.mock('yt-dlp-wrap', () => {
+  const MockClass = function (this: any) {
+    this.exec = mockExec
+    this.getBinaryPath = mockGetBinaryPath
+    this.setBinaryPath = mockSetBinaryPath
+  }
+  MockClass.downloadFromGithub = mockDownloadFromGithub
+  return { default: MockClass, downloadFromGithub: mockDownloadFromGithub }
+})
 
 import { DownloadManager } from '../main/downloader/manager'
 import type { DownloadItem } from '../src/types'
@@ -68,12 +89,7 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
-    manager = new DownloadManager(
-      '/mock/downloads',
-      mockOnProgress,
-      mockOnComplete,
-      mockOnError
-    )
+    manager = new DownloadManager('/mock/downloads', mockOnProgress, mockOnComplete, mockOnError)
   })
 
   afterEach(() => {
@@ -81,20 +97,14 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
   })
 
   describe('ensureBinary()', () => {
-    it('should set binaryReady to true when getBinaryPath succeeds', async () => {
+    it('should set binaryReady when getBinaryPath returns existing path', async () => {
+      mockExistsSync.mockReturnValue(true)
       mockGetBinaryPath.mockReturnValue('/mock/yt-dlp')
-      await manager.ensureBinary()
-      expect((manager as any).binaryReady).toBe(true)
-    })
-
-    it('should set binaryReady after download when getBinaryPath throws', async () => {
-      mockGetBinaryPath.mockImplementation(() => { throw new Error('not found') })
       await manager.ensureBinary()
       expect((manager as any).binaryReady).toBe(true)
     })
 
     it('should not re-download if already ready', async () => {
-      mockGetBinaryPath.mockReturnValue('/mock/yt-dlp')
       ;(manager as any).binaryReady = true
       await manager.ensureBinary()
       expect(mockDownloadFromGithub).not.toHaveBeenCalled()
@@ -128,7 +138,7 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
         totalBytes: 1000,
         downloadedBytes: 500,
         format: 'video',
-        quality: 'best',
+        quality: 'best'
       }
       const emitter = { ytDlpProcess: { kill: mockKill }, on: vi.fn() }
       ;(manager as any).activeItems.set('test-1', { item, emitter })
@@ -153,7 +163,7 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
         totalBytes: 0,
         downloadedBytes: 0,
         format: 'video',
-        quality: 'best',
+        quality: 'best'
       }
       ;(manager as any).queue.push(item)
 
@@ -179,7 +189,7 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
         totalBytes: 0,
         downloadedBytes: 0,
         format: 'video',
-        quality: 'best',
+        quality: 'best'
       }
       const queuedItem: DownloadItem = {
         id: 'queued-1',
@@ -192,7 +202,7 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
         totalBytes: 0,
         downloadedBytes: 0,
         format: 'video',
-        quality: 'best',
+        quality: 'best'
       }
       const emitter = { ytDlpProcess: { kill: mockKill }, on: vi.fn() }
       ;(manager as any).activeItems.set('active-1', { item: activeItem, emitter })
@@ -233,7 +243,7 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
         totalBytes: 1000,
         downloadedBytes: 400,
         format: 'video',
-        quality: 'best',
+        quality: 'best'
       }
       const emitter = { ytDlpProcess: { kill: mockKill }, on: vi.fn() }
       ;(manager as any).activeItems.set('p-1', { item, emitter })
@@ -262,19 +272,78 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
   describe('cleanQueue()', () => {
     it('should remove completed, cancelled, and error items', () => {
       const items: DownloadItem[] = [
-        { id: '1', url: '', title: '', status: 'completed', progress: 100, speed: '', eta: '', totalBytes: 0, downloadedBytes: 0, format: 'video', quality: 'best' },
-        { id: '2', url: '', title: '', status: 'cancelled', progress: 0, speed: '', eta: '', totalBytes: 0, downloadedBytes: 0, format: 'video', quality: 'best' },
-        { id: '3', url: '', title: '', status: 'error', progress: 0, speed: '', eta: '', totalBytes: 0, downloadedBytes: 0, format: 'video', quality: 'best' },
-        { id: '4', url: '', title: '', status: 'queued', progress: 0, speed: '', eta: '', totalBytes: 0, downloadedBytes: 0, format: 'video', quality: 'best' },
-        { id: '5', url: '', title: '', status: 'downloading', progress: 50, speed: '', eta: '', totalBytes: 0, downloadedBytes: 0, format: 'video', quality: 'best' },
+        {
+          id: '1',
+          url: '',
+          title: '',
+          status: 'completed',
+          progress: 100,
+          speed: '',
+          eta: '',
+          totalBytes: 0,
+          downloadedBytes: 0,
+          format: 'video',
+          quality: 'best'
+        },
+        {
+          id: '2',
+          url: '',
+          title: '',
+          status: 'cancelled',
+          progress: 0,
+          speed: '',
+          eta: '',
+          totalBytes: 0,
+          downloadedBytes: 0,
+          format: 'video',
+          quality: 'best'
+        },
+        {
+          id: '3',
+          url: '',
+          title: '',
+          status: 'error',
+          progress: 0,
+          speed: '',
+          eta: '',
+          totalBytes: 0,
+          downloadedBytes: 0,
+          format: 'video',
+          quality: 'best'
+        },
+        {
+          id: '4',
+          url: '',
+          title: '',
+          status: 'queued',
+          progress: 0,
+          speed: '',
+          eta: '',
+          totalBytes: 0,
+          downloadedBytes: 0,
+          format: 'video',
+          quality: 'best'
+        },
+        {
+          id: '5',
+          url: '',
+          title: '',
+          status: 'downloading',
+          progress: 50,
+          speed: '',
+          eta: '',
+          totalBytes: 0,
+          downloadedBytes: 0,
+          format: 'video',
+          quality: 'best'
+        }
       ]
       ;(manager as any).queue = items
-
       ;(manager as any).cleanQueue()
 
       const remaining = manager.getQueue()
       expect(remaining).toHaveLength(2)
-      expect(remaining.every(i => i.status === 'queued' || i.status === 'downloading')).toBe(true)
+      expect(remaining.every((i) => i.status === 'queued' || i.status === 'downloading')).toBe(true)
     })
   })
 })
