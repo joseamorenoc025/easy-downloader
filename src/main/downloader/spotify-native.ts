@@ -23,11 +23,13 @@ interface ResolvedPlaylist {
 }
 
 function sanitizeFilename(name: string): string {
-  // eslint-disable-next-line no-control-regex
-  return name
-    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return (
+    name
+      // eslint-disable-next-line no-control-regex
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  )
 }
 
 const MAX_FILENAME_LENGTH = 200
