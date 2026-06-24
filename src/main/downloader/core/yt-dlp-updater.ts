@@ -1,8 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { default: YtDlpWrap } = require('yt-dlp-wrap')
 import { join } from 'path'
 import { app } from 'electron'
-import { existsSync } from 'fs'
 import { execSync } from 'child_process'
 
 export class YtDlpUpdater {
@@ -58,7 +56,8 @@ export class YtDlpUpdater {
       const binaryName = isWin ? 'yt-dlp.exe' : 'yt-dlp'
       const binaryPath = join(app.getPath('userData'), binaryName)
       return execSync(`"${binaryPath}" --version`, { stdio: 'pipe', timeout: 10000 })
-        .toString().trim()
+        .toString()
+        .trim()
     } catch {
       return null
     }
@@ -75,8 +74,10 @@ export class YtDlpUpdater {
     }
 
     try {
-      const pipOutput = execSync('pip index versions yt-dlp', { stdio: 'pipe', timeout: 15000 })
-        .toString()
+      const pipOutput = execSync('pip index versions yt-dlp', {
+        stdio: 'pipe',
+        timeout: 15000
+      }).toString()
       const match = pipOutput.match(/yt-dlp\s+\(([^)]+)\)/)
       if (match) return match[1]
     } catch {

@@ -42,3 +42,6 @@ downloads/
 # Tool config
 .opencode/
 .mavis/
+
+# Husky internal
+.husky/_

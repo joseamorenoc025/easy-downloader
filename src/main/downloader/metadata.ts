@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { default: YtDlpWrap } = require('yt-dlp-wrap')
 import type { MetadataResult } from '../../src/types'
 
@@ -6,12 +5,7 @@ export async function fetchMetadata(url: string): Promise<MetadataResult> {
   const ytDlp = new YtDlpWrap()
 
   try {
-    const stdout = await ytDlp.execPromise([
-      '--dump-json',
-      '--flat-playlist',
-      '--no-warnings',
-      url
-    ])
+    const stdout = await ytDlp.execPromise(['--dump-json', '--flat-playlist', '--no-warnings', url])
 
     const lines = stdout.trim().split('\n')
     const firstLine = lines[0]
@@ -22,9 +16,15 @@ export async function fetchMetadata(url: string): Promise<MetadataResult> {
     const isPlaylist = data._type === 'playlist' || !!data.entries || lines.length > 1
 
     if (isPlaylist) {
-      const entries = lines.map(l => {
-        try { return JSON.parse(l) } catch { return null }
-      }).filter(Boolean)
+      const entries = lines
+        .map((l) => {
+          try {
+            return JSON.parse(l)
+          } catch {
+            return null
+          }
+        })
+        .filter(Boolean)
 
       return {
         title: data.title || 'Playlist',
@@ -56,6 +56,6 @@ export async function fetchMetadata(url: string): Promise<MetadataResult> {
         }))
     }
   } catch (err) {
-    throw new Error(`Failed to fetch metadata: ${(err as Error).message}`)
+    throw new Error(`Failed to fetch metadata: ${(err as Error).message}`, { cause: err })
   }
 }

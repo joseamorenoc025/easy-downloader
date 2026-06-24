@@ -17,7 +17,6 @@ function findBundledFfmpeg(): string | null {
     }
   } else {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
       if (ffmpegPath && existsSync(ffmpegPath)) {
         cachedFfmpegPath = ffmpegPath

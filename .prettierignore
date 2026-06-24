@@ -1,0 +1,6 @@
+out
+dist
+node_modules
+*.ico
+*.png
+*.dll

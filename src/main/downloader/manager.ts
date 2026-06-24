@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { default: YtDlpWrap } = require('yt-dlp-wrap')
 import { randomUUID } from 'crypto'
 import { buildDownloadOptions } from './options'
 import { getFfmpegPath } from './ffmpeg'
@@ -62,7 +60,7 @@ export class DownloadManager extends BaseDownloadManager {
 
   resumeAll(): void {
     this.paused = false
-    const queuedItems = this.queue.filter(i => i.status === 'queued' && i.speed === 'Pausado')
+    const queuedItems = this.queue.filter((i) => i.status === 'queued' && i.speed === 'Pausado')
     for (const item of queuedItems) {
       item.status = 'queued'
       item.speed = ''
@@ -92,11 +90,16 @@ export class DownloadManager extends BaseDownloadManager {
       '--no-warnings',
       '--newline',
       '--progress',
-      '--socket-timeout', '20',
-      '--retries', '3',
-      '--ffmpeg-location', getFfmpegPath(),
-      '-f', String(opts.format),
-      '-o', String(opts.outtmpl),
+      '--socket-timeout',
+      '20',
+      '--retries',
+      '3',
+      '--ffmpeg-location',
+      getFfmpegPath(),
+      '-f',
+      String(opts.format),
+      '-o',
+      String(opts.outtmpl),
       ...(item.format === 'audio'
         ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
         : [])
