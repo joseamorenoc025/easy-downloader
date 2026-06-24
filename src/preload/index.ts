@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { EasyDownloaderAPI, DownloadItem, DownloadProgress } from '../types'
+import type { EasyDownloaderAPI } from '../types'
 
 export type { EasyDownloaderAPI }
 
