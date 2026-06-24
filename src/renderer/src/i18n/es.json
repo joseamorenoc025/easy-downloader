@@ -122,11 +122,10 @@
   "toast.trackFailed": "No se pudo descargar",
   "toast.trackSkipped": "Saltando canción",
 
-  "header.pause": "Pausar todo",
+  "header.pause": "PAUSE",
   "header.pauseResume": "Pausar todo - Click para reanudar",
   "header.resumePause": "Reanudar todo - Click para pausar",
   "header.play": "PLAY",
-  "header.pause": "PAUSE",
   "header.incognitoOn": "Incognito ON",
   "header.incognitoOff": "Incognito OFF",
   "header.incognitoOnDesc": "Incognito ON - No history saved",
