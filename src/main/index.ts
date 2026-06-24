@@ -40,9 +40,9 @@ let isQuitting = false
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 800,
+    width: 960,
     height: 700,
-    minWidth: 600,
+    minWidth: 700,
     minHeight: 500,
     show: false,
     autoHideMenuBar: true,
