@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const spotifyUrlInfo = require('spotify-url-info')(globalThis.fetch)
 import { randomUUID } from 'crypto'
 import { join } from 'path'
 import { mkdirSync, existsSync } from 'fs'
@@ -7,6 +5,7 @@ import { getFfmpegPath } from './ffmpeg'
 import { AUDIO_FORMAT_MAP } from './options'
 import { YtdlpSearchProvider } from './core/providers/ytdlp-search.provider'
 import { BaseDownloadManager } from './base-manager'
+import spotifyUrlInfoFactory from '../lib/spotify-url-info'
 import type { DownloadItem, DownloadProgress } from '../../src/types'
 
 type TrackErrorCallback = (itemId: string, trackTitle: string) => void
@@ -24,7 +23,11 @@ interface ResolvedPlaylist {
 }
 
 function sanitizeFilename(name: string): string {
-  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, '').replace(/\s+/g, ' ').trim()
+  // eslint-disable-next-line no-control-regex
+  return name
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 const MAX_FILENAME_LENGTH = 200
@@ -32,6 +35,7 @@ const MAX_FILENAME_LENGTH = 200
 export class SpotifyDownloadManager extends BaseDownloadManager {
   private searcher: YtdlpSearchProvider
   private onTrackError: TrackErrorCallback
+  private spotifyUrlInfo = spotifyUrlInfoFactory(globalThis.fetch)
 
   constructor(
     downloadPath: string,
@@ -104,17 +108,16 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
 
   private async resolveSpotifyUrl(url: string): Promise<ResolvedPlaylist> {
     try {
-      const data = await spotifyUrlInfo.getData(url)
+      const data = await this.spotifyUrlInfo.getData(url)
       const type = data.uri?.split(':')[1]
 
       if (type === 'track') {
-        const preview = spotifyUrlInfo.getPreview
-          ? await spotifyUrlInfo.getPreview(url)
+        const preview = this.spotifyUrlInfo.getPreview
+          ? await this.spotifyUrlInfo.getPreview(url)
           : null
         const trackData = data
-        const artist = trackData.artists
-          ?.map((a: any) => a.name)
-          .join(', ') || preview?.artist || 'Unknown'
+        const artist =
+          trackData.artists?.map((a: any) => a.name).join(', ') || preview?.artist || 'Unknown'
         const name = trackData.name || preview?.track || 'Unknown'
         return { tracks: [{ name, artist, duration: trackData.duration_ms, uri: trackData.uri }] }
       }
@@ -122,7 +125,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
       const playlistName = data.name || 'Playlist'
 
       if (type === 'playlist' || type === 'album') {
-        const tracksResult = await spotifyUrlInfo.getTracks(url)
+        const tracksResult = await this.spotifyUrlInfo.getTracks(url)
         const tracks = tracksResult.map((t: any) => ({
           name: t.name,
           artist: t.artist,
@@ -132,10 +135,12 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         return { playlistName, tracks }
       }
 
-      const preview = await spotifyUrlInfo.getPreview(url)
+      const preview = await this.spotifyUrlInfo.getPreview(url)
       return { tracks: [{ name: preview.track, artist: preview.artist, uri: url }] }
     } catch (err) {
-      throw new Error(`Error al obtener metadata de Spotify: ${(err as Error).message}`)
+      throw new Error(`Error al obtener metadata de Spotify: ${(err as Error).message}`, {
+        cause: err
+      })
     }
   }
 
@@ -175,14 +180,21 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         '--no-warnings',
         '--newline',
         '--progress',
-        '--socket-timeout', '20',
-        '--retries', '3',
-        '--ffmpeg-location', getFfmpegPath(),
-        '-f', formatStr,
-        '-o', outTemplate,
+        '--socket-timeout',
+        '20',
+        '--retries',
+        '3',
+        '--ffmpeg-location',
+        getFfmpegPath(),
+        '-f',
+        formatStr,
+        '-o',
+        outTemplate,
         '--extract-audio',
-        '--audio-format', 'mp3',
-        '--audio-quality', quality
+        '--audio-format',
+        'mp3',
+        '--audio-quality',
+        quality
       ]
 
       try {
@@ -210,7 +222,8 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
     }
 
     if (spotifyTrack) {
-      this.searcher.searchFirst(spotifyTrack.artist, spotifyTrack.name)
+      this.searcher
+        .searchFirst(spotifyTrack.artist, spotifyTrack.name)
         .then((match) => {
           if (!match) {
             const trackName = `${spotifyTrack.artist} - ${spotifyTrack.name}`
@@ -222,7 +235,9 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
             setTimeout(() => this.processQueue(), 100)
             return
           }
-          console.log(`[spotify] Found: "${match.title}" for "${spotifyTrack.artist} - ${spotifyTrack.name}"`)
+          console.log(
+            `[spotify] Found: "${match.title}" for "${spotifyTrack.artist} - ${spotifyTrack.name}"`
+          )
           executeDownload(match.url)
         })
         .catch((err) => {
