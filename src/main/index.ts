@@ -23,6 +23,8 @@ let spotifyManager: SpotifyDownloadManager | null = null
 let isQuitting = false
 let isUpdateDownloaded = false
 
+const isTestMode = process.env.EASYDOWNLOADER_TEST === '1'
+
 function getMainWindow(): BrowserWindow | null {
   return mainWindow
 }
@@ -172,31 +174,37 @@ app.whenReady().then(() => {
   // Tray
   setupTray(getMainWindow)
 
-  // Minimize to tray on close
-  mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
-      event.preventDefault()
-      mainWindow?.hide()
-    }
-  })
+  // Minimize to tray on close (skip in test mode)
+  if (!isTestMode) {
+    mainWindow.on('close', (event) => {
+      if (!app.isQuitting) {
+        event.preventDefault()
+        mainWindow?.hide()
+      }
+    })
+  }
 
-  // Eager check: verify yt-dlp binary on startup
-  downloadManager?.ensureBinary().catch(() => {
-    console.error('Failed to download yt-dlp binary')
-  })
+  // Eager check: verify yt-dlp binary on startup (skip in test mode)
+  if (!isTestMode) {
+    downloadManager?.ensureBinary().catch(() => {
+      console.error('Failed to download yt-dlp binary')
+    })
 
-  // Auto-update yt-dlp binary every 24h
-  const ytDlpUpdater = new YtDlpUpdater()
-  ytDlpUpdater.checkAndUpdate().catch((err: Error) => console.error(err))
-  setInterval(
-    () => {
-      ytDlpUpdater.checkAndUpdate().catch((err: Error) => console.error(err))
-    },
-    24 * 60 * 60 * 1000
-  )
+    // Auto-update yt-dlp binary every 24h
+    const ytDlpUpdater = new YtDlpUpdater()
+    ytDlpUpdater.checkAndUpdate().catch((err: Error) => console.error(err))
+    setInterval(
+      () => {
+        ytDlpUpdater.checkAndUpdate().catch((err: Error) => console.error(err))
+      },
+      24 * 60 * 60 * 1000
+    )
+  }
 
-  // Auto-updater
-  setupAutoUpdater({ getMainWindow, getIsUpdateDownloaded, setIsUpdateDownloaded })
+  // Auto-updater (skip in test mode)
+  if (!isTestMode) {
+    setupAutoUpdater({ getMainWindow, getIsUpdateDownloaded, setIsUpdateDownloaded })
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
