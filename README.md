@@ -136,6 +136,18 @@ R: Sí. Lee [CONTRIBUTING.md](CONTRIBUTING.md).
 
 MIT — ver [LICENSE](LICENSE).
 
+### Apoya el proyecto
+
+EasyDownloader es gratuito y siempre lo será. Si te resulta útil, considera apoyar el desarrollo:
+
+- **Certificado de Windows ($300/año)**: Quitemos juntos el error de SmartScreen
+- **Meta**: 60 personas x $5 = certificado comprado
+
+| Crypto | Dirección / ID |
+|--------|---------------|
+| USDT (TRC20) | `TFRHPxCaSs5aMkEmA7kuuwnS5Md2CMXkHL` |
+| Binance Pay | `57018184` |
+
 ---
 
 ## English
@@ -260,6 +272,18 @@ A: Yes. See [CONTRIBUTING.md](CONTRIBUTING.md).
 ### License
 
 MIT — see [LICENSE](LICENSE).
+
+### Support the project
+
+EasyDownloader is free and always will be. If you find it useful, consider supporting development:
+
+- **Windows certificate ($300/year)**: Let's remove the SmartScreen warning together
+- **Goal**: 60 people x $5 = certificate purchased
+
+| Crypto | Address / ID |
+|--------|-------------|
+| USDT (TRC20) | `TFRHPxCaSs5aMkEmA7kuuwnS5Md2CMXkHL` |
+| Binance Pay | `57018184` |
 
 ---
 

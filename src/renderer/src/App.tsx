@@ -347,6 +347,16 @@ function AppContent() {
             GitHub
           </a>
         </p>
+        <p className="text-[10px] text-muted-foreground/50">
+          <a
+            href="https://github.com/joseamorenoc025/easy-downloader#apoya-el-proyecto"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline-offset-4 hover:underline hover:text-muted-foreground"
+          >
+            {t('app.donate')}
+          </a>
+        </p>
       </footer>
     </div>
   )
