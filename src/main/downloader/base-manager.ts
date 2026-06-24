@@ -1,6 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { default: YtDlpWrap } = require('yt-dlp-wrap')
 import { join } from 'path'
+import { existsSync } from 'fs'
 import { app } from 'electron'
 import { isValidHttpUrl } from '../utils/url'
 import type { DownloadItem, DownloadProgress } from '../../src/types'
@@ -45,14 +45,29 @@ export abstract class BaseDownloadManager {
     const isWin = process.platform === 'win32'
     const binaryName = isWin ? 'yt-dlp.exe' : 'yt-dlp'
     const ytDlpPath = join(app.getPath('userData'), binaryName)
-    try {
-      this.ytDlp.getBinaryPath()
-      this.binaryReady = true
-    } catch {
-      await YtDlpWrap.downloadFromGithub(ytDlpPath)
+
+    // Check if binary already exists on disk
+    if (existsSync(ytDlpPath)) {
       this.ytDlp.setBinaryPath(ytDlpPath)
       this.binaryReady = true
+      return
     }
+
+    // Try the default path from yt-dlp-wrap
+    try {
+      const binPath = this.ytDlp.getBinaryPath()
+      if (existsSync(binPath)) {
+        this.binaryReady = true
+        return
+      }
+    } catch {
+      // getBinaryPath throws when not found — expected
+    }
+
+    // Download fresh binary
+    await YtDlpWrap.downloadFromGithub(ytDlpPath)
+    this.ytDlp.setBinaryPath(ytDlpPath)
+    this.binaryReady = true
   }
 
   cancelItem(itemId: string): void {
@@ -67,11 +82,11 @@ export abstract class BaseDownloadManager {
       return
     }
 
-    const item = this.queue.find(i => i.id === itemId)
+    const item = this.queue.find((i) => i.id === itemId)
     if (item) {
       item.status = 'cancelled'
       this.onComplete(item)
-      this.queue = this.queue.filter(i => i.id !== itemId)
+      this.queue = this.queue.filter((i) => i.id !== itemId)
     }
   }
 
@@ -83,7 +98,7 @@ export abstract class BaseDownloadManager {
     }
     this.activeItems.clear()
 
-    this.queue.forEach(item => {
+    this.queue.forEach((item) => {
       if (item.status === 'queued') {
         item.status = 'cancelled'
         this.onComplete(item)
@@ -98,7 +113,7 @@ export abstract class BaseDownloadManager {
 
   protected cleanQueue(): void {
     this.queue = this.queue.filter(
-      i => i.status !== 'completed' && i.status !== 'cancelled' && i.status !== 'error'
+      (i) => i.status !== 'completed' && i.status !== 'cancelled' && i.status !== 'error'
     )
   }
 
@@ -107,7 +122,7 @@ export abstract class BaseDownloadManager {
     const slots = this.maxConcurrent - this.activeItems.size
     if (slots <= 0) return
 
-    const queued = this.queue.filter(i => i.status === 'queued').slice(0, slots)
+    const queued = this.queue.filter((i) => i.status === 'queued').slice(0, slots)
     if (queued.length === 0) return
 
     for (const item of queued) {

@@ -53,37 +53,40 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
     return () => window.removeEventListener('paste-url', handler)
   }, [])
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      setError('')
 
-    const trimmedUrl = url.trim()
-    if (!trimmedUrl) {
-      setError(t('form.error.emptyUrl'))
-      return
-    }
-    if (!isValidUrl(trimmedUrl)) {
-      setError(t('form.error.invalidUrl'))
-      return
-    }
-
-    if (source === 'spotify') {
-      if (!trimmedUrl.includes('open.spotify.com')) {
-        setError(t('form.error.invalidSpotifyUrl'))
+      const trimmedUrl = url.trim()
+      if (!trimmedUrl) {
+        setError(t('form.error.emptyUrl'))
         return
       }
-      onAddSpotify?.(trimmedUrl, quality)
-      setUrl('')
-      return
-    }
+      if (!isValidUrl(trimmedUrl)) {
+        setError(t('form.error.invalidUrl'))
+        return
+      }
 
-    onAdd({
-      url: trimmedUrl,
-      format,
-      quality
-    })
-    setUrl('')
-  }, [url, format, quality, source, onAdd, onAddSpotify])
+      if (source === 'spotify') {
+        if (!trimmedUrl.includes('open.spotify.com')) {
+          setError(t('form.error.invalidSpotifyUrl'))
+          return
+        }
+        onAddSpotify?.(trimmedUrl, quality)
+        setUrl('')
+        return
+      }
+
+      onAdd({
+        url: trimmedUrl,
+        format,
+        quality
+      })
+      setUrl('')
+    },
+    [url, format, quality, source, onAdd, onAddSpotify]
+  )
 
   const videoQualities = ['best', '2160p', '1440p', '1080p', '720p', '480p']
   const audioQualities = ['320', '256', '192', '128']
@@ -96,25 +99,33 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         <input
           type="text"
           value={url}
-          onChange={e => { setUrl(e.target.value); setError('') }}
+          onChange={(e) => {
+            setUrl(e.target.value)
+            setError('')
+          }}
           aria-label={t('a11y.urlInput')}
-          placeholder={source === 'youtube'
-            ? t('form.placeholder.youtube')
-            : t('form.placeholder.spotify')}
+          placeholder={
+            source === 'youtube' ? t('form.placeholder.youtube') : t('form.placeholder.spotify')
+          }
           className="flex-1 rounded-xl border border-input bg-background/80 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none"
         />
-        <Button type="submit" disabled={isLoading || !url.trim()} className="rounded-xl px-4">
-          {isLoading ? t('form.adding') : t('form.download')}
-        </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex flex-wrap gap-3">
-        <div role="radiogroup" aria-label={t('a11y.sourceToggle')} className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <div
+          role="radiogroup"
+          aria-label={t('a11y.sourceToggle')}
+          className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5"
+        >
           <button
             type="button"
             role="radio"
             aria-checked={source === 'youtube'}
-            onClick={() => { setSource('youtube'); setFormat('video'); setQuality('best') }}
+            onClick={() => {
+              setSource('youtube')
+              setFormat('video')
+              setQuality('best')
+            }}
             className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               source === 'youtube'
                 ? 'bg-card text-foreground shadow-sm'
@@ -128,7 +139,9 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
             role="radio"
             aria-checked={source === 'spotify'}
             onClick={() => {
-              setSource('spotify'); setFormat('audio'); setQuality('320')
+              setSource('spotify')
+              setFormat('audio')
+              setQuality('320')
             }}
             className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
               source === 'spotify'
@@ -142,12 +155,19 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
 
         {source === 'youtube' && (
           <>
-            <div role="radiogroup" aria-label={t('a11y.formatToggle')} className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
+            <div
+              role="radiogroup"
+              aria-label={t('a11y.formatToggle')}
+              className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5"
+            >
               <button
                 type="button"
                 role="radio"
                 aria-checked={format === 'video'}
-                onClick={() => { setFormat('video'); setQuality('best') }}
+                onClick={() => {
+                  setFormat('video')
+                  setQuality('best')
+                }}
                 className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                   format === 'video'
                     ? 'bg-card text-foreground shadow-sm'
@@ -160,7 +180,10 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
                 type="button"
                 role="radio"
                 aria-checked={format === 'audio'}
-                onClick={() => { setFormat('audio'); setQuality('320') }}
+                onClick={() => {
+                  setFormat('audio')
+                  setQuality('320')
+                }}
                 className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                   format === 'audio'
                     ? 'bg-card text-foreground shadow-sm'
@@ -172,11 +195,11 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
             </div>
             <select
               value={quality}
-              onChange={e => setQuality(e.target.value)}
+              onChange={(e) => setQuality(e.target.value)}
               aria-label={format === 'audio' ? t('form.bitrate') : t('form.resolution')}
               className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
             >
-              {qualities.map(q => (
+              {qualities.map((q) => (
                 <option key={q} value={q}>
                   {format === 'audio' ? `${q} kbps` : qualityLabel(q, t)}
                 </option>
@@ -188,15 +211,25 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         {source === 'spotify' && (
           <select
             value={quality}
-            onChange={e => setQuality(e.target.value)}
+            onChange={(e) => setQuality(e.target.value)}
             aria-label={t('form.bitrate')}
             className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
           >
-            {audioQualities.map(q => (
-              <option key={q} value={q}>{q} kbps</option>
+            {audioQualities.map((q) => (
+              <option key={q} value={q}>
+                {q} kbps
+              </option>
             ))}
           </select>
         )}
+
+        <Button
+          type="submit"
+          disabled={isLoading || !url.trim()}
+          className="ml-auto rounded-xl px-4"
+        >
+          {isLoading ? t('form.adding') : t('form.download')}
+        </Button>
       </div>
 
       {url && isValidUrl(url) && source === 'youtube' && (
