@@ -43,6 +43,7 @@
   "item.error": "Error",
   "item.cancelled": "Cancelled",
   "item.cancel": "Cancel",
+  "item.retry": "Retry",
   "item.openFolder": "Open folder",
   "item.downloaded": "Downloaded",
   "item.eta": "ETA",

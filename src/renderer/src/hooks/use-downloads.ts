@@ -148,6 +148,17 @@ export function useDownloads() {
     await window.easyDownloader.openFolder(item?.outputPath)
   }, [])
 
+  const retryDownload = useCallback(
+    async (item: DownloadItem) => {
+      if (item.source === 'spotify') {
+        await addSpotifyDownload(item.url, item.quality)
+      } else {
+        await addDownload({ url: item.url, format: item.format, quality: item.quality })
+      }
+    },
+    [addDownload, addSpotifyDownload]
+  )
+
   return {
     queue,
     isLoading,
@@ -155,6 +166,7 @@ export function useDownloads() {
     addSpotifyDownload,
     cancelDownload,
     cancelAll,
-    openFolder
+    openFolder,
+    retryDownload
   }
 }

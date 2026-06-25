@@ -21,7 +21,8 @@ function AppContent() {
     addSpotifyDownload,
     cancelDownload,
     cancelAll,
-    openFolder
+    openFolder,
+    retryDownload
   } = useDownloads()
   const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } =
     useSettings()
@@ -408,6 +409,7 @@ function AppContent() {
                   onCancel={cancelDownload}
                   onCancelAll={cancelAll}
                   onOpenFolder={openFolder}
+                  onRetry={retryDownload}
                 />
               </div>
             </motion.div>

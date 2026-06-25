@@ -11,6 +11,7 @@ interface QueueItemProps {
   item: DownloadItem
   onCancel: (id: string) => void
   onOpenFolder?: (item: DownloadItem) => void
+  onRetry?: (item: DownloadItem) => void
   index?: number
 }
 
@@ -38,7 +39,7 @@ const statusTextColors: Record<DownloadItem['status'], string> = {
   cancelled: 'text-muted-foreground'
 }
 
-function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemProps) {
+function QueueItemInner({ item, onCancel, onOpenFolder, onRetry, index = 0 }: QueueItemProps) {
   const { t } = useI18n()
   const { toast } = useToast()
   const [expandedError, setExpandedError] = useState(false)
@@ -154,7 +155,17 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
 
       {item.status === 'error' && errorKey && (
         <div className="mt-2">
-          <p className="text-xs text-destructive">{t(errorKey)}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-destructive">{t(errorKey)}</p>
+            {onRetry && (
+              <button
+                onClick={() => onRetry(item)}
+                className="text-xs text-primary hover:underline underline-offset-4"
+              >
+                {t('item.retry')}
+              </button>
+            )}
+          </div>
           {item.errorDetails && (
             <div className="mt-1.5">
               <button
@@ -184,7 +195,17 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
         </div>
       )}
       {item.status === 'error' && !errorKey && item.error && (
-        <p className="mt-1.5 text-xs text-destructive whitespace-pre-wrap">{item.error}</p>
+        <div className="mt-1.5 flex items-center gap-2">
+          <p className="text-xs text-destructive whitespace-pre-wrap">{item.error}</p>
+          {onRetry && (
+            <button
+              onClick={() => onRetry(item)}
+              className="text-xs text-primary hover:underline underline-offset-4 shrink-0"
+            >
+              {t('item.retry')}
+            </button>
+          )}
+        </div>
       )}
     </motion.div>
   )
@@ -215,7 +236,8 @@ function arePropsEqual(prev: QueueItemProps, next: QueueItemProps): boolean {
     a.errorDetails === b.errorDetails &&
     a.outputPath === b.outputPath &&
     prev.onCancel === next.onCancel &&
-    prev.onOpenFolder === next.onOpenFolder
+    prev.onOpenFolder === next.onOpenFolder &&
+    prev.onRetry === next.onRetry
   )
 }
 

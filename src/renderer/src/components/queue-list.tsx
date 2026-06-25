@@ -10,17 +10,20 @@ interface QueueListProps {
   onCancel: (id: string) => void
   onCancelAll: () => void
   onOpenFolder?: (item: DownloadItem) => void
+  onRetry?: (item: DownloadItem) => void
 }
 
-export function QueueList({ items, onCancel, onCancelAll, onOpenFolder }: QueueListProps) {
+export function QueueList({ items, onCancel, onCancelAll, onOpenFolder, onRetry }: QueueListProps) {
   const { t } = useI18n()
-  const activeItems = items.filter(i => i.status !== 'cancelled')
+  const activeItems = items.filter((i) => i.status !== 'cancelled')
 
   if (activeItems.length === 0) {
     return <InfoSection />
   }
 
-  const pendingCount = activeItems.filter(i => i.status === 'queued' || i.status === 'downloading').length
+  const pendingCount = activeItems.filter(
+    (i) => i.status === 'queued' || i.status === 'downloading'
+  ).length
 
   return (
     <div className="space-y-2.5">
@@ -47,6 +50,7 @@ export function QueueList({ items, onCancel, onCancelAll, onOpenFolder }: QueueL
             index={index}
             onCancel={onCancel}
             onOpenFolder={onOpenFolder}
+            onRetry={onRetry}
           />
         ))}
       </AnimatePresence>
