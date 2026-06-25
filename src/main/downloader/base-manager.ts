@@ -22,6 +22,26 @@ function formatSpeed(bytesPerSec: number): string {
   return `${(bytesPerSec / (1024 * 1024 * 1024)).toFixed(1)} GiB/s`
 }
 
+function parseSize(str: string): number {
+  if (!str) return 0
+  const match = str.match(/([\d.]+)\s*(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)/i)
+  if (!match) return 0
+  const val = parseFloat(match[1])
+  const unit = match[2].toLowerCase()
+  const multipliers: Record<string, number> = {
+    b: 1,
+    kb: 1024,
+    kib: 1024,
+    mb: 1024 * 1024,
+    mib: 1024 * 1024,
+    gb: 1024 * 1024 * 1024,
+    gib: 1024 * 1024 * 1024,
+    tb: 1024 * 1024 * 1024 * 1024,
+    tib: 1024 * 1024 * 1024 * 1024
+  }
+  return val * (multipliers[unit] || 1)
+}
+
 export interface ActiveDownload {
   item: DownloadItem
   emitter: import('yt-dlp-wrap').YTDlpEventEmitter
@@ -166,15 +186,29 @@ export abstract class BaseDownloadManager {
       }
       item.eta = progress.eta ?? ''
 
+      const totalSizeStr = progress.totalSize ?? ''
+      const totalBytes = parseSize(totalSizeStr)
+      const downloadedBytes = totalBytes > 0 ? Math.round((pct / 100) * totalBytes) : 0
+
+      console.log('[PROGRESS]', {
+        id: item.id,
+        pct,
+        speed: item.speed,
+        rawSpeed: progress.currentSpeed,
+        totalSize: totalSizeStr,
+        totalBytes,
+        downloadedBytes
+      })
+
       this.onProgress({
         id: item.id,
         percentage: pct.toFixed(1),
         speed: item.speed,
         eta: item.eta,
-        downloaded: '',
-        total: progress.totalSize ?? '',
+        downloaded: downloadedBytes > 0 ? `${downloadedBytes} B` : '',
+        total: totalSizeStr,
         title: item.title,
-        totalSize: progress.totalSize ?? ''
+        totalSize: totalSizeStr
       })
     })
 
