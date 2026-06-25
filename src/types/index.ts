@@ -91,6 +91,7 @@ export interface Settings {
   fetchMetadata: boolean
   incognitoMode: boolean
   globalPause: boolean // Nuevo: toggle para pausar/reanudar todas las descargas
+  maxConcurrent: number
 }
 
 export interface DependencyStatus {
@@ -115,6 +116,7 @@ export interface EasyDownloaderAPI {
   setFetchMetadata: (enabled: boolean) => Promise<void>
   setIncognitoMode: (enabled: boolean) => Promise<void>
   setGlobalPause: (enabled: boolean) => Promise<void> // Nuevo: toggle global pause
+  setMaxConcurrent: (value: number) => Promise<void>
   checkFfmpeg: () => Promise<boolean>
   checkSpotdl: () => Promise<boolean>
   checkYtdlp: () => Promise<boolean>

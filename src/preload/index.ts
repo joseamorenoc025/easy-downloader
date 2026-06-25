@@ -19,6 +19,7 @@ const api: EasyDownloaderAPI = {
   setFetchMetadata: (enabled) => ipcRenderer.invoke('set-fetch-metadata', enabled),
   setIncognitoMode: (enabled) => ipcRenderer.invoke('set-incognito-mode', enabled),
   setGlobalPause: (enabled) => ipcRenderer.invoke('set-global-pause', enabled),
+  setMaxConcurrent: (value) => ipcRenderer.invoke('set-max-concurrent', value),
   checkFfmpeg: () => ipcRenderer.invoke('check-ffmpeg'),
   checkSpotdl: () => ipcRenderer.invoke('check-spotdl'),
   checkYtdlp: () => ipcRenderer.invoke('check-ytdlp'),

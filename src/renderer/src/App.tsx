@@ -27,8 +27,14 @@ function AppContent() {
     clearCompleted,
     addBatchDownloads
   } = useDownloads()
-  const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } =
-    useSettings()
+  const {
+    settings,
+    updateTheme,
+    setFetchMetadata,
+    setIncognitoMode,
+    setMaxConcurrent,
+    selectDirectory
+  } = useSettings()
   const { t, locale, setLocale } = useI18n()
   const { toast } = useToast()
   const [view, setView] = useState<'queue' | 'history'>('queue')
@@ -306,6 +312,28 @@ function AppContent() {
             </svg>
             {t('header.meta')}
           </button>
+
+          {/* Concurrent downloads */}
+          <div
+            className="flex items-center gap-1 text-xs text-muted-foreground"
+            title={t('concurrent.title')}
+          >
+            <button
+              onClick={() => setMaxConcurrent(Math.max(1, (settings.maxConcurrent || 3) - 1))}
+              className="rounded px-1 py-0.5 hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              −
+            </button>
+            <span className="w-4 text-center font-mono text-foreground">
+              {settings.maxConcurrent || 3}
+            </span>
+            <button
+              onClick={() => setMaxConcurrent(Math.min(8, (settings.maxConcurrent || 3) + 1))}
+              className="rounded px-1 py-0.5 hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              +
+            </button>
+          </div>
 
           {/* Queue / History toggle */}
           <div

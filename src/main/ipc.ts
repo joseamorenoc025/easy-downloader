@@ -83,7 +83,8 @@ export function setupIPC(deps: IpcDeps): void {
       themeMode: store.get('themeMode') as string,
       fetchMetadata: store.get('fetchMetadata') as boolean,
       incognitoMode: store.get('incognitoMode') as boolean,
-      globalPause: store.get('globalPause') as boolean
+      globalPause: store.get('globalPause') as boolean,
+      maxConcurrent: store.get('maxConcurrent') as number
     }
   })
 
@@ -102,6 +103,12 @@ export function setupIPC(deps: IpcDeps): void {
 
   ipcMain.handle('set-incognito-mode', async (_event, enabled: boolean) => {
     store.set('incognitoMode', enabled)
+  })
+
+  ipcMain.handle('set-max-concurrent', async (_event, value: number) => {
+    const clamped = Math.max(1, Math.min(8, Math.round(value)))
+    store.set('maxConcurrent', clamped)
+    getDownloadManager()?.setMaxConcurrent(clamped)
   })
 
   ipcMain.handle('set-global-pause', async (_event, enabled: boolean) => {

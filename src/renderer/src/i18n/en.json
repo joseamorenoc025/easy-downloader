@@ -166,5 +166,7 @@
   "context.pasteAndGo": "Paste URL and download",
 
   "stats.speed": "Speed",
-  "stats.peak": "Peak"
+  "stats.peak": "Peak",
+
+  "concurrent.title": "Concurrent downloads (1-8)"
 }

@@ -69,6 +69,11 @@ export class DownloadManager extends BaseDownloadManager {
     this.processQueue()
   }
 
+  setMaxConcurrent(value: number): void {
+    this.maxConcurrent = Math.max(1, Math.min(8, Math.round(value)))
+    this.processQueue()
+  }
+
   protected startDownload(item: DownloadItem, attempt = 1): void {
     if (!this.validateUrl(item.url)) {
       item.status = 'error'

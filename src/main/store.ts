@@ -9,6 +9,7 @@ export const store = new Store({
     downloadQueue: [] as Array<{ url: string; format: string; quality: string; source: string }>,
     fetchMetadata: true,
     incognitoMode: false,
-    globalPause: false
+    globalPause: false,
+    maxConcurrent: 3
   }
 })

@@ -31,7 +31,8 @@ export function useSettings() {
     downloadPath: '',
     themeMode: 'system',
     fetchMetadata: true,
-    incognitoMode: false
+    incognitoMode: false,
+    maxConcurrent: 3
   })
 
   useEffect(() => {
@@ -65,6 +66,11 @@ export function useSettings() {
     setSettings((prev) => ({ ...prev, incognitoMode: enabled }))
   }, [])
 
+  const setMaxConcurrent = useCallback(async (value: number) => {
+    await window.easyDownloader.setMaxConcurrent(value)
+    setSettings((prev) => ({ ...prev, maxConcurrent: value }))
+  }, [])
+
   const selectDirectory = useCallback(async () => {
     const dir = await window.easyDownloader.selectDirectory()
     if (dir) {
@@ -73,5 +79,12 @@ export function useSettings() {
     return dir
   }, [])
 
-  return { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory }
+  return {
+    settings,
+    updateTheme,
+    setFetchMetadata,
+    setIncognitoMode,
+    setMaxConcurrent,
+    selectDirectory
+  }
 }

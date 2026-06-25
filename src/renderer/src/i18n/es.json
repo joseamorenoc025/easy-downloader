@@ -166,5 +166,7 @@
   "context.pasteAndGo": "Pegar URL y descargar",
 
   "stats.speed": "Velocidad",
-  "stats.peak": "Pico"
+  "stats.peak": "Pico",
+
+  "concurrent.title": "Descargas simultáneas (1-8)"
 }
