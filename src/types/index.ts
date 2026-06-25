@@ -29,6 +29,7 @@ export interface DownloadItem {
   /** Stderr completo de yt-dlp, para mostrar en panel expandible. */
   errorDetails?: string
   incognito?: boolean
+  writeSubtitles?: boolean
 }
 
 export interface FormatInfo {
@@ -58,6 +59,7 @@ export interface DownloadOptions {
   quality: string
   outputDir?: string
   playlistFolder?: boolean
+  writeSubtitles?: boolean
 }
 
 export interface DownloadProgress {

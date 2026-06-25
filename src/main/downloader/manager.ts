@@ -33,7 +33,8 @@ export class DownloadManager extends BaseDownloadManager {
       downloadedBytes: 0,
       format: options.format,
       quality: options.quality,
-      incognito: options.incognito || false
+      incognito: options.incognito || false,
+      writeSubtitles: options.writeSubtitles || false
     }
 
     this.queue.push(item)
@@ -104,7 +105,8 @@ export class DownloadManager extends BaseDownloadManager {
       String(opts.outtmpl),
       ...(item.format === 'audio'
         ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
-        : [])
+        : []),
+      ...(item.writeSubtitles ? ['--write-subs', '--sub-langs', 'en,es', '--embed-subs'] : [])
     ]
 
     try {
