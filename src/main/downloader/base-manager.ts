@@ -14,6 +14,14 @@ export type ErrorCallback = (
   details?: string
 ) => void
 
+function formatSpeed(bytesPerSec: number): string {
+  if (bytesPerSec === 0) return '0 B/s'
+  if (bytesPerSec < 1024) return `${Math.round(bytesPerSec)} B/s`
+  if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} KiB/s`
+  if (bytesPerSec < 1024 * 1024 * 1024) return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MiB/s`
+  return `${(bytesPerSec / (1024 * 1024 * 1024)).toFixed(1)} GiB/s`
+}
+
 export interface ActiveDownload {
   item: DownloadItem
   emitter: import('yt-dlp-wrap').YTDlpEventEmitter
@@ -148,7 +156,14 @@ export abstract class BaseDownloadManager {
     emitter.on('progress', (progress) => {
       const pct = progress.percent ?? 0
       item.progress = pct
-      item.speed = progress.currentSpeed ?? ''
+
+      // Format speed as human-readable string for the renderer
+      const rawSpeed = progress.currentSpeed
+      if (typeof rawSpeed === 'number') {
+        item.speed = formatSpeed(rawSpeed)
+      } else if (typeof rawSpeed === 'string' && rawSpeed.trim()) {
+        item.speed = rawSpeed.trim()
+      }
       item.eta = progress.eta ?? ''
 
       this.onProgress({
@@ -167,6 +182,15 @@ export abstract class BaseDownloadManager {
         const fileName = filePath.split(/[\\/]/).pop() || ''
         item.title = fileName.replace(/\.[^.]+$/, '')
         item.outputPath = filePath
+        // Notify renderer of the title update
+        this.onProgress({
+          id: item.id,
+          percentage: item.progress.toString(),
+          speed: item.speed,
+          eta: item.eta,
+          downloaded: '',
+          total: ''
+        })
       }
       if (eventType === 'ExtractAudio') {
         item.speed = 'Procesando audio...'
@@ -206,7 +230,7 @@ export abstract class BaseDownloadManager {
         setTimeout(() => this.processQueue(), 100)
       } else if (item.status !== 'cancelled') {
         if (context) console.error(`[${context}] Download failed (code=${code}): ${item.url}`)
-        if (attempt < 3) {
+        if (attempt < 3 && !this.paused) {
           item.speed = `Reintentando (${attempt}/3)...`
           this.onProgress({
             id: item.id,
@@ -237,7 +261,7 @@ export abstract class BaseDownloadManager {
       const classified = classifyYtDlpError(stderr)
       if (context) console.error(`[${context}] Download error: ${err.message} for ${item.url}`)
       if (item.status !== 'cancelled') {
-        if (attempt < 3) {
+        if (attempt < 3 && !this.paused) {
           item.speed = `Reintentando (${attempt}/3)...`
           this.onProgress({
             id: item.id,

@@ -3,7 +3,7 @@ const electron = require("electron");
 const api = {
   fetchMetadata: (url) => electron.ipcRenderer.invoke("fetch-metadata", url),
   addDownload: (options) => electron.ipcRenderer.invoke("add-download", options),
-  addSpotifyDownload: (url) => electron.ipcRenderer.invoke("add-spotify-download", url),
+  addSpotifyDownload: (url, quality) => electron.ipcRenderer.invoke("add-spotify-download", url, quality),
   cancelDownload: (itemId) => electron.ipcRenderer.invoke("cancel-download", itemId),
   cancelAll: () => electron.ipcRenderer.invoke("cancel-all"),
   pauseAll: () => electron.ipcRenderer.invoke("pause-all"),
@@ -16,6 +16,7 @@ const api = {
   setFetchMetadata: (enabled) => electron.ipcRenderer.invoke("set-fetch-metadata", enabled),
   setIncognitoMode: (enabled) => electron.ipcRenderer.invoke("set-incognito-mode", enabled),
   setGlobalPause: (enabled) => electron.ipcRenderer.invoke("set-global-pause", enabled),
+  setMaxConcurrent: (value) => electron.ipcRenderer.invoke("set-max-concurrent", value),
   checkFfmpeg: () => electron.ipcRenderer.invoke("check-ffmpeg"),
   checkSpotdl: () => electron.ipcRenderer.invoke("check-spotdl"),
   checkYtdlp: () => electron.ipcRenderer.invoke("check-ytdlp"),
@@ -35,6 +36,15 @@ const api = {
   },
   onDownloadError: (callback) => {
     electron.ipcRenderer.on("download-error", (_event, data) => callback(data));
+  },
+  onSpotifyTrackError: (callback) => {
+    electron.ipcRenderer.on("spotify-track-error", (_event, data) => callback(data));
+  },
+  onContextPaste: (callback) => {
+    electron.ipcRenderer.on("context-paste", (_event, data) => callback(data));
+  },
+  onHistoryEntryAdded: (callback) => {
+    electron.ipcRenderer.on("history-entry-added", (_event, data) => callback(data));
   },
   removeAllListeners: (channel) => {
     electron.ipcRenderer.removeAllListeners(channel);

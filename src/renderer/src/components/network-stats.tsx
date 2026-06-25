@@ -5,20 +5,26 @@ const MAX_SAMPLES = 30
 
 function parseSpeedToBytes(speedStr: string): number {
   if (!speedStr) return 0
+  // Try formatted strings: "2.5 MiB/s", "2.5MiB/s", "100 KB/s" etc.
   const match = speedStr.match(/([\d.]+)\s*(KiB|MiB|GiB|KB|MB|GB|B)\/s/i)
-  if (!match) return 0
-  const value = parseFloat(match[1])
-  const unit = match[2].toLowerCase()
-  const multipliers: Record<string, number> = {
-    b: 1,
-    kb: 1024,
-    kib: 1024,
-    mb: 1024 * 1024,
-    mib: 1024 * 1024,
-    gb: 1024 * 1024 * 1024,
-    gib: 1024 * 1024 * 1024
+  if (match) {
+    const value = parseFloat(match[1])
+    const unit = match[2].toLowerCase()
+    const multipliers: Record<string, number> = {
+      b: 1,
+      kb: 1024,
+      kib: 1024,
+      mb: 1024 * 1024,
+      mib: 1024 * 1024,
+      gb: 1024 * 1024 * 1024,
+      gib: 1024 * 1024 * 1024
+    }
+    return value * (multipliers[unit] || 1)
   }
-  return value * (multipliers[unit] || 1)
+  // Fallback: treat as raw number (bytes/sec)
+  const num = parseFloat(speedStr)
+  if (!isNaN(num)) return num
+  return 0
 }
 
 function formatSpeedLabel(bytesPerSec: number): string {

@@ -188,6 +188,10 @@ app.whenReady().then(() => {
   else if (themeMode === 'light') nativeTheme.themeSource = 'light'
   else nativeTheme.themeSource = 'system'
 
+  // Always start unpaused — stale globalPause from previous session causes
+  // UI/main-process state mismatch (UI shows "paused" indicator but downloads run)
+  store.set('globalPause', false)
+
   // Init managers
   initDownloadManager()
   initSpotifyManager()
