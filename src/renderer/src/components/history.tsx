@@ -294,7 +294,22 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
     window.easyDownloader.getHistory().then(setEntries)
   }, [])
 
+  // Real-time updates: listen for new completions while viewing history
+  useEffect(() => {
+    const handler = (_event: Electron.IpcRendererEvent, item: HistoryEntry) => {
+      setEntries((prev) => {
+        if (prev.some((e) => e.id === item.id)) return prev
+        return [item, ...prev].slice(0, 200)
+      })
+    }
+    window.easyDownloader.onHistoryEntryAdded(handler)
+    return () => {
+      window.easyDownloader.removeAllListeners('history-entry-added')
+    }
+  }, [])
+
   const clear = async () => {
+    if (!window.confirm(t('history.confirmClear'))) return
     await window.easyDownloader.clearHistory()
     setEntries([])
   }

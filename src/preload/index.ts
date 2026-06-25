@@ -45,6 +45,9 @@ const api: EasyDownloaderAPI = {
   onContextPaste: (callback) => {
     ipcRenderer.on('context-paste', (_event, data) => callback(data))
   },
+  onHistoryEntryAdded: (callback) => {
+    ipcRenderer.on('history-entry-added', (_event, data) => callback(data))
+  },
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel)
   }

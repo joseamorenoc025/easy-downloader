@@ -11,9 +11,19 @@ interface QueueListProps {
   onCancelAll: () => void
   onOpenFolder?: (item: DownloadItem) => void
   onRetry?: (item: DownloadItem) => void
+  onClearCompleted?: () => void
+  isPaused?: boolean
 }
 
-export function QueueList({ items, onCancel, onCancelAll, onOpenFolder, onRetry }: QueueListProps) {
+export function QueueList({
+  items,
+  onCancel,
+  onCancelAll,
+  onOpenFolder,
+  onRetry,
+  onClearCompleted,
+  isPaused
+}: QueueListProps) {
   const { t } = useI18n()
   const activeItems = items.filter((i) => i.status !== 'cancelled')
 
@@ -24,22 +34,39 @@ export function QueueList({ items, onCancel, onCancelAll, onOpenFolder, onRetry 
   const pendingCount = activeItems.filter(
     (i) => i.status === 'queued' || i.status === 'downloading'
   ).length
+  const completedCount = activeItems.filter((i) => i.status === 'completed').length
 
   return (
     <div className="space-y-2.5">
-      {pendingCount > 0 && (
+      {(pendingCount > 0 || completedCount > 0) && (
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs font-medium text-muted-foreground">
-            {t('queue.active', { count: pendingCount })}
+            {pendingCount > 0 ? t('queue.active', { count: pendingCount }) : ''}
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCancelAll}
-            className="text-destructive hover:text-destructive text-xs h-7 px-2"
-          >
-            {t('queue.cancelAll')}
-          </Button>
+          <div className="flex items-center gap-2">
+            {completedCount > 0 && onClearCompleted && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearCompleted}
+                className="text-muted-foreground hover:text-foreground text-xs h-7 px-2"
+              >
+                {t('queue.clearCompleted')}
+              </Button>
+            )}
+            {pendingCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm(t('queue.confirmCancelAll'))) onCancelAll()
+                }}
+                className="text-destructive hover:text-destructive text-xs h-7 px-2"
+              >
+                {t('queue.cancelAll')}
+              </Button>
+            )}
+          </div>
         </div>
       )}
       <AnimatePresence initial={false}>
@@ -51,6 +78,7 @@ export function QueueList({ items, onCancel, onCancelAll, onOpenFolder, onRetry 
             onCancel={onCancel}
             onOpenFolder={onOpenFolder}
             onRetry={onRetry}
+            isPaused={isPaused}
           />
         ))}
       </AnimatePresence>

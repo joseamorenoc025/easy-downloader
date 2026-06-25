@@ -12,6 +12,7 @@ interface QueueItemProps {
   onCancel: (id: string) => void
   onOpenFolder?: (item: DownloadItem) => void
   onRetry?: (item: DownloadItem) => void
+  isPaused?: boolean
   index?: number
 }
 
@@ -39,13 +40,21 @@ const statusTextColors: Record<DownloadItem['status'], string> = {
   cancelled: 'text-muted-foreground'
 }
 
-function QueueItemInner({ item, onCancel, onOpenFolder, onRetry, index = 0 }: QueueItemProps) {
+function QueueItemInner({
+  item,
+  onCancel,
+  onOpenFolder,
+  onRetry,
+  isPaused,
+  index = 0
+}: QueueItemProps) {
   const { t } = useI18n()
   const { toast } = useToast()
   const [expandedError, setExpandedError] = useState(false)
 
   const errorCategory = item.errorCategory as DownloadErrorCategory | undefined
   const errorKey = errorCategory ? `errors.${errorCategory}` : null
+  const isItemPaused = item.status === 'downloading' && isPaused
 
   return (
     <motion.div
@@ -67,14 +76,22 @@ function QueueItemInner({ item, onCancel, onOpenFolder, onRetry, index = 0 }: Qu
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 flex items-start gap-2.5">
           {/* Status dot */}
-          <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${statusDot[item.status]}`} />
+          <span
+            className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${
+              isItemPaused ? 'bg-amber-500' : statusDot[item.status]
+            }`}
+          />
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-card-foreground leading-snug">
               {item.title}
             </p>
-            <p className={`text-xs mt-0.5 ${statusTextColors[item.status]}`}>
-              {t(statusKeys[item.status])}
+            <p
+              className={`text-xs mt-0.5 ${
+                isItemPaused ? 'text-amber-600 dark:text-amber-400' : statusTextColors[item.status]
+              }`}
+            >
+              {isItemPaused ? t('item.paused') : t(statusKeys[item.status])}
               <span className="text-muted-foreground/60 mx-1">·</span>
               {item.format === 'video' ? 'MP4' : 'MP3'}
               <span className="text-muted-foreground/60 mx-1">·</span>

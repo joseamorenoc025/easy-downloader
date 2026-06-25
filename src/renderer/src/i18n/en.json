@@ -34,6 +34,8 @@
   "queue.active.one": "{count} active",
   "queue.active.other": "{count} active",
   "queue.cancelAll": "Cancel all",
+  "queue.confirmCancelAll": "Cancel all active downloads?",
+  "queue.clearCompleted": "Clear completed",
   "queue.empty": "No downloads yet",
   "queue.emptyHint": "Paste a URL above and click Download",
 
@@ -42,6 +44,7 @@
   "item.completed": "Completed",
   "item.error": "Error",
   "item.cancelled": "Cancelled",
+  "item.paused": "Paused",
   "item.cancel": "Cancel",
   "item.retry": "Retry",
   "item.openFolder": "Open folder",
@@ -57,7 +60,6 @@
   "info.spotifyTitle": "Spotify",
   "info.spotifyTracks": "Single tracks",
   "info.spotifyAlbums": "Albums & playlists",
-  "info.spotifyRequires": "",
 
   "preview.loading": "Fetching info...",
   "preview.error": "Failed to fetch metadata",
@@ -71,6 +73,7 @@
   "history.redownload": "Download again",
   "history.search": "Search...",
   "history.clear": "Clear history",
+  "history.confirmClear": "Clear all download history?",
   "history.today": "Today",
   "history.thisWeek": "This week",
   "history.thisMonth": "This month",
@@ -124,6 +127,7 @@
 
   "toast.trackFailed": "Could not download",
   "toast.trackSkipped": "Skipping track",
+  "toast.addedToQueue": "Added to queue",
 
   "errors.unavailable": "Content unavailable or private",
   "errors.signIn": "Sign-in required",

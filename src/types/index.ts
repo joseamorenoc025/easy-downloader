@@ -135,5 +135,6 @@ export interface EasyDownloaderAPI {
   ) => void
   onSpotifyTrackError: (callback: (data: { itemId: string; trackTitle: string }) => void) => void
   onContextPaste: (callback: (data: { text: string; autoGo: boolean }) => void) => void
+  onHistoryEntryAdded: (callback: (entry: HistoryEntry) => void) => void
   removeAllListeners: (channel: string) => void
 }

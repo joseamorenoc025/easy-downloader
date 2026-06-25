@@ -22,7 +22,8 @@ function AppContent() {
     cancelDownload,
     cancelAll,
     openFolder,
-    retryDownload
+    retryDownload,
+    clearCompleted
   } = useDownloads()
   const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } =
     useSettings()
@@ -61,31 +62,26 @@ function AppContent() {
 
   const handleAdd = (options: DownloadOptions) => {
     addDownload(options)
+    toast(t('toast.addedToQueue'), 'success', 2000)
   }
 
   const handleAddSpotify = (url: string, quality?: string) => {
     addSpotifyDownload(url, quality)
+    toast(t('toast.addedToQueue'), 'success', 2000)
   }
 
   const handleOpenFolder = () => {
     openFolder()
   }
 
-  // Drag & drop handler
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      const text = e.dataTransfer.getData('text/plain')
-      if (text && isValidUrl(text)) {
-        if (text.includes('open.spotify.com')) {
-          addSpotifyDownload(text)
-        } else {
-          addDownload({ url: text, format: 'video', quality: 'best' })
-        }
-      }
-    },
-    [addDownload, addSpotifyDownload]
-  )
+  // Drag & drop handler — paste URL into form instead of auto-downloading
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const text = e.dataTransfer.getData('text/plain')
+    if (text && isValidUrl(text)) {
+      window.dispatchEvent(new CustomEvent('paste-url', { detail: text }))
+    }
+  }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -410,6 +406,8 @@ function AppContent() {
                   onCancelAll={cancelAll}
                   onOpenFolder={openFolder}
                   onRetry={retryDownload}
+                  onClearCompleted={clearCompleted}
+                  isPaused={settings.globalPause}
                 />
               </div>
             </motion.div>

@@ -34,6 +34,8 @@
   "queue.active.one": "{count} activa",
   "queue.active.other": "{count} activas",
   "queue.cancelAll": "Cancelar todo",
+  "queue.confirmCancelAll": "¿Cancelar todas las descargas activas?",
+  "queue.clearCompleted": "Limpiar completados",
   "queue.empty": "No hay descargas",
   "queue.emptyHint": "Pega una URL arriba y haz clic en Descargar",
 
@@ -42,6 +44,7 @@
   "item.completed": "Completado",
   "item.error": "Error",
   "item.cancelled": "Cancelado",
+  "item.paused": "Pausado",
   "item.cancel": "Cancelar",
   "item.retry": "Reintentar",
   "item.openFolder": "Abrir carpeta",
@@ -57,7 +60,6 @@
   "info.spotifyTitle": "Spotify",
   "info.spotifyTracks": "Canciones individuales",
   "info.spotifyAlbums": "Álbumes y playlists",
-  "info.spotifyRequires": "",
 
   "preview.loading": "Obteniendo información...",
   "preview.error": "Error al obtener metadatos",
@@ -71,6 +73,7 @@
   "history.redownload": "Descargar de nuevo",
   "history.search": "Buscar...",
   "history.clear": "Limpiar historial",
+  "history.confirmClear": "¿Limpiar todo el historial de descargas?",
   "history.today": "Hoy",
   "history.thisWeek": "Esta semana",
   "history.thisMonth": "Este mes",
@@ -124,6 +127,7 @@
 
   "toast.trackFailed": "No se pudo descargar",
   "toast.trackSkipped": "Saltando canción",
+  "toast.addedToQueue": "Agregado a la cola",
 
   "errors.unavailable": "Contenido no disponible o privado",
   "errors.signIn": "Se requiere iniciar sesión",

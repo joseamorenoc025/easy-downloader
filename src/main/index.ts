@@ -71,6 +71,18 @@ function initDownloadManager(): void {
         })
         store.set('downloadHistory', history.slice(0, 200))
 
+        // Notify renderer of new history entry (for real-time history view updates)
+        mainWindow?.webContents.send('history-entry-added', {
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          format: item.format,
+          quality: item.quality,
+          source: item.source,
+          outputPath: item.outputPath,
+          completedAt: new Date().toISOString()
+        })
+
         if (Notification.isSupported()) {
           const notif = new Notification({
             title: 'Download Complete',
@@ -118,6 +130,18 @@ function initSpotifyManager(): void {
           completedAt: new Date().toISOString()
         })
         store.set('downloadHistory', history.slice(0, 200))
+
+        // Notify renderer of new history entry (for real-time history view updates)
+        mainWindow?.webContents.send('history-entry-added', {
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          format: item.format,
+          quality: item.quality,
+          source: item.source,
+          outputPath: item.outputPath,
+          completedAt: new Date().toISOString()
+        })
 
         if (Notification.isSupported()) {
           const notif = new Notification({

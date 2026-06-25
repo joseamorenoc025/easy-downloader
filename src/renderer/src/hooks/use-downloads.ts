@@ -159,6 +159,14 @@ export function useDownloads() {
     [addDownload, addSpotifyDownload]
   )
 
+  const clearCompleted = useCallback(() => {
+    setQueue((prev) => {
+      const remaining = prev.filter((i) => i.status !== 'completed')
+      saveToStorage(remaining)
+      return remaining
+    })
+  }, [])
+
   return {
     queue,
     isLoading,
@@ -167,6 +175,7 @@ export function useDownloads() {
     cancelDownload,
     cancelAll,
     openFolder,
-    retryDownload
+    retryDownload,
+    clearCompleted
   }
 }
