@@ -131,7 +131,7 @@ function HistoryCard({
           </div>
         ) : (
           /* Generic video placeholder */
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-900/60 to-slate-900">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/60 to-slate-900">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="32"
@@ -155,7 +155,7 @@ function HistoryCard({
         {/* Format badge */}
         <span
           className={`absolute top-2 right-2 rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide ${
-            isVideo ? 'bg-violet-600 text-white' : 'bg-emerald-600 text-white'
+            isVideo ? 'bg-indigo-600 text-white' : 'bg-indigo-400 text-white'
           }`}
         >
           {badgeLabel}

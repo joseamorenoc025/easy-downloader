@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 t.type === 'error'
                   ? 'bg-destructive/10 border-destructive/30 text-destructive'
                   : t.type === 'success'
-                    ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
                     : 'bg-muted border-border text-foreground'
               }`}
             >

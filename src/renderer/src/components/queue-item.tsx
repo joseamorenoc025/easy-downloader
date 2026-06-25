@@ -27,7 +27,7 @@ const statusKeys: Record<DownloadItem['status'], string> = {
 const statusDot: Record<DownloadItem['status'], string> = {
   queued: 'bg-muted-foreground/40',
   downloading: 'bg-primary animate-pulse',
-  completed: 'bg-green-500',
+  completed: 'bg-emerald-500',
   error: 'bg-destructive',
   cancelled: 'bg-muted-foreground/30'
 }
@@ -35,7 +35,7 @@ const statusDot: Record<DownloadItem['status'], string> = {
 const statusTextColors: Record<DownloadItem['status'], string> = {
   queued: 'text-muted-foreground',
   downloading: 'text-primary',
-  completed: 'text-green-600 dark:text-green-400',
+  completed: 'text-emerald-600 dark:text-emerald-400',
   error: 'text-destructive',
   cancelled: 'text-muted-foreground'
 }
@@ -71,7 +71,9 @@ function QueueItemInner({
         // and made the last item feel laggy.
         delay: Math.min(index, 8) * 0.04
       }}
-      className="rounded-xl border border-border/60 bg-card/70 p-3.5 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-border transition-shadow"
+      className={`rounded-xl border border-border/60 bg-card/70 p-3.5 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-border transition-shadow ${
+        item.status === 'downloading' && !isItemPaused ? 'queue-item-active' : ''
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 flex items-start gap-2.5">
@@ -151,7 +153,7 @@ function QueueItemInner({
           animate={{ opacity: 1 }}
           className="mt-2 flex items-center gap-2"
         >
-          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="11"
