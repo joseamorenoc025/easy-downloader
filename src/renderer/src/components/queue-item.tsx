@@ -4,6 +4,7 @@ import { Progress } from './ui/progress'
 import type { DownloadItem, DownloadErrorCategory } from '@/types'
 import { useI18n } from '../i18n/context'
 import { useToast } from './toast'
+import { formatBytes } from '../lib/utils'
 import '../lib/ipc'
 
 interface QueueItemProps {
@@ -103,10 +104,19 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
             value={item.progress}
             label={t('a11y.downloadProgress', { title: item.title })}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
             <span>{item.progress.toFixed(1)}%</span>
+            <span>
+              {item.downloadedBytes && item.totalBytes
+                ? `${formatBytes(item.downloadedBytes)} / ${formatBytes(item.totalBytes)}`
+                : ''}
+            </span>
             <span>{item.speed}</span>
-            <span>{item.eta ? `${t('item.eta')}: ${item.eta}` : ''}</span>
+            <span>
+              {item.eta && !item.speed?.match(/Pausado|Procesando|Reintentando|FFmpeg|Fusionando/)
+                ? `ETA: ${item.eta}`
+                : ''}
+            </span>
           </div>
         </motion.div>
       )}
