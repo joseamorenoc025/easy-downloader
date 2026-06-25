@@ -134,8 +134,9 @@ describe('Retry logic (setupEmitterListeners)', () => {
       emitter.emit('close', 1)
 
       expect(item.status).toBe('error')
-      expect(item.error).toContain('Process exited with code 1')
-      expect(mockOnError).toHaveBeenCalledWith(item.id, expect.any(String))
+      expect(item.errorCategory).toBe('unknown')
+      expect(item.errorDetails).toContain('Process exited with code 1')
+      expect(mockOnError).toHaveBeenCalledWith(item.id, 'unknown', expect.any(String))
     })
 
     it('should complete successfully on close code 0', () => {
@@ -201,8 +202,9 @@ describe('Retry logic (setupEmitterListeners)', () => {
       emitter.emit('error', new Error('spawn ENOENT'))
 
       expect(item.status).toBe('error')
-      expect(item.error).toBe('spawn ENOENT')
-      expect(mockOnError).toHaveBeenCalledWith(item.id, 'spawn ENOENT')
+      expect(item.errorCategory).toBe('unknown')
+      expect(item.errorDetails).toBe('spawn ENOENT')
+      expect(mockOnError).toHaveBeenCalledWith(item.id, 'unknown', 'spawn ENOENT')
     })
 
     it('should not retry if item was cancelled', () => {

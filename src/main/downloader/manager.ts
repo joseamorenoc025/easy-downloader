@@ -13,7 +13,7 @@ export class DownloadManager extends BaseDownloadManager {
     downloadPath: string,
     onProgress: (progress: import('../../src/types').DownloadProgress) => void,
     onComplete: (item: DownloadItem) => void,
-    onError: (itemId: string, error: string) => void
+    onError: import('../downloader/base-manager').ErrorCallback
   ) {
     super(downloadPath, onProgress, onComplete, onError)
   }
@@ -72,7 +72,9 @@ export class DownloadManager extends BaseDownloadManager {
     if (!this.validateUrl(item.url)) {
       item.status = 'error'
       item.error = 'URL inválida: solo se permiten http y https'
-      this.onError(item.id, item.error)
+      item.errorCategory = 'unsupported'
+      item.errorDetails = item.error
+      this.onError(item.id, 'unsupported', item.error)
       return
     }
     item.status = 'downloading'
@@ -141,7 +143,9 @@ export class DownloadManager extends BaseDownloadManager {
     } catch (err) {
       item.status = 'error'
       item.error = (err as Error).message
-      this.onError(item.id, (err as Error).message)
+      item.errorCategory = 'unknown'
+      item.errorDetails = (err as Error).message
+      this.onError(item.id, 'unknown', (err as Error).message)
     }
   }
 }

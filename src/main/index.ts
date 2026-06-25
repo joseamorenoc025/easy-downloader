@@ -81,8 +81,13 @@ function initDownloadManager(): void {
         }
       }
     },
-    (itemId, error) => {
-      mainWindow?.webContents.send('download-error', { itemId, error })
+    (itemId, errorCategory, errorDetails) => {
+      mainWindow?.webContents.send('download-error', {
+        itemId,
+        error: errorCategory,
+        category: errorCategory,
+        details: errorDetails
+      })
     }
   )
 }
@@ -124,8 +129,13 @@ function initSpotifyManager(): void {
         }
       }
     },
-    (itemId, error) => {
-      mainWindow?.webContents.send('download-error', { itemId, error })
+    (itemId, errorCategory, errorDetails) => {
+      mainWindow?.webContents.send('download-error', {
+        itemId,
+        error: errorCategory,
+        category: errorCategory,
+        details: errorDetails
+      })
     },
     (itemId, trackTitle) => {
       mainWindow?.webContents.send('spotify-track-error', { itemId, trackTitle })

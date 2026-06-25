@@ -5,8 +5,8 @@ import '../lib/ipc'
 
 function saveToStorage(queue: DownloadItem[]): void {
   const pending = queue
-    .filter(i => i.status === 'queued' || i.status === 'downloading')
-    .map(i => ({ url: i.url, format: i.format, quality: i.quality, source: i.source }))
+    .filter((i) => i.status === 'queued' || i.status === 'downloading')
+    .map((i) => ({ url: i.url, format: i.format, quality: i.quality, source: i.source }))
   window.easyDownloader.saveQueue(pending)
 }
 
@@ -62,8 +62,8 @@ export function useDownloads() {
     })
 
     window.easyDownloader.onDownloadProgress((progress) => {
-      setQueue(prev =>
-        prev.map(item =>
+      setQueue((prev) =>
+        prev.map((item) =>
           item.id === progress.id
             ? {
                 ...item,
@@ -79,19 +79,21 @@ export function useDownloads() {
     })
 
     window.easyDownloader.onDownloadComplete((item) => {
-      setQueue(prev => {
-        const exists = prev.find(i => i.id === item.id)
+      setQueue((prev) => {
+        const exists = prev.find((i) => i.id === item.id)
         if (!exists) return prev
-        const updated = prev.map(i => (i.id === item.id ? item : i))
+        const updated = prev.map((i) => (i.id === item.id ? item : i))
         saveToStorage(updated)
         return updated
       })
     })
 
-    window.easyDownloader.onDownloadError(({ itemId, error }) => {
-      setQueue(prev => {
-        const updated = prev.map(item =>
-          item.id === itemId ? { ...item, status: 'error', error } : item
+    window.easyDownloader.onDownloadError(({ itemId, error, category, details }) => {
+      setQueue((prev) => {
+        const updated = prev.map((item) =>
+          item.id === itemId
+            ? { ...item, status: 'error', error, errorCategory: category, errorDetails: details }
+            : item
         )
         saveToStorage(updated)
         return updated
@@ -111,7 +113,7 @@ export function useDownloads() {
     try {
       const item = await window.easyDownloader.addDownload(options)
       if (item) {
-        setQueue(prev => [...prev, item])
+        setQueue((prev) => [...prev, item])
       }
       return item
     } finally {
@@ -124,7 +126,7 @@ export function useDownloads() {
     try {
       const items = await window.easyDownloader.addSpotifyDownload(url, quality)
       if (items && items.length > 0) {
-        setQueue(prev => [...prev, ...items])
+        setQueue((prev) => [...prev, ...items])
       }
       return items
     } finally {
@@ -134,7 +136,7 @@ export function useDownloads() {
 
   const cancelDownload = useCallback(async (itemId: string) => {
     await window.easyDownloader.cancelDownload(itemId)
-    setQueue(prev => prev.filter(i => i.id !== itemId))
+    setQueue((prev) => prev.filter((i) => i.id !== itemId))
   }, [])
 
   const cancelAll = useCallback(async () => {
@@ -146,5 +148,13 @@ export function useDownloads() {
     await window.easyDownloader.openFolder(item?.outputPath)
   }, [])
 
-  return { queue, isLoading, addDownload, addSpotifyDownload, cancelDownload, cancelAll, openFolder }
+  return {
+    queue,
+    isLoading,
+    addDownload,
+    addSpotifyDownload,
+    cancelDownload,
+    cancelAll,
+    openFolder
+  }
 }

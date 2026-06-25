@@ -3,11 +3,16 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 import { app } from 'electron'
 import { isValidHttpUrl } from '../utils/url'
-import type { DownloadItem, DownloadProgress } from '../../src/types'
+import type { DownloadItem, DownloadProgress, DownloadErrorCategory } from '../../src/types'
+import { classifyYtDlpError } from './error-parser'
 
 export type ProgressCallback = (progress: DownloadProgress) => void
 export type CompleteCallback = (item: DownloadItem) => void
-export type ErrorCallback = (itemId: string, error: string) => void
+export type ErrorCallback = (
+  itemId: string,
+  category: DownloadErrorCategory,
+  details?: string
+) => void
 
 export interface ActiveDownload {
   item: DownloadItem
@@ -22,6 +27,8 @@ export abstract class BaseDownloadManager {
   protected binaryReady = false
   protected downloadPath: string
   protected paused = false
+  /** Acumulador de stderr por item, para clasificar el error al cierre. */
+  protected stderrBuffers: Map<string, string> = new Map()
 
   protected onProgress: ProgressCallback
   protected onComplete: CompleteCallback
@@ -173,10 +180,23 @@ export abstract class BaseDownloadManager {
           total: ''
         })
       }
+      // Acumular stderr / mensajes de error para clasificar al cierre.
+      // yt-dlp-wrap emite líneas de error como 'ytDlpEvent' con eventType
+      // que contiene 'ERROR', 'WARNING', o variantes según el evento.
+      if (
+        typeof eventData === 'string' &&
+        (eventType === 'error' || eventType === 'stderr' || /error|warning/i.test(eventType))
+      ) {
+        const buf = this.stderrBuffers.get(item.id) || ''
+        this.stderrBuffers.set(item.id, buf + eventData + '\n')
+      }
     })
 
     emitter.on('close', (code) => {
       this.activeItems.delete(item.id)
+      const stderr = this.stderrBuffers.get(item.id) || ''
+      this.stderrBuffers.delete(item.id)
+      const classified = classifyYtDlpError(stderr, code)
 
       if (code === 0) {
         item.status = 'completed'
@@ -198,9 +218,12 @@ export abstract class BaseDownloadManager {
           })
           setTimeout(() => this.startDownload(item, attempt + 1), 3000)
         } else {
+          const details = stderr || `Process exited with code ${code}`
           item.status = 'error'
-          item.error = `Process exited with code ${code}`
-          this.onError(item.id, item.error)
+          item.error = details
+          item.errorCategory = classified.category
+          item.errorDetails = details
+          this.onError(item.id, classified.category, details)
           this.cleanQueue()
           setTimeout(() => this.processQueue(), 100)
         }
@@ -209,6 +232,9 @@ export abstract class BaseDownloadManager {
 
     emitter.on('error', (err) => {
       this.activeItems.delete(item.id)
+      const stderr = this.stderrBuffers.get(item.id) || err.message || ''
+      this.stderrBuffers.delete(item.id)
+      const classified = classifyYtDlpError(stderr)
       if (context) console.error(`[${context}] Download error: ${err.message} for ${item.url}`)
       if (item.status !== 'cancelled') {
         if (attempt < 3) {
@@ -224,8 +250,10 @@ export abstract class BaseDownloadManager {
           setTimeout(() => this.startDownload(item, attempt + 1), 3000)
         } else {
           item.status = 'error'
-          item.error = err.message
-          this.onError(item.id, err.message)
+          item.error = stderr || err.message
+          item.errorCategory = classified.category
+          item.errorDetails = stderr || err.message
+          this.onError(item.id, classified.category, stderr || err.message)
           this.cleanQueue()
           setTimeout(() => this.processQueue(), 100)
         }

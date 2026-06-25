@@ -4,7 +4,7 @@ import { mkdirSync, existsSync } from 'fs'
 import { getFfmpegPath } from './ffmpeg'
 import { AUDIO_FORMAT_MAP } from './options'
 import { YtdlpSearchProvider } from './core/providers/ytdlp-search.provider'
-import { BaseDownloadManager } from './base-manager'
+import { BaseDownloadManager, type ErrorCallback } from './base-manager'
 import spotifyUrlInfoFactory from '../lib/spotify-url-info'
 import type { DownloadItem, DownloadProgress } from '../../src/types'
 
@@ -43,7 +43,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
     downloadPath: string,
     onProgress: (progress: DownloadProgress) => void,
     onComplete: (item: DownloadItem) => void,
-    onError: (itemId: string, error: string) => void,
+    onError: ErrorCallback,
     onTrackError: TrackErrorCallback
   ) {
     super(downloadPath, onProgress, onComplete, onError)
@@ -63,7 +63,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         const item = this.createItem(url, 'No tracks found')
         item.status = 'error'
         item.error = 'No se encontraron canciones en la URL de Spotify'
-        this.onError(item.id, item.error)
+        this.onError(item.id, 'unavailable', item.error)
         return [item]
       }
 
@@ -150,7 +150,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
     if (!this.validateUrl(item.url)) {
       item.status = 'error'
       item.error = 'URL inválida: solo se permiten http y https'
-      this.onError(item.id, item.error)
+      this.onError(item.id, 'unsupported', item.error)
       return
     }
 
@@ -219,7 +219,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
       } catch (err) {
         item.status = 'error'
         item.error = (err as Error).message
-        this.onError(item.id, (err as Error).message)
+        this.onError(item.id, 'unknown', (err as Error).message)
       }
     }
 
@@ -232,7 +232,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
             item.status = 'error'
             item.error = `No se encontró en YouTube: ${trackName}`
             this.onTrackError(item.id, trackName)
-            this.onError(item.id, item.error)
+            this.onError(item.id, 'unavailable', item.error)
             this.cleanQueue()
             setTimeout(() => this.processQueue(), 100)
             return
@@ -245,7 +245,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         .catch((err) => {
           item.status = 'error'
           item.error = (err as Error).message
-          this.onError(item.id, item.error)
+          this.onError(item.id, 'unknown', item.error)
           this.cleanQueue()
           setTimeout(() => this.processQueue(), 100)
         })
