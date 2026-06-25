@@ -110,8 +110,7 @@ export class DownloadManager extends BaseDownloadManager {
       String(opts.outtmpl),
       ...(item.format === 'audio'
         ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
-        : []),
-      ...(item.writeSubtitles ? ['--write-subs', '--sub-langs', 'en,es', '--embed-subs'] : [])
+        : ['--write-subs', '--sub-langs', 'en,es', '--embed-subs'])
     ]
 
     try {
@@ -129,7 +128,8 @@ export class DownloadManager extends BaseDownloadManager {
             speed: item.speed,
             eta: item.eta,
             downloaded: '',
-            total: ''
+            total: '',
+            title: item.title
           })
         }
         if (eventType === 'download' && eventData.includes('Downloading video')) {
@@ -142,7 +142,8 @@ export class DownloadManager extends BaseDownloadManager {
               speed: item.speed,
               eta: item.eta,
               downloaded: '',
-              total: ''
+              total: '',
+              title: item.title
             })
           }
         }

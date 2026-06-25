@@ -32,7 +32,6 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
   const [source, setSource] = useState<DetectedSource>('youtube')
   const [format, setFormat] = useState<'video' | 'audio'>('video')
   const [quality, setQuality] = useState('best')
-  const [writeSubtitles, setWriteSubtitles] = useState(false)
   const [error, setError] = useState('')
 
   // Listen for paste events from App.tsx
@@ -125,12 +124,11 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
       onAdd({
         url: trimmedUrl,
         format,
-        quality,
-        writeSubtitles
+        quality
       })
       setUrl('')
     },
-    [url, format, quality, source, writeSubtitles, detectedUrls, onAdd, onAddSpotify, onAddBatch, t]
+    [url, format, quality, source, detectedUrls, onAdd, onAddSpotify, onAddBatch, t]
   )
 
   return (
@@ -281,18 +279,6 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
               ))}
             </select>
           </>
-        )}
-
-        {source !== 'spotify' && (
-          <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={writeSubtitles}
-              onChange={(e) => setWriteSubtitles(e.target.checked)}
-              className="rounded"
-            />
-            {t('form.subtitles')}
-          </label>
         )}
 
         {source === 'other' && (

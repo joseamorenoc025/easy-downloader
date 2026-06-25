@@ -69,6 +69,8 @@ export interface DownloadProgress {
   eta: string
   downloaded: string
   total: string
+  title?: string
+  totalSize?: string
 }
 
 export interface HistoryEntry {

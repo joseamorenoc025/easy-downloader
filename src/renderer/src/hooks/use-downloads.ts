@@ -71,7 +71,9 @@ export function useDownloads() {
                 speed: progress.speed,
                 eta: progress.eta,
                 downloadedBytes: parseBytes(progress.downloaded),
-                totalBytes: parseBytes(progress.total)
+                totalBytes: parseBytes(progress.total),
+                ...(progress.title ? { title: progress.title } : {}),
+                ...(progress.totalSize ? { totalBytes: parseBytes(progress.totalSize) } : {})
               }
             : item
         )

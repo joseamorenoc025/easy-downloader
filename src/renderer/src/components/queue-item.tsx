@@ -97,10 +97,10 @@ function QueueItemInner({
               <span className="text-muted-foreground/60 mx-1">·</span>
               {item.quality}
               {item.format === 'audio' ? ' kbps' : ''}
-              {item.writeSubtitles && (
+              {item.totalBytes > 0 && (
                 <>
                   <span className="text-muted-foreground/60 mx-1">·</span>
-                  <span className="text-blue-500 dark:text-blue-400">{t('form.subtitles')}</span>
+                  {formatBytes(item.totalBytes)}
                 </>
               )}
             </p>

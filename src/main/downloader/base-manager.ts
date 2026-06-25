@@ -172,7 +172,9 @@ export abstract class BaseDownloadManager {
         speed: item.speed,
         eta: item.eta,
         downloaded: '',
-        total: progress.totalSize ?? ''
+        total: progress.totalSize ?? '',
+        title: item.title,
+        totalSize: progress.totalSize ?? ''
       })
     })
 
@@ -189,7 +191,8 @@ export abstract class BaseDownloadManager {
           speed: item.speed,
           eta: item.eta,
           downloaded: '',
-          total: ''
+          total: '',
+          title: item.title
         })
       }
       if (eventType === 'ExtractAudio') {
@@ -201,7 +204,8 @@ export abstract class BaseDownloadManager {
           speed: item.speed,
           eta: item.eta,
           downloaded: '',
-          total: ''
+          total: '',
+          title: item.title
         })
       }
       // Acumular stderr / mensajes de error para clasificar al cierre.
@@ -238,7 +242,8 @@ export abstract class BaseDownloadManager {
             speed: item.speed,
             eta: '',
             downloaded: '',
-            total: ''
+            total: '',
+            title: item.title
           })
           setTimeout(() => this.startDownload(item, attempt + 1), 3000)
         } else {
@@ -269,7 +274,8 @@ export abstract class BaseDownloadManager {
             speed: item.speed,
             eta: '',
             downloaded: '',
-            total: ''
+            total: '',
+            title: item.title
           })
           setTimeout(() => this.startDownload(item, attempt + 1), 3000)
         } else {
