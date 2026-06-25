@@ -44,14 +44,31 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
       if (detected === 'spotify') {
         setFormat('audio')
         setQuality('320')
-      } else {
-        setFormat('video')
-        setQuality('best')
       }
     }
     window.addEventListener('paste-url', handler)
     return () => window.removeEventListener('paste-url', handler)
   }, [])
+
+  // Listen for paste-and-go (right-click context menu)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const url = (e as CustomEvent).detail as string
+      setUrl(url)
+      setError('')
+      const detected = detectSource(url)
+      setSource(detected)
+      if (detected === 'spotify') {
+        setFormat('audio')
+        setQuality('320')
+        onAddSpotify?.(url, '320')
+      } else {
+        onAdd({ url, format: 'video', quality: 'best' })
+      }
+    }
+    window.addEventListener('paste-url-and-go', handler)
+    return () => window.removeEventListener('paste-url-and-go', handler)
+  }, [onAdd, onAddSpotify])
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {

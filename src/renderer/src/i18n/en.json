@@ -153,5 +153,8 @@
   "header.defaultFolder": "Default download folder",
   "header.downloads": "Downloads",
   "header.switchToEn": "Switch to English",
-  "header.switchToEs": "Cambiar a Español"
+  "header.switchToEs": "Cambiar a Español",
+
+  "context.paste": "Paste URL",
+  "context.pasteAndGo": "Paste URL and download"
 }

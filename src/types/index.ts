@@ -1,3 +1,14 @@
+export type DownloadErrorCategory =
+  | 'unavailable'
+  | 'signIn'
+  | 'network'
+  | 'format'
+  | 'diskFull'
+  | 'permission'
+  | 'binary'
+  | 'unsupported'
+  | 'unknown'
+
 export interface DownloadItem {
   id: string
   url: string
@@ -13,6 +24,10 @@ export interface DownloadItem {
   source: 'youtube' | 'spotify'
   outputPath?: string
   error?: string
+  /** Categoría traducible del error. Vacío si no hay error. */
+  errorCategory?: DownloadErrorCategory
+  /** Stderr completo de yt-dlp, para mostrar en panel expandible. */
+  errorDetails?: string
   incognito?: boolean
 }
 
@@ -102,8 +117,12 @@ export interface EasyDownloaderAPI {
   checkSpotdl: () => Promise<boolean>
   checkYtdlp: () => Promise<boolean>
   checkDependencies: () => Promise<DependencyStatus>
-  saveQueue: (queue: Array<{ url: string; format: string; quality: string; source: string }>) => Promise<void>
-  getSavedQueue: () => Promise<Array<{ url: string; format: string; quality: string; source: string }>>
+  saveQueue: (
+    queue: Array<{ url: string; format: string; quality: string; source: string }>
+  ) => Promise<void>
+  getSavedQueue: () => Promise<
+    Array<{ url: string; format: string; quality: string; source: string }>
+  >
   checkForUpdates: () => Promise<{ updateInfo: { version: string } } | null>
   quitAndInstall: () => Promise<void>
   getHistory: () => Promise<HistoryEntry[]>
@@ -111,7 +130,10 @@ export interface EasyDownloaderAPI {
   clearHistory: () => Promise<void>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
   onDownloadComplete: (callback: (item: DownloadItem) => void) => void
-  onDownloadError: (callback: (data: { itemId: string; error: string }) => void) => void
+  onDownloadError: (
+    callback: (data: { itemId: string; error: string; category: string; details?: string }) => void
+  ) => void
   onSpotifyTrackError: (callback: (data: { itemId: string; trackTitle: string }) => void) => void
+  onContextPaste: (callback: (data: { text: string; autoGo: boolean }) => void) => void
   removeAllListeners: (channel: string) => void
 }

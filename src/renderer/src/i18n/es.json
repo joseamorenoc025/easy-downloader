@@ -153,5 +153,8 @@
   "header.defaultFolder": "Carpeta por defecto",
   "header.downloads": "Descargas",
   "header.switchToEn": "Cambiar a English",
-  "header.switchToEs": "Cambiar a Español"
+  "header.switchToEs": "Cambiar a Español",
+
+  "context.paste": "Pegar URL",
+  "context.pasteAndGo": "Pegar URL y descargar"
 }

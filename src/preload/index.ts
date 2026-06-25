@@ -42,6 +42,9 @@ const api: EasyDownloaderAPI = {
   onSpotifyTrackError: (callback) => {
     ipcRenderer.on('spotify-track-error', (_event, data) => callback(data))
   },
+  onContextPaste: (callback) => {
+    ipcRenderer.on('context-paste', (_event, data) => callback(data))
+  },
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel)
   }

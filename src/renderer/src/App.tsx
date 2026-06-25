@@ -14,8 +14,17 @@ import { isValidUrl } from './lib/utils'
 import './lib/ipc'
 
 function AppContent() {
-  const { queue, isLoading, addDownload, addSpotifyDownload, cancelDownload, cancelAll, openFolder } = useDownloads()
-  const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } = useSettings()
+  const {
+    queue,
+    isLoading,
+    addDownload,
+    addSpotifyDownload,
+    cancelDownload,
+    cancelAll,
+    openFolder
+  } = useDownloads()
+  const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } =
+    useSettings()
   const { t, locale, setLocale } = useI18n()
   const { toast } = useToast()
   const [view, setView] = useState<'queue' | 'history'>('queue')
@@ -23,9 +32,12 @@ function AppContent() {
   const [depsDismissed, setDepsDismissed] = useState(false)
 
   useEffect(() => {
-    window.easyDownloader.checkDependencies().then(setDeps).catch((err) => {
-      console.error('checkDependencies failed:', err)
-    })
+    window.easyDownloader
+      .checkDependencies()
+      .then(setDeps)
+      .catch((err) => {
+        console.error('checkDependencies failed:', err)
+      })
   }, [])
 
   useEffect(() => {
@@ -59,17 +71,20 @@ function AppContent() {
   }
 
   // Drag & drop handler
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    const text = e.dataTransfer.getData('text/plain')
-    if (text && isValidUrl(text)) {
-      if (text.includes('open.spotify.com')) {
-        addSpotifyDownload(text)
-      } else {
-        addDownload({ url: text, format: 'video', quality: 'best' })
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      const text = e.dataTransfer.getData('text/plain')
+      if (text && isValidUrl(text)) {
+        if (text.includes('open.spotify.com')) {
+          addSpotifyDownload(text)
+        } else {
+          addDownload({ url: text, format: 'video', quality: 'best' })
+        }
       }
-    }
-  }, [addDownload, addSpotifyDownload])
+    },
+    [addDownload, addSpotifyDownload]
+  )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -85,6 +100,27 @@ function AppContent() {
     }
     document.addEventListener('paste', handlePaste)
     return () => document.removeEventListener('paste', handlePaste)
+  }, [])
+
+  // Context menu paste handler (right-click → Paste / Paste and go)
+  useEffect(() => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      data: { text: string; autoGo: boolean }
+    ) => {
+      if (!data.text || !isValidUrl(data.text)) return
+      if (data.autoGo) {
+        // Paste URL + auto-submit
+        window.dispatchEvent(new CustomEvent('paste-url-and-go', { detail: data.text }))
+      } else {
+        // Just paste URL into the input
+        window.dispatchEvent(new CustomEvent('paste-url', { detail: data.text }))
+      }
+    }
+    window.easyDownloader.onContextPaste(handler)
+    return () => {
+      window.easyDownloader.removeAllListeners('context-paste')
+    }
   }, [])
 
   return (
@@ -103,7 +139,11 @@ function AppContent() {
             exit={{ opacity: 0, y: -8, height: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <DependencyBanner deps={deps} onDismiss={() => setDepsDismissed(true)} onRetryYtdlp={handleRetryYtdlp} />
+            <DependencyBanner
+              deps={deps}
+              onDismiss={() => setDepsDismissed(true)}
+              onRetryYtdlp={handleRetryYtdlp}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -117,7 +157,17 @@ function AppContent() {
             className="shrink-0 rounded-xl p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             title={t('app.openFolder')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
             </svg>
           </button>
@@ -125,15 +175,32 @@ function AppContent() {
           {/* Logo + title */}
           <div className="flex items-center gap-2 min-w-0">
             {/* Gradient icon badge */}
-            <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'linear-gradient(135deg, hsl(250,84%,62%), hsl(195,80%,56%))' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div
+              className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg"
+              style={{ background: 'linear-gradient(135deg, hsl(250,84%,62%), hsl(195,80%,56%))' }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M12 16l-4-4h2.5V4h3v8H16l-4 4Z" />
                 <path d="M4 18h16" />
               </svg>
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-bold text-foreground leading-tight truncate">{t('app.title')}</h1>
-              <p className="text-[11px] text-muted-foreground truncate leading-tight">{t('app.subtitle')}</p>
+              <h1 className="text-base font-bold text-foreground leading-tight truncate">
+                {t('app.title')}
+              </h1>
+              <p className="text-[11px] text-muted-foreground truncate leading-tight">
+                {t('app.subtitle')}
+              </p>
             </div>
           </div>
         </div>
@@ -155,16 +222,30 @@ function AppContent() {
           >
             {settings.globalPause ? (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1">
-                  <rect x="6" y="4" width="4" height="16"/>
-                  <rect x="14" y="4" width="4" height="16"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="inline-block mr-1"
+                >
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
                 </svg>
                 {t('header.pause')}
               </>
             ) : (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline-block mr-1">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="inline-block mr-1"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
                 {t('header.play')}
               </>
@@ -179,13 +260,26 @@ function AppContent() {
                 ? 'bg-red-500/10 text-red-600 dark:text-red-400'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`}
-            title={settings.incognitoMode ? t('header.incognitoOnDesc') : t('header.incognitoOffDesc')}
+            title={
+              settings.incognitoMode ? t('header.incognitoOnDesc') : t('header.incognitoOffDesc')
+            }
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1">
-              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-              <line x1="2" x2="22" y1="2" y2="22"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="inline-block mr-1"
+            >
+              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+              <line x1="2" x2="22" y1="2" y2="22" />
             </svg>
             {settings.incognitoMode ? t('header.incognitoOn') : t('header.incognitoOff')}
           </button>
@@ -200,16 +294,31 @@ function AppContent() {
             }`}
             title={settings.fetchMetadata ? t('header.metadataOn') : t('header.metadataOff')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" x2="12" y1="16" y2="12"/>
-              <line x1="12" x2="12.01" y1="8" y2="8"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="inline-block mr-1"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" x2="12" y1="16" y2="12" />
+              <line x1="12" x2="12.01" y1="8" y2="8" />
             </svg>
             {t('header.meta')}
           </button>
 
           {/* Queue / History toggle */}
-          <div role="tablist" aria-label={t('a11y.viewTabs')} className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5">
+          <div
+            role="tablist"
+            aria-label={t('a11y.viewTabs')}
+            className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5"
+          >
             {(['queue', 'history'] as const).map((v) => (
               <button
                 key={v}
@@ -309,15 +418,10 @@ function AppContent() {
       {/* Polite live region for screen readers: announces download
           progress changes without stealing focus. Updates are throttled
           to one announcement per few seconds by callers (queue-item renders). */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {queue
-          .filter(i => i.status === 'downloading')
-          .map(i => `${i.title}: ${i.progress.toFixed(0)}%`)
+          .filter((i) => i.status === 'downloading')
+          .map((i) => `${i.title}: ${i.progress.toFixed(0)}%`)
           .join(' | ')}
       </div>
 
@@ -333,9 +437,7 @@ function AppContent() {
             EasyDownloader v{__APP_VERSION__}
           </a>
         </p>
-        <p className="text-[10px] text-muted-foreground/50">
-          {t('app.footer')}
-        </p>
+        <p className="text-[10px] text-muted-foreground/50">{t('app.footer')}</p>
         <p className="text-[10px] text-muted-foreground/50">
           {t('app.starPrompt')}{' '}
           <a

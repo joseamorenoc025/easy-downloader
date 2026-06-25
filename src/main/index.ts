@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, nativeTheme, Notification } from 'electron'
+import { app, BrowserWindow, Menu, nativeTheme, Notification, clipboard } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { store } from './store'
 import { createWindow } from './window'
@@ -180,6 +180,47 @@ app.whenReady().then(() => {
 
   // Window
   mainWindow = createWindow()
+
+  // Context menu (right-click)
+  if (!isTestMode) {
+    mainWindow.webContents.on('context-menu', (_, params) => {
+      const template: Electron.MenuItemConstructorOptions[] = []
+
+      if (params.selectionText) {
+        template.push({ role: 'copy' })
+        template.push({ type: 'separator' })
+      }
+
+      if (params.isEditable) {
+        template.push({
+          label: 'Pegar',
+          accelerator: 'CmdOrCtrl+V',
+          click: () => {
+            const text = clipboard.readText()
+            if (text) {
+              mainWindow?.webContents.send('context-paste', { text, autoGo: false })
+            }
+          }
+        })
+        template.push({
+          label: 'Pegar e ir',
+          click: () => {
+            const text = clipboard.readText()
+            if (text) {
+              mainWindow?.webContents.send('context-paste', { text, autoGo: true })
+            }
+          }
+        })
+        template.push({ type: 'separator' })
+        template.push({ role: 'cut' })
+        template.push({ role: 'selectAll' })
+      }
+
+      if (template.length > 0) {
+        Menu.buildFromTemplate(template).popup()
+      }
+    })
+  }
 
   // Tray
   setupTray(getMainWindow)
