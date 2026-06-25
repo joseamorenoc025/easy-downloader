@@ -17,32 +17,24 @@ export class YtDlpUpdater {
     try {
       const currentVersion = this.getVersion()
       if (!currentVersion) {
-        console.log('[yt-dlp] No binary found, downloading...')
         await this.downloadStandalone()
         return
       }
 
       const latestVersion = await this.getLatestVersion()
       if (!latestVersion) {
-        console.log('[yt-dlp] Could not fetch latest version')
         return
       }
 
       if (currentVersion === latestVersion) {
-        console.log(`[yt-dlp] Already up to date (${currentVersion})`)
         return
       }
-
-      console.log(`[yt-dlp] Updating ${currentVersion} -> ${latestVersion}...`)
 
       if (this.isPipInstalled()) {
         await this.updateViaPip()
       } else {
         await this.downloadStandalone()
       }
-
-      const newVersion = this.getVersion()
-      console.log(`[yt-dlp] Updated to ${newVersion}`)
     } catch (err) {
       console.error('[yt-dlp] Update failed:', err)
     } finally {
@@ -97,7 +89,6 @@ export class YtDlpUpdater {
   }
 
   private async updateViaPip(): Promise<void> {
-    console.log('[yt-dlp] Updating via pip...')
     execSync('pip install -U yt-dlp', { stdio: 'pipe', timeout: 120000 })
   }
 

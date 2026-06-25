@@ -57,6 +57,9 @@ export abstract class BaseDownloadManager {
   protected paused = false
   /** Acumulador de stderr por item, para clasificar el error al cierre. */
   protected stderrBuffers: Map<string, string> = new Map()
+  /** Throttle: timestamp del último envío de progreso por item (ms). */
+  protected lastProgressSent: Map<string, number> = new Map()
+  private static readonly PROGRESS_THROTTLE_MS = 200
 
   protected onProgress: ProgressCallback
   protected onComplete: CompleteCallback
@@ -173,30 +176,19 @@ export abstract class BaseDownloadManager {
     attempt: number,
     context?: string
   ): void {
-    // Fallback: parse progress from raw ytDlpEvent since yt-dlp-wrap's regex
-    // fails to extract totalSize/speed/eta from current yt-dlp output format.
+    // Parse progress from raw ytDlpEvent — yt-dlp-wrap's 'progress' event
+    // has a broken regex that doesn't extract speed/totalSize/eta.
     const progressRegex =
       /\[download\]\s+([\d.]+)%\s+of\s+~?([\d.]+\s*\w+)\s+at\s+([\d.]+\s*\w+\/s)\s+ETA\s+(\S+)/
 
-    emitter.on('progress', (progress) => {
-      const pct = progress.percent ?? 0
-      item.progress = pct
-
-      // yt-dlp-wrap only populates percent correctly; speed/total are broken.
-      // Store what we have — the ytDlpEvent handler below will fill in the rest.
-      item.eta = progress.eta ?? ''
-
-      this.onProgress({
-        id: item.id,
-        percentage: pct.toFixed(1),
-        speed: item.speed,
-        eta: item.eta,
-        downloaded: '',
-        total: '',
-        title: item.title,
-        totalSize: ''
-      })
-    })
+    const throttledOnProgress = (data: DownloadProgress): void => {
+      const now = Date.now()
+      const last = this.lastProgressSent.get(item.id) ?? 0
+      if (now - last >= BaseDownloadManager.PROGRESS_THROTTLE_MS) {
+        this.lastProgressSent.set(item.id, now)
+        this.onProgress(data)
+      }
+    }
 
     emitter.on('ytDlpEvent', (eventType, eventData) => {
       if (eventType === 'Destination') {
@@ -244,9 +236,7 @@ export abstract class BaseDownloadManager {
           item.speed = speedStr
           item.eta = etaStr
 
-          console.log('[YTDL-PARSE]', { pct, speedStr, totalSizeStr, etaStr, totalBytes })
-
-          this.onProgress({
+          throttledOnProgress({
             id: item.id,
             percentage: pct.toFixed(1),
             speed: item.speed,
@@ -278,6 +268,7 @@ export abstract class BaseDownloadManager {
       if (code === 0) {
         item.status = 'completed'
         item.progress = 100
+        this.lastProgressSent.delete(item.id)
         this.onComplete(item)
         this.cleanQueue()
         setTimeout(() => this.processQueue(), 100)
@@ -301,6 +292,7 @@ export abstract class BaseDownloadManager {
           item.error = details
           item.errorCategory = classified.category
           item.errorDetails = details
+          this.lastProgressSent.delete(item.id)
           this.onError(item.id, classified.category, details)
           this.cleanQueue()
           setTimeout(() => this.processQueue(), 100)
@@ -332,6 +324,7 @@ export abstract class BaseDownloadManager {
           item.error = stderr || err.message
           item.errorCategory = classified.category
           item.errorDetails = stderr || err.message
+          this.lastProgressSent.delete(item.id)
           this.onError(item.id, classified.category, stderr || err.message)
           this.cleanQueue()
           setTimeout(() => this.processQueue(), 100)

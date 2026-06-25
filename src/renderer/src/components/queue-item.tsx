@@ -254,6 +254,8 @@ function arePropsEqual(prev: QueueItemProps, next: QueueItemProps): boolean {
     a.progress === b.progress &&
     a.speed === b.speed &&
     a.eta === b.eta &&
+    a.totalBytes === b.totalBytes &&
+    a.downloadedBytes === b.downloadedBytes &&
     a.error === b.error &&
     a.errorCategory === b.errorCategory &&
     a.errorDetails === b.errorDetails &&

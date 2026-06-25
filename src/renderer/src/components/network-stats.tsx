@@ -43,10 +43,17 @@ export function NetworkStats({ currentSpeed }: NetworkStatsProps) {
   const { t } = useI18n()
   const [samples, setSamples] = useState<number[]>(() => new Array(MAX_SAMPLES).fill(0))
   const lastSampleRef = useRef('')
+  const lastSampleTimeRef = useRef(0)
 
   useEffect(() => {
-    if (currentSpeed && currentSpeed !== lastSampleRef.current) {
+    const now = Date.now()
+    if (
+      currentSpeed &&
+      currentSpeed !== lastSampleRef.current &&
+      now - lastSampleTimeRef.current >= 500
+    ) {
       lastSampleRef.current = currentSpeed
+      lastSampleTimeRef.current = now
       const bytes = parseSpeedToBytes(currentSpeed)
       setSamples((prev) => {
         const next = [...prev.slice(1), bytes]

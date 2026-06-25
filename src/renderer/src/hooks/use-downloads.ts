@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { DownloadItem, DownloadOptions } from '@/types'
+import type { DownloadItem, DownloadOptions, DownloadProgress } from '@/types'
 import { parseBytes } from '../lib/utils'
 import '../lib/ipc'
 
@@ -14,6 +14,8 @@ export function useDownloads() {
   const [queue, setQueue] = useState<DownloadItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const queueRef = useRef(queue)
+  const progressBufferRef = useRef(new Map<string, DownloadProgress>())
+  const progressFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     queueRef.current = queue
@@ -62,22 +64,34 @@ export function useDownloads() {
     })
 
     window.easyDownloader.onDownloadProgress((progress) => {
-      setQueue((prev) =>
-        prev.map((item) =>
-          item.id === progress.id
-            ? {
+      // Buffer progress updates and flush periodically to reduce re-renders
+      progressBufferRef.current.set(progress.id, progress)
+      if (!progressFlushRef.current) {
+        progressFlushRef.current = setTimeout(() => {
+          progressFlushRef.current = null
+          const buffered = new Map(progressBufferRef.current)
+          progressBufferRef.current.clear()
+          setQueue((prev) => {
+            let changed = false
+            const next = prev.map((item) => {
+              const p = buffered.get(item.id)
+              if (!p) return item
+              changed = true
+              return {
                 ...item,
-                progress: parseFloat(progress.percentage),
-                speed: progress.speed,
-                eta: progress.eta,
-                downloadedBytes: parseBytes(progress.downloaded),
-                totalBytes: parseBytes(progress.total),
-                ...(progress.title ? { title: progress.title } : {}),
-                ...(progress.totalSize ? { totalBytes: parseBytes(progress.totalSize) } : {})
+                progress: parseFloat(p.percentage),
+                speed: p.speed,
+                eta: p.eta,
+                downloadedBytes: parseBytes(p.downloaded),
+                totalBytes: parseBytes(p.total),
+                ...(p.title ? { title: p.title } : {}),
+                ...(p.totalSize ? { totalBytes: parseBytes(p.totalSize) } : {})
               }
-            : item
-        )
-      )
+            })
+            return changed ? next : prev
+          })
+        }, 150)
+      }
     })
 
     window.easyDownloader.onDownloadComplete((item) => {
@@ -104,6 +118,10 @@ export function useDownloads() {
 
     return () => {
       isMounted = false
+      if (progressFlushRef.current) {
+        clearTimeout(progressFlushRef.current)
+        progressFlushRef.current = null
+      }
       window.easyDownloader.removeAllListeners('download-progress')
       window.easyDownloader.removeAllListeners('download-complete')
       window.easyDownloader.removeAllListeners('download-error')

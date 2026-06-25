@@ -234,31 +234,27 @@ describe('Retry logic (setupEmitterListeners)', () => {
   })
 
   describe('progress handler', () => {
-    it('should update item progress from emitter', () => {
+    it('should update item progress from ytDlpEvent', () => {
       const item = makeItem({ status: 'downloading' })
       const emitter = createEmitter()
 
       ;(manager as any).setupEmitterListeners(emitter, item, 1, 'test')
 
-      emitter.emit('progress', {
-        percent: 45.5,
-        currentSpeed: '2MB/s',
-        eta: '10s',
-        totalSize: '100MB'
-      })
+      emitter.emit('ytDlpEvent', 'download', '  45.5% of  100MB at  2MB/s ETA 00:10')
 
       expect(item.progress).toBe(45.5)
-      expect(item.eta).toBe('10s')
+      expect(item.speed).toBe('2MB/s')
+      expect(item.eta).toBe('00:10')
       expect(mockOnProgress).toHaveBeenCalledWith(expect.objectContaining({ percentage: '45.5' }))
     })
 
-    it('should handle missing progress fields', () => {
+    it('should handle non-matching download event', () => {
       const item = makeItem({ status: 'downloading' })
       const emitter = createEmitter()
 
       ;(manager as any).setupEmitterListeners(emitter, item, 1, 'test')
 
-      emitter.emit('progress', {})
+      emitter.emit('ytDlpEvent', 'download', 'some non-progress line')
 
       expect(item.progress).toBe(0)
       expect(item.speed).toBe('')

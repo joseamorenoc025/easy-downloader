@@ -237,9 +237,6 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
             setTimeout(() => this.processQueue(), 100)
             return
           }
-          console.log(
-            `[spotify] Found: "${match.title}" for "${spotifyTrack.artist} - ${spotifyTrack.name}"`
-          )
           executeDownload(match.url)
         })
         .catch((err) => {
