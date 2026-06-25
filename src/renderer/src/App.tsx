@@ -1,9 +1,10 @@
 import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { DownloadForm } from './components/download-form'
+import { DownloadPanel } from './components/download-panel'
+import { StatsCard } from './components/stats-card'
+import { SessionToolbar } from './components/session-toolbar'
 import { QueueList } from './components/queue-list'
 import { History } from './components/history'
-import { NetworkStats } from './components/network-stats'
 import { ThemeToggle } from './components/theme-toggle'
 import { DependencyBanner } from './components/dependency-banner'
 import { ToastProvider, useToast } from './components/toast'
@@ -32,8 +33,11 @@ function AppContent() {
     updateTheme,
     setFetchMetadata,
     setIncognitoMode,
+    setNotifications,
     setMaxConcurrent,
-    selectDirectory
+    selectDirectory,
+    selectCookiesFile,
+    clearCookies
   } = useSettings()
   const { t, locale, setLocale } = useI18n()
   const { toast } = useToast()
@@ -82,7 +86,11 @@ function AppContent() {
     openFolder()
   }
 
-  // Drag & drop handler — paste URL into form instead of auto-downloading
+  const handleTogglePause = () => {
+    const newPause = !settings.globalPause
+    window.easyDownloader.setGlobalPause(newPause)
+  }
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     const text = e.dataTransfer.getData('text/plain')
@@ -95,7 +103,6 @@ function AppContent() {
     e.preventDefault()
   }, [])
 
-  // Global paste handler (Ctrl+V) - only populate URL field, don't auto-download
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain')
@@ -107,7 +114,6 @@ function AppContent() {
     return () => document.removeEventListener('paste', handlePaste)
   }, [])
 
-  // Context menu paste handler (right-click → Paste / Paste and go)
   useEffect(() => {
     const handler = (data: { text: string; autoGo: boolean }) => {
       if (!data.text || !isValidUrl(data.text)) return
@@ -125,7 +131,7 @@ function AppContent() {
 
   return (
     <div
-      className="mx-auto flex h-dvh w-full max-w-4xl flex-col px-4 py-5 gap-3"
+      className="mx-auto flex h-dvh w-full max-w-5xl flex-col px-4 py-4 gap-3"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -149,7 +155,7 @@ function AppContent() {
       </AnimatePresence>
 
       {/* ─── Header ────────────────────────────────────────────────── */}
-      <header className="glass shrink-0 flex items-center justify-between rounded-2xl px-4 py-3">
+      <header className="glass shrink-0 flex items-center justify-between rounded-2xl px-4 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
           {/* Folder button */}
           <button
@@ -159,8 +165,8 @@ function AppContent() {
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -174,15 +180,14 @@ function AppContent() {
 
           {/* Logo + title */}
           <div className="flex items-center gap-2 min-w-0">
-            {/* Gradient icon badge */}
             <div
-              className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg"
+              className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg"
               style={{ background: 'linear-gradient(135deg, hsl(250,84%,62%), hsl(195,80%,56%))' }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="15"
-                height="15"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="white"
@@ -195,146 +200,18 @@ function AppContent() {
               </svg>
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-bold text-foreground leading-tight truncate">
+              <h1 className="text-sm font-bold text-gradient-brand leading-tight truncate">
                 {t('app.title')}
               </h1>
-              <p className="text-[11px] text-muted-foreground truncate leading-tight">
+              <p className="text-[10px] text-muted-foreground truncate leading-tight">
                 {t('app.subtitle')}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Global Pause/Resume Toggle */}
-          <button
-            onClick={() => {
-              const newPause = !settings.globalPause
-              window.easyDownloader.setGlobalPause(newPause)
-            }}
-            className={`rounded-lg px-2 py-1 text-xs font-semibold transition-colors ${
-              settings.globalPause
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-            title={settings.globalPause ? t('header.pauseResume') : t('header.resumePause')}
-          >
-            {settings.globalPause ? (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="inline-block mr-1"
-                >
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-                {t('header.pause')}
-              </>
-            ) : (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="inline-block mr-1"
-                >
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-                {t('header.play')}
-              </>
-            )}
-          </button>
-
-          {/* Incognito mode toggle */}
-          <button
-            onClick={() => setIncognitoMode(!settings.incognitoMode)}
-            className={`rounded-lg px-2 py-1 text-xs font-semibold transition-colors ${
-              settings.incognitoMode
-                ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-            title={
-              settings.incognitoMode ? t('header.incognitoOnDesc') : t('header.incognitoOffDesc')
-            }
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="inline-block mr-1"
-            >
-              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-              <line x1="2" x2="22" y1="2" y2="22" />
-            </svg>
-            {settings.incognitoMode ? t('header.incognitoOn') : t('header.incognitoOff')}
-          </button>
-
-          {/* Fetch metadata toggle */}
-          <button
-            onClick={() => setFetchMetadata(!settings.fetchMetadata)}
-            className={`rounded-lg px-2 py-1 text-xs font-semibold transition-colors ${
-              settings.fetchMetadata
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-            title={settings.fetchMetadata ? t('header.metadataOn') : t('header.metadataOff')}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="inline-block mr-1"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" x2="12" y1="16" y2="12" />
-              <line x1="12" x2="12.01" y1="8" y2="8" />
-            </svg>
-            {t('header.meta')}
-          </button>
-
-          {/* Concurrent downloads */}
-          <div
-            className="flex items-center gap-1 text-xs text-muted-foreground"
-            title={t('concurrent.title')}
-          >
-            <button
-              onClick={() => setMaxConcurrent(Math.max(1, (settings.maxConcurrent || 3) - 1))}
-              className="rounded px-1 py-0.5 hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              −
-            </button>
-            <span className="w-4 text-center font-mono text-foreground">
-              {settings.maxConcurrent || 3}
-            </span>
-            <button
-              onClick={() => setMaxConcurrent(Math.min(8, (settings.maxConcurrent || 3) + 1))}
-              className="rounded px-1 py-0.5 hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              +
-            </button>
-          </div>
-
+        {/* Right controls - max 6 items */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Queue / History toggle */}
           <div
             role="tablist"
@@ -347,7 +224,7 @@ function AppContent() {
                 role="tab"
                 aria-selected={view === v}
                 onClick={() => setView(v)}
-                className={`relative rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                className={`relative rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                   view === v
                     ? 'bg-card text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -362,43 +239,111 @@ function AppContent() {
           <button
             onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
             aria-label={locale === 'es' ? t('a11y.switchToEnglish') : t('a11y.switchToSpanish')}
-            className="rounded-lg px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className="rounded-lg px-1.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             title={locale === 'es' ? t('header.switchToEn') : t('header.switchToEs')}
           >
             {locale === 'es' ? 'EN' : 'ES'}
           </button>
 
-          {/* Download path */}
+          {/* Cookies */}
           <button
-            onClick={selectDirectory}
-            aria-label={t('a11y.changeDownloadFolder')}
-            className="max-w-[110px] truncate text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-            title={settings.downloadPath || t('header.defaultFolder')}
+            onClick={settings.cookiesPath ? clearCookies : selectCookiesFile}
+            aria-label={t('a11y.cookies')}
+            className={`shrink-0 rounded-xl p-1.5 ${
+              settings.cookiesPath
+                ? 'text-emerald-500 hover:bg-emerald-500/10'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
+            title={
+              settings.cookiesPath
+                ? `${t('cookies.active')}: ${settings.cookiesPath.split(/[\\/]/).pop()}`
+                : t('cookies.import')
+            }
           >
-            {settings.downloadPath
-              ? settings.downloadPath.split(/[\\/]/).pop()
-              : t('header.downloads')}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+              <path d="M8.5 8.5v.01" />
+              <path d="M16 15.5v.01" />
+              <path d="M12 12v.01" />
+              <path d="M11 17v.01" />
+              <path d="M7 14v.01" />
+              <path d="M16 8v.01" />
+            </svg>
+          </button>
+
+          {/* Notifications toggle */}
+          <button
+            onClick={() => setNotifications(!settings.notificationsEnabled)}
+            aria-label={t('a11y.notifications')}
+            className={`shrink-0 rounded-xl p-1.5 ${
+              settings.notificationsEnabled
+                ? 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
+            title={settings.notificationsEnabled ? t('notifications.on') : t('notifications.off')}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              {settings.notificationsEnabled ? (
+                <>
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </>
+              ) : (
+                <>
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <line x1="2" y1="2" x2="22" y2="22" />
+                </>
+              )}
+            </svg>
           </button>
 
           <ThemeToggle theme={settings.themeMode} onThemeChange={updateTheme} />
         </div>
       </header>
 
-      {/* ─── Main content ──────────────────────────────────────────── */}
-      <main className="glass flex min-h-0 flex-1 flex-col gap-4 rounded-2xl px-5 py-5 overflow-hidden">
-        <DownloadForm
-          onAdd={handleAdd}
-          onAddSpotify={handleAddSpotify}
-          onAddBatch={addBatchDownloads}
-          isLoading={isLoading}
-        />
+      {/* ─── Workspace: Dual Pane ─────────────────────────────────── */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-[1fr_320px]">
+        {/* Left: Download Panel */}
+        <div className="min-h-0 flex flex-col">
+          <DownloadPanel
+            onAdd={handleAdd}
+            onAddSpotify={handleAddSpotify}
+            onAddBatch={addBatchDownloads}
+            isLoading={isLoading}
+          />
+        </div>
 
-        <div className="h-px bg-border/60" />
+        {/* Right: Stats Card */}
+        <div className="min-h-0">
+          <StatsCard queue={queue} />
+        </div>
+      </div>
 
-        <NetworkStats currentSpeed={queue.find((i) => i.status === 'downloading')?.speed || ''} />
+      {/* ─── Session Toolbar ──────────────────────────────────────── */}
+      <SessionToolbar
+        settings={settings}
+        onTogglePause={handleTogglePause}
+        onToggleIncognito={() => setIncognitoMode(!settings.incognitoMode)}
+        onToggleMetadata={() => setFetchMetadata(!settings.fetchMetadata)}
+        onChangeConcurrent={setMaxConcurrent}
+      />
 
-        <div className="h-px bg-border/60" />
-
+      {/* ─── Queue / History ──────────────────────────────────────── */}
+      <div className="glass min-h-0 flex-1 overflow-hidden rounded-2xl px-5 py-4">
         <AnimatePresence mode="wait">
           {view === 'history' ? (
             <motion.div
@@ -407,7 +352,7 @@ function AppContent() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.2 }}
-              className="min-h-0 flex-1"
+              className="h-full"
             >
               <div className="queue-scroll h-full overflow-y-auto pr-1">
                 <History
@@ -431,7 +376,7 @@ function AppContent() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 12 }}
               transition={{ duration: 0.2 }}
-              className="min-h-0 flex-1"
+              className="h-full"
             >
               <div className="queue-scroll h-full overflow-y-auto pr-1">
                 <QueueList
@@ -447,11 +392,9 @@ function AppContent() {
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </div>
 
-      {/* Polite live region for screen readers: announces download
-          progress changes without stealing focus. Updates are throttled
-          to one announcement per few seconds by callers (queue-item renders). */}
+      {/* Screen reader live region */}
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {queue
           .filter((i) => i.status === 'downloading')

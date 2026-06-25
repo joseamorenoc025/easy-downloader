@@ -4,64 +4,64 @@
 
 @layer base {
   :root {
-    --background: 230 25% 97%;
-    --foreground: 230 25% 8%;
+    --background: 220 23% 97%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 230 25% 8%;
-    --primary: 250 84% 60%;
+    --card-foreground: 222 47% 11%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 230 20% 92%;
-    --secondary-foreground: 230 25% 20%;
-    --muted: 230 18% 94%;
-    --muted-foreground: 230 12% 52%;
-    --accent: 250 84% 96%;
-    --accent-foreground: 250 84% 40%;
-    --destructive: 0 84% 58%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 239 84% 96%;
+    --accent-foreground: 239 84% 40%;
+    --destructive: 350 89% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 230 18% 88%;
-    --input: 230 18% 88%;
-    --ring: 250 84% 60%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 67%;
     --radius: 0.75rem;
 
     /* Glass tokens */
-    --glass-bg: rgba(255, 255, 255, 0.65);
-    --glass-border: rgba(255, 255, 255, 0.8);
-    --glass-shadow: 0 8px 32px rgba(80, 60, 200, 0.10);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(226, 232, 240, 0.8);
+    --glass-shadow: 0 8px 32px rgba(99, 102, 241, 0.08);
 
-    /* Gradient orbs */
-    --orb-1: radial-gradient(ellipse at 20% 30%, hsla(250, 90%, 72%, 0.28) 0%, transparent 60%);
-    --orb-2: radial-gradient(ellipse at 80% 70%, hsla(195, 90%, 65%, 0.22) 0%, transparent 60%);
-    --orb-3: radial-gradient(ellipse at 55% 10%, hsla(320, 80%, 68%, 0.16) 0%, transparent 55%);
+    /* Gradient orbs - Indigo/Violet/Cyan */
+    --orb-1: radial-gradient(ellipse at 20% 30%, hsla(239, 84%, 67%, 0.15) 0%, transparent 60%);
+    --orb-2: radial-gradient(ellipse at 80% 70%, hsla(262, 83%, 58%, 0.12) 0%, transparent 60%);
+    --orb-3: radial-gradient(ellipse at 55% 10%, hsla(199, 89%, 48%, 0.1) 0%, transparent 55%);
   }
 
   .dark {
-    --background: 232 28% 8%;
-    --foreground: 220 20% 95%;
-    --card: 232 25% 11%;
-    --card-foreground: 220 20% 95%;
-    --primary: 258 90% 68%;
+    --background: 222 47% 6%;
+    --foreground: 217 33% 97%;
+    --card: 222 47% 9%;
+    --card-foreground: 217 33% 97%;
+    --primary: 235 86% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 232 22% 16%;
-    --secondary-foreground: 220 20% 80%;
-    --muted: 232 22% 14%;
-    --muted-foreground: 220 12% 55%;
-    --accent: 258 60% 20%;
-    --accent-foreground: 258 90% 80%;
-    --destructive: 0 72% 50%;
+    --secondary: 220 14% 18%;
+    --secondary-foreground: 215 20% 80%;
+    --muted: 220 14% 15%;
+    --muted-foreground: 215 16% 55%;
+    --accent: 235 60% 20%;
+    --accent-foreground: 235 86% 80%;
+    --destructive: 350 72% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 232 22% 18%;
-    --input: 232 22% 18%;
-    --ring: 258 90% 68%;
+    --border: 220 14% 20%;
+    --input: 220 14% 20%;
+    --ring: 235 86% 65%;
 
     /* Glass tokens dark */
-    --glass-bg: rgba(20, 18, 38, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    --glass-border: rgba(148, 163, 184, 0.08);
+    --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
 
     /* Gradient orbs dark */
-    --orb-1: radial-gradient(ellipse at 20% 30%, hsla(258, 80%, 55%, 0.22) 0%, transparent 60%);
-    --orb-2: radial-gradient(ellipse at 80% 70%, hsla(195, 80%, 45%, 0.16) 0%, transparent 60%);
-    --orb-3: radial-gradient(ellipse at 55% 10%, hsla(320, 70%, 50%, 0.12) 0%, transparent 55%);
+    --orb-1: radial-gradient(ellipse at 20% 30%, hsla(235, 86%, 55%, 0.18) 0%, transparent 60%);
+    --orb-2: radial-gradient(ellipse at 80% 70%, hsla(262, 83%, 58%, 0.14) 0%, transparent 60%);
+    --orb-3: radial-gradient(ellipse at 55% 10%, hsla(199, 89%, 48%, 0.1) 0%, transparent 55%);
   }
 }
 
@@ -70,13 +70,20 @@
     @apply border-border;
   }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     @apply h-dvh overflow-hidden;
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family:
+      'Outfit',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     position: relative;
@@ -87,10 +94,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background:
-      var(--orb-1),
-      var(--orb-2),
-      var(--orb-3);
+    background: var(--orb-1), var(--orb-2), var(--orb-3);
     pointer-events: none;
     z-index: 0;
     animation: orb-shift 14s ease-in-out infinite alternate;
@@ -105,10 +109,22 @@
 
 /* Orb animation */
 @keyframes orb-shift {
-  0%   { opacity: 1; transform: scale(1) translate(0, 0); }
-  33%  { opacity: 0.85; transform: scale(1.04) translate(1%, -1%); }
-  66%  { opacity: 0.95; transform: scale(0.97) translate(-1%, 1%); }
-  100% { opacity: 1; transform: scale(1.02) translate(0.5%, 0.5%); }
+  0% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+  33% {
+    opacity: 0.85;
+    transform: scale(1.04) translate(1%, -1%);
+  }
+  66% {
+    opacity: 0.95;
+    transform: scale(0.97) translate(-1%, 1%);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.02) translate(0.5%, 0.5%);
+  }
 }
 
 /* Glassmorphism utility */
@@ -118,6 +134,44 @@
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Glass card - more subtle than glass */
+.glass-card {
+  background: hsl(var(--card) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Section titles */
+.section-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Brand gradient text */
+.text-gradient-brand {
+  background: linear-gradient(135deg, hsl(239, 84%, 67%), hsl(262, 83%, 58%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Active download glow */
+.queue-item-active {
+  border-left: 3px solid hsl(239, 84%, 67%);
+  box-shadow: 0 0 12px hsla(239, 84%, 67%, 0.2);
+}
+
+.dark .queue-item-active {
+  box-shadow: 0 0 16px hsla(235, 86%, 65%, 0.25);
 }
 
 /* Custom scrollbar */
@@ -140,8 +194,8 @@ input:focus-visible,
 select:focus-visible,
 button:focus-visible,
 a:focus-visible,
-[role="button"]:focus-visible,
-[role="tab"]:focus-visible {
+[role='button']:focus-visible,
+[role='tab']:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
   box-shadow: 0 0 0 4px hsl(var(--ring) / 0.2);
@@ -166,7 +220,9 @@ a:focus-visible,
   body::before {
     animation: none;
   }
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -175,7 +231,10 @@ a:focus-visible,
 }
 
 /* Smooth transitions globally */
-button, a, input, select {
+button,
+a,
+input,
+select {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
