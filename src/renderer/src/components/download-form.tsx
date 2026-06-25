@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Button } from './ui/button'
 import { isValidUrl, detectSource, type DetectedSource } from '../lib/utils'
 import { useI18n } from '../i18n/context'
@@ -9,6 +9,7 @@ import '../lib/ipc'
 interface DownloadFormProps {
   onAdd: (options: DownloadOptions) => void
   onAddSpotify?: (url: string, quality?: string) => void
+  onAddBatch?: (urls: string[], format: 'video' | 'audio', quality: string) => void
   isLoading: boolean
 }
 
@@ -25,7 +26,7 @@ function qualityLabel(q: string, t: (key: string) => string): string {
   return q
 }
 
-export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormProps) {
+export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: DownloadFormProps) {
   const { t } = useI18n()
   const [url, setUrl] = useState('')
   const [source, setSource] = useState<DetectedSource>('youtube')
@@ -80,6 +81,14 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         setError(t('form.error.emptyUrl'))
         return
       }
+
+      // Batch mode: multiple URLs
+      if (detectedUrls && detectedUrls.length > 1 && onAddBatch) {
+        onAddBatch(detectedUrls, format, quality)
+        setUrl('')
+        return
+      }
+
       if (!isValidUrl(trimmedUrl)) {
         setError(t('form.error.invalidUrl'))
         return
@@ -103,13 +112,24 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
       })
       setUrl('')
     },
-    [url, format, quality, source, onAdd, onAddSpotify]
+    [url, format, quality, source, detectedUrls, onAdd, onAddSpotify, onAddBatch, t]
   )
 
   const videoQualities = ['best', '2160p', '1440p', '1080p', '720p', '480p']
   const audioQualities = ['320', '256', '192', '128']
 
   const qualities = format === 'video' ? videoQualities : audioQualities
+
+  // Batch URL detection
+  const detectedUrls = useMemo(() => {
+    const lines = url
+      .split(/[\n\r]+/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+    if (lines.length <= 1) return null
+    const valid = lines.filter((l) => isValidUrl(l))
+    return valid.length > 1 ? valid : null
+  }, [url])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -141,6 +161,11 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
           className="flex-1 rounded-xl border border-input bg-background/80 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none"
         />
       </div>
+      {detectedUrls && (
+        <p className="text-xs text-blue-500 dark:text-blue-400">
+          {t('form.batchDetected', { count: detectedUrls.length })}
+        </p>
+      )}
       {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <div

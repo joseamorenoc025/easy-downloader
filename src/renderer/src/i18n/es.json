@@ -18,6 +18,7 @@
   "form.error.emptyUrl": "Ingresa una URL",
   "form.error.invalidUrl": "Formato de URL inválido",
   "form.error.invalidSpotifyUrl": "Ingresa una URL válida de Spotify",
+  "form.batchDetected": "{count} URLs detectadas — todas serán encoladas",
   "form.video": "Video",
   "form.audio": "Audio",
   "form.resolution": "Resolución",

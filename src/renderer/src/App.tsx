@@ -23,7 +23,8 @@ function AppContent() {
     cancelAll,
     openFolder,
     retryDownload,
-    clearCompleted
+    clearCompleted,
+    addBatchDownloads
   } = useDownloads()
   const { settings, updateTheme, setFetchMetadata, setIncognitoMode, selectDirectory } =
     useSettings()
@@ -356,7 +357,12 @@ function AppContent() {
 
       {/* ─── Main content ──────────────────────────────────────────── */}
       <main className="glass flex min-h-0 flex-1 flex-col gap-4 rounded-2xl px-5 py-5 overflow-hidden">
-        <DownloadForm onAdd={handleAdd} onAddSpotify={handleAddSpotify} isLoading={isLoading} />
+        <DownloadForm
+          onAdd={handleAdd}
+          onAddSpotify={handleAddSpotify}
+          onAddBatch={addBatchDownloads}
+          isLoading={isLoading}
+        />
 
         <div className="h-px bg-border/60" />
 

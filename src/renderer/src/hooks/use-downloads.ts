@@ -167,11 +167,30 @@ export function useDownloads() {
     })
   }, [])
 
+  const addBatchDownloads = useCallback(
+    async (urls: string[], format: 'video' | 'audio' = 'video', quality: string = 'best') => {
+      setIsLoading(true)
+      try {
+        for (const url of urls) {
+          if (url.includes('open.spotify.com')) {
+            await addSpotifyDownload(url, quality)
+          } else {
+            await addDownload({ url, format, quality })
+          }
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [addDownload, addSpotifyDownload]
+  )
+
   return {
     queue,
     isLoading,
     addDownload,
     addSpotifyDownload,
+    addBatchDownloads,
     cancelDownload,
     cancelAll,
     openFolder,
