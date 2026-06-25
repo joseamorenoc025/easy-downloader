@@ -20,7 +20,6 @@ function getYouTubeThumbnail(url: string): string | null {
 }
 
 function getSpotifyColor(url: string): string {
-  // deterministic colour from URL chars
   const sum = url.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
   const hues = [142, 200, 260, 320, 30, 80]
   return `hsl(${hues[sum % hues.length]}, 65%, 40%)`
@@ -52,18 +51,6 @@ function groupByDate(entries: HistoryEntry[], t: (key: string) => string) {
   return groups.filter((g) => g.entries.length > 0)
 }
 
-function formatDuration(s: number) {
-  if (!s) return ''
-  const m = Math.floor(s / 60)
-  const sec = Math.floor(s % 60)
-  return `${m}:${sec.toString().padStart(2, '0')}`
-}
-
-/**
- * Format a past ISO timestamp as a localized relative time, e.g.
- * "hace 5 min" / "5 min ago". Falls back to a localized date for anything
- * older than a day.
- */
 function relativeTime(iso: string, locale: string): string {
   const diffSeconds = (Date.now() - new Date(iso).getTime()) / 1000
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
@@ -90,10 +77,25 @@ function HistoryCard({
   const spotifyBg = entry.source === 'spotify' ? getSpotifyColor(entry.url) : ''
   const [hovered, setHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
+  const [fileExists, setFileExists] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (entry.outputPath) {
+      window.easyDownloader.checkFileExists(entry.outputPath).then(setFileExists)
+    } else {
+      setFileExists(false)
+    }
+  }, [entry.outputPath])
 
   const isVideo = entry.format === 'video'
   const badgeLabel = isVideo ? 'MP4' : 'MP3'
   const qualityLabel = isVideo ? entry.quality : `${entry.quality} kbps`
+
+  const handleOpenFile = () => {
+    if (entry.outputPath) {
+      window.easyDownloader.openFolder(entry.outputPath)
+    }
+  }
 
   return (
     <motion.div
@@ -117,7 +119,6 @@ function HistoryCard({
             onError={() => setImgError(true)}
           />
         ) : entry.source === 'spotify' ? (
-          /* Spotify gradient placeholder */
           <div
             className="w-full h-full flex flex-col items-center justify-center gap-1"
             style={{ background: `linear-gradient(135deg, ${spotifyBg}, #1a1a2e)` }}
@@ -130,7 +131,6 @@ function HistoryCard({
             </span>
           </div>
         ) : (
-          /* Generic video placeholder */
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/60 to-slate-900">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -166,6 +166,19 @@ function HistoryCard({
           {entry.source === 'spotify' ? '🎵 Spotify' : '▶ YouTube'}
         </span>
 
+        {/* File status badge */}
+        {fileExists !== null && (
+          <span
+            className={`absolute bottom-2 right-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
+              fileExists
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+            }`}
+          >
+            {fileExists ? t('history.fileExists') : t('history.fileDeleted')}
+          </span>
+        )}
+
         {/* Bottom info row (always visible) */}
         <div className="absolute bottom-0 inset-x-0 p-2.5">
           <p className="text-white text-xs font-semibold leading-snug line-clamp-2 drop-shadow">
@@ -186,30 +199,56 @@ function HistoryCard({
               transition={{ duration: 0.15 }}
               className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 backdrop-blur-[2px]"
             >
-              <motion.button
-                initial={{ y: 6, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.05 }}
-                onClick={() => onRedownload(entry)}
-                className="flex items-center gap-1.5 rounded-xl bg-white text-black px-4 py-2 text-xs font-bold shadow-lg hover:bg-white/90 active:scale-95"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {/* Primary action: Open file or Re-download */}
+              {fileExists ? (
+                <motion.button
+                  initial={{ y: 6, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.05 }}
+                  onClick={handleOpenFile}
+                  className="flex items-center gap-1.5 rounded-xl bg-white text-black px-4 py-2 text-xs font-bold shadow-lg hover:bg-white/90 active:scale-95"
                 >
-                  <path d="M12 16l-4-4h2.5V4h3v8H16l-4 4Z" />
-                  <path d="M4 18h16" />
-                </svg>
-                {t('history.redownload')}
-              </motion.button>
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                  </svg>
+                  {t('history.openFile')}
+                </motion.button>
+              ) : (
+                <motion.button
+                  initial={{ y: 6, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.05 }}
+                  onClick={() => onRedownload(entry)}
+                  className="flex items-center gap-1.5 rounded-xl bg-white text-black px-4 py-2 text-xs font-bold shadow-lg hover:bg-white/90 active:scale-95"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 16l-4-4h2.5V4h3v8H16l-4 4Z" />
+                    <path d="M4 18h16" />
+                  </svg>
+                  {t('history.redownload')}
+                </motion.button>
+              )}
 
+              {/* Secondary: Open folder */}
               {entry.outputPath && (
                 <motion.button
                   initial={{ y: 6, opacity: 0 }}
@@ -219,7 +258,6 @@ function HistoryCard({
                   className="flex items-center gap-1.5 rounded-xl border border-white/30 text-white/90 px-4 py-1.5 text-xs font-medium hover:bg-white/10 active:scale-95"
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
                     width="12"
                     height="12"
                     viewBox="0 0 24 24"
@@ -232,6 +270,19 @@ function HistoryCard({
                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
                   </svg>
                   {t('history.openFolder')}
+                </motion.button>
+              )}
+
+              {/* Tertiary: Re-download (only if file exists, as alternative) */}
+              {fileExists && (
+                <motion.button
+                  initial={{ y: 6, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.11 }}
+                  onClick={() => onRedownload(entry)}
+                  className="flex items-center gap-1.5 rounded-xl text-white/60 px-3 py-1 text-[11px] font-medium hover:text-white/90 hover:bg-white/5 active:scale-95"
+                >
+                  {t('history.redownload')}
                 </motion.button>
               )}
             </motion.div>
@@ -266,7 +317,7 @@ function HistorySection({
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <AnimatePresence initial={false}>
-          {entries.map((e, i) => (
+          {entries.map((e) => (
             <HistoryCard
               key={e.id}
               entry={e}
@@ -289,6 +340,7 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
   const [entries, setEntries] = useState<HistoryEntry[]>([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
+  const [pruning, setPruning] = useState(false)
 
   useEffect(() => {
     window.easyDownloader.getHistory().then(setEntries)
@@ -312,6 +364,22 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
     if (!window.confirm(t('history.confirmClear'))) return
     await window.easyDownloader.clearHistory()
     setEntries([])
+  }
+
+  const handlePrune = async () => {
+    if (!window.confirm(t('history.confirmPrune'))) return
+    setPruning(true)
+    try {
+      const remaining = await window.easyDownloader.pruneHistory()
+      setEntries((prev) =>
+        prev.filter((e) => {
+          const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+          return new Date(e.completedAt).getTime() >= cutoff
+        })
+      )
+    } finally {
+      setPruning(false)
+    }
   }
 
   const filtered = useMemo(() => {
@@ -429,7 +497,33 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
           ))}
         </div>
 
-        {/* Clear */}
+        {/* Prune old entries */}
+        <button
+          onClick={handlePrune}
+          disabled={pruning}
+          className="shrink-0 rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 transition-colors disabled:opacity-50"
+          title={t('history.pruneOld')}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            <line x1="10" x2="10" y1="11" y2="17" />
+            <line x1="14" x2="14" y1="11" y2="17" />
+          </svg>
+        </button>
+
+        {/* Clear all */}
         <button
           onClick={clear}
           className="shrink-0 rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"

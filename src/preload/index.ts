@@ -35,6 +35,8 @@ const api: EasyDownloaderAPI = {
   getHistory: () => ipcRenderer.invoke('get-history'),
   addHistoryEntry: (entry) => ipcRenderer.invoke('add-history-entry', entry),
   clearHistory: () => ipcRenderer.invoke('clear-history'),
+  checkFileExists: (path) => ipcRenderer.invoke('check-file-exists', path),
+  pruneHistory: () => ipcRenderer.invoke('prune-history'),
   onDownloadProgress: (callback) => {
     ipcRenderer.on('download-progress', (_event, data) => callback(data))
   },

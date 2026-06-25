@@ -216,6 +216,19 @@ app.whenReady().then(() => {
     setIsQuitting
   })
 
+  // Prune old history entries on startup
+  const maxAgeDays = (store.get('settings', {}) as Record<string, unknown>).historyMaxAge ?? 90
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
+  const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
+  const pruned = history.filter((e) => {
+    const completedAt = e.completedAt as string | undefined
+    if (!completedAt) return true
+    return new Date(completedAt).getTime() >= cutoff
+  })
+  if (pruned.length < history.length) {
+    store.set('downloadHistory', pruned)
+  }
+
   // Window
   mainWindow = createWindow()
 

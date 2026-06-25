@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from 'electron'
 import { resolve, sep } from 'path'
+import { existsSync } from 'fs'
 import { store } from './store'
 import { DownloadManager } from './downloader/manager'
 import { SpotifyDownloadManager } from './downloader/spotify-native'
@@ -310,6 +311,27 @@ export function setupIPC(deps: IpcDeps): void {
 
   ipcMain.handle('clear-history', async () => {
     store.set('downloadHistory', [])
+  })
+
+  ipcMain.handle('check-file-exists', async (_event, filePath: string) => {
+    try {
+      return existsSync(filePath)
+    } catch {
+      return false
+    }
+  })
+
+  ipcMain.handle('prune-history', async () => {
+    const maxAgeDays = (store.get('settings', {}) as Record<string, unknown>).historyMaxAge ?? 90
+    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
+    const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
+    const pruned = history.filter((e) => {
+      const completedAt = e.completedAt as string | undefined
+      if (!completedAt) return true
+      return new Date(completedAt).getTime() >= cutoff
+    })
+    store.set('downloadHistory', pruned)
+    return pruned.length
   })
 
   ipcMain.handle('quit-app', async () => {

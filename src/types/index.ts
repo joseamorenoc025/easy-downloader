@@ -113,6 +113,7 @@ export interface Settings {
   maxConcurrent: number
   cookiesPath: string
   notificationsEnabled: boolean
+  historyMaxAge: number
 }
 
 export interface DependencyStatus {
@@ -157,6 +158,8 @@ export interface EasyDownloaderAPI {
   getHistory: () => Promise<HistoryEntry[]>
   addHistoryEntry: (entry: HistoryEntry) => Promise<void>
   clearHistory: () => Promise<void>
+  checkFileExists: (path: string) => Promise<boolean>
+  pruneHistory: () => Promise<number>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
   onDownloadComplete: (callback: (item: DownloadItem) => void) => void
   onDownloadError: (

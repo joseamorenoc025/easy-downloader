@@ -130,7 +130,7 @@ function AppContent() {
 
   return (
     <div
-      className="mx-auto flex h-dvh w-full max-w-5xl flex-col px-4 py-4 gap-3"
+      className="mx-auto flex h-dvh w-full max-w-7xl flex-col px-4 py-4 gap-3"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >

@@ -24,6 +24,7 @@ export const store = new Store({
     globalPause: false,
     maxConcurrent: 3,
     cookiesPath: '',
-    notificationsEnabled: true
+    notificationsEnabled: true,
+    historyMaxAge: 90
   }
 })

@@ -87,6 +87,11 @@
   "history.filterAudio": "Audio",
   "history.filesCount.one": "{count} archivo",
   "history.filesCount.other": "{count} archivos",
+  "history.openFile": "Abrir archivo",
+  "history.fileExists": "En disco",
+  "history.fileDeleted": "Eliminado",
+  "history.pruneOld": "Limpiar entradas viejas (90+ días)",
+  "history.confirmPrune": "¿Eliminar descargas mayores a 90 días?",
 
   "tray.show": "Mostrar EasyDownloader",
   "tray.hide": "Ocultar",
