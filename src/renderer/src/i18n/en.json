@@ -55,6 +55,7 @@
 
   "info.welcome": "Welcome to EasyDownloader",
   "info.description": "Download videos and music from YouTube and Spotify. Paste a URL above and click Download.",
+  "info.shortDescription": "Paste a URL above and click Download. Supports YouTube, Spotify, and 1700+ sites.",
   "info.youtubeTitle": "YouTube",
   "info.youtubeVideos": "Videos up to 4K",
   "info.youtubeAudio": "Audio in MP3",

@@ -55,6 +55,7 @@
 
   "info.welcome": "Bienvenido a EasyDownloader",
   "info.description": "Descarga videos y música desde YouTube y Spotify. Pega una URL arriba y haz clic en Descargar.",
+  "info.shortDescription": "Pega una URL arriba y haz clic en Descargar. Soporta YouTube, Spotify y más de 1700 sitios.",
   "info.youtubeTitle": "YouTube",
   "info.youtubeVideos": "Videos hasta 4K",
   "info.youtubeAudio": "Audio en MP3",

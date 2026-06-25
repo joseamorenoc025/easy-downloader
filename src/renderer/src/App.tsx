@@ -2,7 +2,6 @@ import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DownloadPanel } from './components/download-panel'
 import { StatsCard } from './components/stats-card'
-import { SessionToolbar } from './components/session-toolbar'
 import { QueueList } from './components/queue-list'
 import { History } from './components/history'
 import { ThemeToggle } from './components/theme-toggle'
@@ -41,7 +40,7 @@ function AppContent() {
   } = useSettings()
   const { t, locale, setLocale } = useI18n()
   const { toast } = useToast()
-  const [view, setView] = useState<'queue' | 'history'>('queue')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [deps, setDeps] = useState<DependencyStatus | null>(null)
   const [depsDismissed, setDepsDismissed] = useState(false)
 
@@ -210,30 +209,19 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Right controls - max 6 items */}
+        {/* Right controls */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Queue / History toggle */}
-          <div
-            role="tablist"
-            aria-label={t('a11y.viewTabs')}
-            className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5"
+          {/* Queue indicator + History toggle */}
+          <button
+            onClick={() => setHistoryOpen(!historyOpen)}
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+              historyOpen
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
           >
-            {(['queue', 'history'] as const).map((v) => (
-              <button
-                key={v}
-                role="tab"
-                aria-selected={view === v}
-                onClick={() => setView(v)}
-                className={`relative rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                  view === v
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {v === 'queue' ? t('header.queue') : t('history.title')}
-              </button>
-            ))}
-          </div>
+            {t('history.title')}
+          </button>
 
           {/* Language toggle */}
           <button
@@ -327,69 +315,95 @@ function AppContent() {
           />
         </div>
 
-        {/* Right: Stats Card */}
+        {/* Right: Stats Card (with session controls) */}
         <div className="min-h-0">
-          <StatsCard queue={queue} />
+          <StatsCard
+            queue={queue}
+            settings={settings}
+            onTogglePause={handleTogglePause}
+            onToggleIncognito={() => setIncognitoMode(!settings.incognitoMode)}
+            onToggleMetadata={() => setFetchMetadata(!settings.fetchMetadata)}
+            onChangeConcurrent={setMaxConcurrent}
+          />
         </div>
       </div>
 
-      {/* ─── Session Toolbar ──────────────────────────────────────── */}
-      <SessionToolbar
-        settings={settings}
-        onTogglePause={handleTogglePause}
-        onToggleIncognito={() => setIncognitoMode(!settings.incognitoMode)}
-        onToggleMetadata={() => setFetchMetadata(!settings.fetchMetadata)}
-        onChangeConcurrent={setMaxConcurrent}
-      />
+      {/* ─── Queue (always visible) + History Drawer ──────────────── */}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
+        {/* Queue */}
+        <div className="glass h-full overflow-y-auto px-5 py-4 pr-1 transition-all duration-300">
+          <QueueList
+            items={queue}
+            onCancel={cancelDownload}
+            onCancelAll={cancelAll}
+            onOpenFolder={openFolder}
+            onRetry={retryDownload}
+            onClearCompleted={clearCompleted}
+            isPaused={settings.globalPause}
+          />
+        </div>
 
-      {/* ─── Queue / History ──────────────────────────────────────── */}
-      <div className="glass min-h-0 flex-1 overflow-hidden rounded-2xl px-5 py-4">
-        <AnimatePresence mode="wait">
-          {view === 'history' ? (
-            <motion.div
-              key="history"
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -12 }}
-              transition={{ duration: 0.2 }}
-              className="h-full"
-            >
-              <div className="queue-scroll h-full overflow-y-auto pr-1">
-                <History
-                  onOpenFolder={openFolder}
-                  onBackToQueue={() => setView('queue')}
-                  onRedownload={(entry: HistoryEntry) => {
-                    if (entry.source === 'spotify') {
-                      handleAddSpotify(entry.url, entry.quality)
-                    } else {
-                      handleAdd({ url: entry.url, format: entry.format, quality: entry.quality })
-                    }
-                    setView('queue')
-                  }}
-                />
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="queue"
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 12 }}
-              transition={{ duration: 0.2 }}
-              className="h-full"
-            >
-              <div className="queue-scroll h-full overflow-y-auto pr-1">
-                <QueueList
-                  items={queue}
-                  onCancel={cancelDownload}
-                  onCancelAll={cancelAll}
-                  onOpenFolder={openFolder}
-                  onRetry={retryDownload}
-                  onClearCompleted={clearCompleted}
-                  isPaused={settings.globalPause}
-                />
-              </div>
-            </motion.div>
+        {/* History Drawer */}
+        <AnimatePresence>
+          {historyOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                key="history-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/30 backdrop-blur-sm z-10"
+                onClick={() => setHistoryOpen(false)}
+              />
+              {/* Drawer panel */}
+              <motion.div
+                key="history-drawer"
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="absolute top-0 right-0 bottom-0 w-[380px] max-w-[90vw] glass z-20 flex flex-col overflow-hidden rounded-l-2xl"
+              >
+                {/* Drawer header */}
+                <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
+                  <h2 className="text-sm font-semibold text-foreground">{t('history.title')}</h2>
+                  <button
+                    onClick={() => setHistoryOpen(false)}
+                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Drawer content */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 queue-scroll">
+                  <History
+                    onOpenFolder={openFolder}
+                    onRedownload={(entry: HistoryEntry) => {
+                      if (entry.source === 'spotify') {
+                        handleAddSpotify(entry.url, entry.quality)
+                      } else {
+                        handleAdd({ url: entry.url, format: entry.format, quality: entry.quality })
+                      }
+                      setHistoryOpen(false)
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
@@ -402,39 +416,42 @@ function AppContent() {
           .join(' | ')}
       </div>
 
-      {/* ─── Footer ─────────────────────────────────────────────────── */}
-      <footer className="shrink-0 text-center space-y-0.5">
-        <p className="text-[10px] text-muted-foreground/70">
-          <a
-            href="https://github.com/joseamorenoc025/easy-downloader"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline-offset-4 hover:underline hover:text-muted-foreground"
-          >
-            EasyDownloader v{__APP_VERSION__}
-          </a>
-        </p>
-        <p className="text-[10px] text-muted-foreground/50">{t('app.footer')}</p>
-        <p className="text-[10px] text-muted-foreground/50">
-          {t('app.starPrompt')}{' '}
-          <a
-            href="https://github.com/joseamorenoc025/easy-downloader"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline-offset-4 hover:underline hover:text-muted-foreground"
-          >
-            GitHub
-          </a>
-        </p>
-        <p className="text-[10px] text-muted-foreground/50">
-          <a
-            href="https://github.com/joseamorenoc025/easy-downloader#apoya-el-proyecto"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline-offset-4 hover:underline hover:text-muted-foreground"
-          >
-            {t('app.donate')}
-          </a>
+      {/* ─── Footer (compact, 1 line) ─────────────────────────────────── */}
+      <footer className="shrink-0 text-center">
+        <p className="text-[10px] text-muted-foreground/60 flex items-center justify-center gap-1.5">
+          <span>
+            <a
+              href="https://github.com/joseamorenoc025/easy-downloader"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-4 hover:underline hover:text-muted-foreground"
+            >
+              EasyDownloader v{__APP_VERSION__}
+            </a>
+          </span>
+          <span className="text-muted-foreground/30">·</span>
+          <span>
+            <a
+              href="https://github.com/joseamorenoc025/easy-downloader"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-4 hover:underline hover:text-muted-foreground"
+            >
+              GitHub
+            </a>
+          </span>
+          <span className="text-muted-foreground/30">·</span>
+          <span>
+            <a
+              href="https://github.com/joseamorenoc025/easy-downloader#apoya-el-proyecto"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-4 hover:underline hover:text-muted-foreground"
+              title={t('app.donate')}
+            >
+              ☕
+            </a>
+          </span>
         </p>
       </footer>
     </div>
