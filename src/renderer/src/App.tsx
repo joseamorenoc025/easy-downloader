@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DownloadForm } from './components/download-form'
 import { QueueList } from './components/queue-list'
 import { History } from './components/history'
+import { NetworkStats } from './components/network-stats'
 import { ThemeToggle } from './components/theme-toggle'
 import { DependencyBanner } from './components/dependency-banner'
 import { ToastProvider, useToast } from './components/toast'
@@ -363,6 +364,10 @@ function AppContent() {
           onAddBatch={addBatchDownloads}
           isLoading={isLoading}
         />
+
+        <div className="h-px bg-border/60" />
+
+        <NetworkStats currentSpeed={queue.find((i) => i.status === 'downloading')?.speed || ''} />
 
         <div className="h-px bg-border/60" />
 

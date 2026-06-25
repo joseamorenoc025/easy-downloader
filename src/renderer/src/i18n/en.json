@@ -163,5 +163,8 @@
   "header.switchToEs": "Cambiar a Español",
 
   "context.paste": "Paste URL",
-  "context.pasteAndGo": "Paste URL and download"
+  "context.pasteAndGo": "Paste URL and download",
+
+  "stats.speed": "Speed",
+  "stats.peak": "Peak"
 }

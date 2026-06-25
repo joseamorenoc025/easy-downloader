@@ -163,5 +163,8 @@
   "header.switchToEs": "Cambiar a Español",
 
   "context.paste": "Pegar URL",
-  "context.pasteAndGo": "Pegar URL y descargar"
+  "context.pasteAndGo": "Pegar URL y descargar",
+
+  "stats.speed": "Velocidad",
+  "stats.peak": "Pico"
 }
