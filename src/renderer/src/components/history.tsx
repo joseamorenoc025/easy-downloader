@@ -296,7 +296,7 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
 
   // Real-time updates: listen for new completions while viewing history
   useEffect(() => {
-    const handler = (_event: Electron.IpcRendererEvent, item: HistoryEntry) => {
+    const handler = (item: HistoryEntry) => {
       setEntries((prev) => {
         if (prev.some((e) => e.id === item.id)) return prev
         return [item, ...prev].slice(0, 200)

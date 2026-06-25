@@ -101,16 +101,11 @@ function AppContent() {
 
   // Context menu paste handler (right-click → Paste / Paste and go)
   useEffect(() => {
-    const handler = (
-      _event: Electron.IpcRendererEvent,
-      data: { text: string; autoGo: boolean }
-    ) => {
+    const handler = (data: { text: string; autoGo: boolean }) => {
       if (!data.text || !isValidUrl(data.text)) return
       if (data.autoGo) {
-        // Paste URL + auto-submit
         window.dispatchEvent(new CustomEvent('paste-url-and-go', { detail: data.text }))
       } else {
-        // Just paste URL into the input
         window.dispatchEvent(new CustomEvent('paste-url', { detail: data.text }))
       }
     }
