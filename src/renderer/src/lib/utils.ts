@@ -42,11 +42,33 @@ export function parseBytes(str: string): number {
   const val = parseFloat(match[1])
   const unit = match[2]
   switch (unit) {
-    case 'TB': return val * 1024 * 1024 * 1024 * 1024
-    case 'GB': return val * 1024 * 1024 * 1024
-    case 'MB': return val * 1024 * 1024
-    case 'KB': return val * 1024
-    case 'B':  return val
-    default:   return 0
+    case 'TB':
+      return val * 1024 * 1024 * 1024 * 1024
+    case 'GB':
+      return val * 1024 * 1024 * 1024
+    case 'MB':
+      return val * 1024 * 1024
+    case 'KB':
+      return val * 1024
+    case 'B':
+      return val
+    default:
+      return 0
+  }
+}
+
+export type DetectedSource = 'youtube' | 'spotify' | 'other'
+
+const SPOTIFY_DOMAINS = ['open.spotify.com', 'spotify.com']
+const YOUTUBE_DOMAINS = ['youtube.com', 'www.youtube.com', 'youtu.be', 'm.youtube.com']
+
+export function detectSource(url: string): DetectedSource {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase()
+    if (SPOTIFY_DOMAINS.some((d) => hostname === d || hostname.endsWith('.' + d))) return 'spotify'
+    if (YOUTUBE_DOMAINS.some((d) => hostname === d || hostname.endsWith('.' + d))) return 'youtube'
+    return 'other'
+  } catch {
+    return 'youtube'
   }
 }

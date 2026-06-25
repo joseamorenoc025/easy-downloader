@@ -8,11 +8,13 @@
 
   "source.youtube": "YouTube",
   "source.spotify": "Spotify",
+  "source.other": "Other",
 
   "form.download": "Download",
   "form.adding": "Adding...",
   "form.placeholder.youtube": "https://youtube.com/watch?v=...",
   "form.placeholder.spotify": "https://open.spotify.com/track/...",
+  "form.placeholder.other": "https://vimeo.com/..., https://tiktok.com/..., https://soundcloud.com/...",
   "form.error.emptyUrl": "Enter a URL",
   "form.error.invalidUrl": "Invalid URL format",
   "form.error.invalidSpotifyUrl": "Enter a valid Spotify URL",

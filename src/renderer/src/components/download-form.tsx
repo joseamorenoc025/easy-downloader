@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Button } from './ui/button'
-import { isValidUrl } from '../lib/utils'
+import { isValidUrl, detectSource, type DetectedSource } from '../lib/utils'
 import { useI18n } from '../i18n/context'
 import { MetadataPreview } from './metadata-preview'
 import type { DownloadOptions } from '@/types'
@@ -28,7 +28,7 @@ function qualityLabel(q: string, t: (key: string) => string): string {
 export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormProps) {
   const { t } = useI18n()
   const [url, setUrl] = useState('')
-  const [source, setSource] = useState<'youtube' | 'spotify'>('youtube')
+  const [source, setSource] = useState<DetectedSource>('youtube')
   const [format, setFormat] = useState<'video' | 'audio'>('video')
   const [quality, setQuality] = useState('best')
   const [error, setError] = useState('')
@@ -39,12 +39,12 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
       const url = (e as CustomEvent).detail as string
       setUrl(url)
       setError('')
-      if (url.includes('open.spotify.com')) {
-        setSource('spotify')
+      const detected = detectSource(url)
+      setSource(detected)
+      if (detected === 'spotify') {
         setFormat('audio')
         setQuality('320')
       } else {
-        setSource('youtube')
         setFormat('video')
         setQuality('best')
       }
@@ -78,6 +78,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         return
       }
 
+      // youtube and other both go through yt-dlp
       onAdd({
         url: trimmedUrl,
         format,
@@ -100,12 +101,25 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
           type="text"
           value={url}
           onChange={(e) => {
-            setUrl(e.target.value)
+            const val = e.target.value
+            setUrl(val)
             setError('')
+            if (val.trim()) {
+              const detected = detectSource(val)
+              setSource(detected)
+              if (detected === 'spotify') {
+                setFormat('audio')
+                setQuality('320')
+              }
+            }
           }}
           aria-label={t('a11y.urlInput')}
           placeholder={
-            source === 'youtube' ? t('form.placeholder.youtube') : t('form.placeholder.spotify')
+            source === 'spotify'
+              ? t('form.placeholder.spotify')
+              : source === 'other'
+                ? t('form.placeholder.other')
+                : t('form.placeholder.youtube')
           }
           className="flex-1 rounded-xl border border-input bg-background/80 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none"
         />
@@ -151,9 +165,81 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
           >
             {t('source.spotify')}
           </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={source === 'other'}
+            onClick={() => {
+              setSource('other')
+              setFormat('video')
+              setQuality('best')
+            }}
+            className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+              source === 'other'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t('source.other')}
+          </button>
         </div>
 
         {source === 'youtube' && (
+          <>
+            <div
+              role="radiogroup"
+              aria-label={t('a11y.formatToggle')}
+              className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={format === 'video'}
+                onClick={() => {
+                  setFormat('video')
+                  setQuality('best')
+                }}
+                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                  format === 'video'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('form.video')}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={format === 'audio'}
+                onClick={() => {
+                  setFormat('audio')
+                  setQuality('320')
+                }}
+                className={`rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                  format === 'audio'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('form.audio')}
+              </button>
+            </div>
+            <select
+              value={quality}
+              onChange={(e) => setQuality(e.target.value)}
+              aria-label={format === 'audio' ? t('form.bitrate') : t('form.resolution')}
+              className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+            >
+              {qualities.map((q) => (
+                <option key={q} value={q}>
+                  {format === 'audio' ? `${q} kbps` : qualityLabel(q, t)}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {source === 'other' && (
           <>
             <div
               role="radiogroup"
@@ -232,7 +318,7 @@ export function DownloadForm({ onAdd, onAddSpotify, isLoading }: DownloadFormPro
         </Button>
       </div>
 
-      {url && isValidUrl(url) && source === 'youtube' && (
+      {url && isValidUrl(url) && (source === 'youtube' || source === 'other') && (
         <MetadataPreview
           url={url}
           source={source}
