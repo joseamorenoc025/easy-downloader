@@ -248,7 +248,6 @@ describe('Retry logic (setupEmitterListeners)', () => {
       })
 
       expect(item.progress).toBe(45.5)
-      expect(item.speed).toBe('2MB/s')
       expect(item.eta).toBe('10s')
       expect(mockOnProgress).toHaveBeenCalledWith(expect.objectContaining({ percentage: '45.5' }))
     })

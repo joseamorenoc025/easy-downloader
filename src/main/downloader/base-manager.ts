@@ -173,42 +173,28 @@ export abstract class BaseDownloadManager {
     attempt: number,
     context?: string
   ): void {
+    // Fallback: parse progress from raw ytDlpEvent since yt-dlp-wrap's regex
+    // fails to extract totalSize/speed/eta from current yt-dlp output format.
+    const progressRegex =
+      /\[download\]\s+([\d.]+)%\s+of\s+~?([\d.]+\s*\w+)\s+at\s+([\d.]+\s*\w+\/s)\s+ETA\s+(\S+)/
+
     emitter.on('progress', (progress) => {
       const pct = progress.percent ?? 0
       item.progress = pct
 
-      // Format speed as human-readable string for the renderer
-      const rawSpeed = progress.currentSpeed
-      if (typeof rawSpeed === 'number') {
-        item.speed = formatSpeed(rawSpeed)
-      } else if (typeof rawSpeed === 'string' && rawSpeed.trim()) {
-        item.speed = rawSpeed.trim()
-      }
+      // yt-dlp-wrap only populates percent correctly; speed/total are broken.
+      // Store what we have — the ytDlpEvent handler below will fill in the rest.
       item.eta = progress.eta ?? ''
-
-      const totalSizeStr = progress.totalSize ?? ''
-      const totalBytes = parseSize(totalSizeStr)
-      const downloadedBytes = totalBytes > 0 ? Math.round((pct / 100) * totalBytes) : 0
-
-      console.log('[PROGRESS]', {
-        id: item.id,
-        pct,
-        speed: item.speed,
-        rawSpeed: progress.currentSpeed,
-        totalSize: totalSizeStr,
-        totalBytes,
-        downloadedBytes
-      })
 
       this.onProgress({
         id: item.id,
         percentage: pct.toFixed(1),
         speed: item.speed,
         eta: item.eta,
-        downloaded: downloadedBytes > 0 ? `${downloadedBytes} B` : '',
-        total: totalSizeStr,
+        downloaded: '',
+        total: '',
         title: item.title,
-        totalSize: totalSizeStr
+        totalSize: ''
       })
     })
 
@@ -218,7 +204,6 @@ export abstract class BaseDownloadManager {
         const fileName = filePath.split(/[\\/]/).pop() || ''
         item.title = fileName.replace(/\.[^.]+$/, '')
         item.outputPath = filePath
-        // Notify renderer of the title update
         this.onProgress({
           id: item.id,
           percentage: item.progress.toString(),
@@ -242,9 +227,39 @@ export abstract class BaseDownloadManager {
           title: item.title
         })
       }
-      // Acumular stderr / mensajes de error para clasificar al cierre.
-      // yt-dlp-wrap emite líneas de error como 'ytDlpEvent' con eventType
-      // que contiene 'ERROR', 'WARNING', o variantes según el evento.
+
+      // Parse progress ourselves from the raw download event line
+      if (eventType === 'download' || eventType === 'progress') {
+        const rawLine = `[download] ${eventData}`
+        const match = rawLine.match(progressRegex)
+        if (match) {
+          const pct = parseFloat(match[1])
+          const totalSizeStr = match[2].trim()
+          const speedStr = match[3].trim()
+          const etaStr = match[4].trim()
+          const totalBytes = parseSize(totalSizeStr)
+          const downloadedBytes = totalBytes > 0 ? Math.round((pct / 100) * totalBytes) : 0
+
+          item.progress = pct
+          item.speed = speedStr
+          item.eta = etaStr
+
+          console.log('[YTDL-PARSE]', { pct, speedStr, totalSizeStr, etaStr, totalBytes })
+
+          this.onProgress({
+            id: item.id,
+            percentage: pct.toFixed(1),
+            speed: item.speed,
+            eta: item.eta,
+            downloaded: downloadedBytes > 0 ? `${downloadedBytes} B` : '',
+            total: totalSizeStr,
+            title: item.title,
+            totalSize: totalSizeStr
+          })
+        }
+      }
+
+      // Accumulate stderr for error classification
       if (
         typeof eventData === 'string' &&
         (eventType === 'error' || eventType === 'stderr' || /error|warning/i.test(eventType))
