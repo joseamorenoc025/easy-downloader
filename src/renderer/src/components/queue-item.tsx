@@ -1,8 +1,9 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Progress } from './ui/progress'
-import type { DownloadItem } from '@/types'
+import type { DownloadItem, DownloadErrorCategory } from '@/types'
 import { useI18n } from '../i18n/context'
+import { useToast } from './toast'
 import '../lib/ipc'
 
 interface QueueItemProps {
@@ -38,6 +39,11 @@ const statusTextColors: Record<DownloadItem['status'], string> = {
 
 function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemProps) {
   const { t } = useI18n()
+  const { toast } = useToast()
+  const [expandedError, setExpandedError] = useState(false)
+
+  const errorCategory = item.errorCategory as DownloadErrorCategory | undefined
+  const errorKey = errorCategory ? `errors.${errorCategory}` : null
 
   return (
     <motion.div
@@ -70,7 +76,8 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
               <span className="text-muted-foreground/60 mx-1">·</span>
               {item.format === 'video' ? 'MP4' : 'MP3'}
               <span className="text-muted-foreground/60 mx-1">·</span>
-              {item.quality}{item.format === 'audio' ? ' kbps' : ''}
+              {item.quality}
+              {item.format === 'audio' ? ' kbps' : ''}
             </p>
           </div>
         </div>
@@ -92,7 +99,10 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
           animate={{ opacity: 1, height: 'auto' }}
           className="mt-3 space-y-1.5"
         >
-          <Progress value={item.progress} label={t('a11y.downloadProgress', { title: item.title })} />
+          <Progress
+            value={item.progress}
+            label={t('a11y.downloadProgress', { title: item.title })}
+          />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{item.progress.toFixed(1)}%</span>
             <span>{item.speed}</span>
@@ -108,7 +118,17 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
           className="mt-2 flex items-center gap-2"
         >
           <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="20 6 9 17 4 12" />
             </svg>
             {t('item.downloaded')}
@@ -122,10 +142,39 @@ function QueueItemInner({ item, onCancel, onOpenFolder, index = 0 }: QueueItemPr
         </motion.div>
       )}
 
-      {item.status === 'error' && item.error && (
-        <p className="mt-1.5 text-xs text-destructive whitespace-pre-wrap">
-          {item.error}
-        </p>
+      {item.status === 'error' && errorKey && (
+        <div className="mt-2">
+          <p className="text-xs text-destructive">{t(errorKey)}</p>
+          {item.errorDetails && (
+            <div className="mt-1.5">
+              <button
+                onClick={() => setExpandedError(!expandedError)}
+                className="text-[10px] text-muted-foreground/70 hover:text-muted-foreground select-none"
+              >
+                {expandedError ? t('errors.hideDetails') : t('errors.showDetails')}
+              </button>
+              {expandedError && (
+                <div className="mt-1.5 relative">
+                  <pre className="text-[10px] text-muted-foreground/80 bg-muted/50 rounded-md p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
+                    {item.errorDetails}
+                  </pre>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(item.errorDetails || '')
+                      toast(t('errors.copied'), 'success', 1500)
+                    }}
+                    className="absolute top-1 right-1 rounded px-1.5 py-0.5 text-[10px] bg-muted/80 hover:bg-muted text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                  >
+                    {t('errors.copyDetails')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {item.status === 'error' && !errorKey && item.error && (
+        <p className="mt-1.5 text-xs text-destructive whitespace-pre-wrap">{item.error}</p>
       )}
     </motion.div>
   )
@@ -152,6 +201,8 @@ function arePropsEqual(prev: QueueItemProps, next: QueueItemProps): boolean {
     a.speed === b.speed &&
     a.eta === b.eta &&
     a.error === b.error &&
+    a.errorCategory === b.errorCategory &&
+    a.errorDetails === b.errorDetails &&
     a.outputPath === b.outputPath &&
     prev.onCancel === next.onCancel &&
     prev.onOpenFolder === next.onOpenFolder

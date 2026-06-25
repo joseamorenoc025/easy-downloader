@@ -8,7 +8,7 @@ interface Toast {
 }
 
 interface ToastContextValue {
-  toast: (message: string, type?: Toast['type']) => void
+  toast: (message: string, type?: Toast['type'], duration?: number) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -22,12 +22,12 @@ export function useToast(): ToastContextValue {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const toast = useCallback((message: string, type: Toast['type'] = 'error') => {
+  const toast = useCallback((message: string, type: Toast['type'] = 'error', duration = 4000) => {
     const id = Math.random().toString(36).slice(2)
-    setToasts(prev => [...prev, { id, message, type }])
+    setToasts((prev) => [...prev, { id, message, type }])
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id))
-    }, 4000)
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, duration)
   }, [])
 
   return (
@@ -35,7 +35,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm">
         <AnimatePresence>
-          {toasts.map(t => (
+          {toasts.map((t) => (
             <motion.div
               key={t.id}
               initial={{ opacity: 0, x: 40, scale: 0.95 }}
