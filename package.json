@@ -97,7 +97,8 @@
     ],
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ],
       "icon": "resources/icon.ico",
       "signAndEditExecutable": false,

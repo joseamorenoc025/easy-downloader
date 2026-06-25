@@ -168,5 +168,52 @@
   "stats.speed": "Velocidad",
   "stats.peak": "Pico",
 
-  "concurrent.title": "Descargas simultáneas (1-8)"
+  "concurrent.title": "Descargas simultáneas (1-8)",
+
+  "cookies.import": "Importar cookies (formato Netscape)",
+  "cookies.active": "Cookies activas",
+  "a11y.cookies": "Importar cookies del navegador para descargas autenticadas",
+  "a11y.changeDownloadFolder": "Cambiar carpeta de descargas",
+
+  "metadata.title": "Editar metadatos (ID3)",
+  "metadata.titlePh": "Título de la canción",
+  "metadata.artistPh": "Nombre del artista",
+  "metadata.albumPh": "Nombre del álbum",
+  "metadata.yearPh": "Año",
+  "metadata.genrePh": "Género",
+  "metadata.trackPh": "Número de pista",
+  "metadata.artist": "Artista",
+  "metadata.album": "Álbum",
+  "metadata.year": "Año",
+  "metadata.genre": "Género",
+  "metadata.track": "Pista",
+  "metadata.loading": "Extrayendo metadatos...",
+  "metadata.skip": "Omitir",
+  "metadata.confirm": "Descargar con metadatos",
+  "metadata.edit": "Editar ID3",
+
+  "notifications.on": "Notificaciones Activadas",
+  "notifications.off": "Notificaciones Desactivadas",
+  "a11y.notifications": "Activar/desactivar notificaciones de descarga",
+
+  "presets.none": "Sin preselección (manual)",
+  "presets.label": "Preselección de conversión",
+  "presets.music": "Música (256 kbps)",
+  "presets.podcast": "Podcast (192 kbps, mono)",
+  "presets.archival": "Archivo (320 kbps máx)",
+  "presets.social": "Redes Sociales (128 kbps)",
+  "presets.video-hd": "Video HD (1080p)",
+  "presets.video-sd": "Video SD (480p)",
+
+  "section.newDownload": "NUEVA DESCARGA",
+  "section.realTimeStatus": "ESTADO EN TIEMPO REAL",
+  "section.session": "SESIÓN",
+
+  "stats.realTimeStatus": "ESTADO EN TIEMPO REAL",
+  "stats.eta": "ETA",
+  "stats.globalProgress": "Progreso Global",
+  "stats.active": "activos",
+  "stats.done": "hechos",
+
+  "session.title": "SESIÓN"
 }

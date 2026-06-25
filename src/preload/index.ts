@@ -5,6 +5,7 @@ export type { EasyDownloaderAPI }
 
 const api: EasyDownloaderAPI = {
   fetchMetadata: (url) => ipcRenderer.invoke('fetch-metadata', url),
+  extractMetadata: (url) => ipcRenderer.invoke('extract-metadata', url),
   addDownload: (options) => ipcRenderer.invoke('add-download', options),
   addSpotifyDownload: (url, quality) => ipcRenderer.invoke('add-spotify-download', url, quality),
   cancelDownload: (itemId) => ipcRenderer.invoke('cancel-download', itemId),
@@ -18,8 +19,11 @@ const api: EasyDownloaderAPI = {
   setTheme: (mode) => ipcRenderer.invoke('set-theme', mode),
   setFetchMetadata: (enabled) => ipcRenderer.invoke('set-fetch-metadata', enabled),
   setIncognitoMode: (enabled) => ipcRenderer.invoke('set-incognito-mode', enabled),
+  setNotifications: (enabled) => ipcRenderer.invoke('set-notifications', enabled),
   setGlobalPause: (enabled) => ipcRenderer.invoke('set-global-pause', enabled),
   setMaxConcurrent: (value) => ipcRenderer.invoke('set-max-concurrent', value),
+  selectCookiesFile: () => ipcRenderer.invoke('select-cookies-file'),
+  setCookiesPath: (path) => ipcRenderer.invoke('set-cookies-path', path),
   checkFfmpeg: () => ipcRenderer.invoke('check-ffmpeg'),
   checkSpotdl: () => ipcRenderer.invoke('check-spotdl'),
   checkYtdlp: () => ipcRenderer.invoke('check-ytdlp'),

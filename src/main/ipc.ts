@@ -7,6 +7,7 @@ import { fetchMetadata } from './downloader/metadata'
 import { checkFfmpegInstalled } from './downloader/ffmpeg'
 import { isValidHttpUrl } from './utils/url'
 import { autoUpdater } from './lib/updater'
+import YtDlpWrap from 'yt-dlp-wrap'
 
 interface IpcDeps {
   getMainWindow: () => BrowserWindow | null
@@ -84,8 +85,31 @@ export function setupIPC(deps: IpcDeps): void {
       fetchMetadata: store.get('fetchMetadata') as boolean,
       incognitoMode: store.get('incognitoMode') as boolean,
       globalPause: store.get('globalPause') as boolean,
-      maxConcurrent: store.get('maxConcurrent') as number
+      maxConcurrent: store.get('maxConcurrent') as number,
+      cookiesPath: store.get('cookiesPath') as string,
+      notificationsEnabled: store.get('notificationsEnabled') as boolean
     }
+  })
+
+  ipcMain.handle('select-cookies-file', async () => {
+    const result = await dialog.showOpenDialog(getMainWindow()!, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Netscape Cookie File', extensions: ['txt'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    })
+    if (!result.canceled && result.filePaths.length > 0) {
+      store.set('cookiesPath', result.filePaths[0])
+      return result.filePaths[0]
+    }
+    return null
+  })
+
+  ipcMain.handle('set-cookies-path', async (_event, path: string) => {
+    store.set('cookiesPath', path)
+    getDownloadManager()?.setCookiesPath(path)
+    getSpotifyManager()?.setCookiesPath(path)
   })
 
   ipcMain.handle('set-theme', async (_event, mode: 'light' | 'dark' | 'system') => {
@@ -103,6 +127,10 @@ export function setupIPC(deps: IpcDeps): void {
 
   ipcMain.handle('set-incognito-mode', async (_event, enabled: boolean) => {
     store.set('incognitoMode', enabled)
+  })
+
+  ipcMain.handle('set-notifications', async (_event, enabled: boolean) => {
+    store.set('notificationsEnabled', enabled)
   })
 
   ipcMain.handle('set-max-concurrent', async (_event, value: number) => {
@@ -136,6 +164,49 @@ export function setupIPC(deps: IpcDeps): void {
 
   ipcMain.handle('check-ffmpeg', async () => {
     return checkFfmpegInstalled()
+  })
+
+  ipcMain.handle('extract-metadata', async (_event, url: string) => {
+    try {
+      const ytDlp = new YtDlpWrap()
+      await getDownloadManager()?.ensureBinary()
+      const isWin = process.platform === 'win32'
+      const binaryName = isWin ? 'yt-dlp.exe' : 'yt-dlp'
+      const { join } = await import('path')
+      const { existsSync } = await import('fs')
+      const { app: electronApp } = await import('electron')
+      const binaryPath = join(electronApp.getPath('userData'), binaryName)
+      if (existsSync(binaryPath)) {
+        ytDlp.setBinaryPath(binaryPath)
+      }
+      const stdout = await ytDlp.execRaw([
+        url,
+        '--dump-json',
+        '--no-warnings',
+        '--no-playlist',
+        '--skip-download'
+      ])
+      const data = JSON.parse(stdout)
+      return {
+        title: data.title || data.fulltitle || '',
+        artist: data.artist || data.uploader || data.channel || '',
+        album: data.album || '',
+        year: data.upload_year?.toString() || data.release_year?.toString() || '',
+        genre: data.genres?.[0] || data.tags?.[0] || '',
+        track: data.track || data.playlist_index?.toString() || '',
+        thumbnail: data.thumbnail || data.thumbnails?.[data.thumbnails.length - 1]?.url || ''
+      }
+    } catch (err) {
+      return {
+        title: '',
+        artist: '',
+        album: '',
+        year: '',
+        genre: '',
+        track: '',
+        thumbnail: ''
+      }
+    }
   })
 
   ipcMain.handle('add-spotify-download', async (_event, url: string, quality?: string) => {

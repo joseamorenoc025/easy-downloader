@@ -30,6 +30,15 @@ export interface DownloadItem {
   errorDetails?: string
   incognito?: boolean
   writeSubtitles?: boolean
+  /** Metadata ID3 personalizada para embed en el archivo. */
+  metadata?: {
+    title?: string
+    artist?: string
+    album?: string
+    year?: string
+    genre?: string
+    track?: string
+  }
 }
 
 export interface FormatInfo {
@@ -60,6 +69,14 @@ export interface DownloadOptions {
   outputDir?: string
   playlistFolder?: boolean
   writeSubtitles?: boolean
+  metadata?: {
+    title?: string
+    artist?: string
+    album?: string
+    year?: string
+    genre?: string
+    track?: string
+  }
 }
 
 export interface DownloadProgress {
@@ -92,8 +109,10 @@ export interface Settings {
   themeMode: ThemeMode
   fetchMetadata: boolean
   incognitoMode: boolean
-  globalPause: boolean // Nuevo: toggle para pausar/reanudar todas las descargas
+  globalPause: boolean
   maxConcurrent: number
+  cookiesPath: string
+  notificationsEnabled: boolean
 }
 
 export interface DependencyStatus {
@@ -104,6 +123,7 @@ export interface DependencyStatus {
 
 export interface EasyDownloaderAPI {
   fetchMetadata: (url: string) => Promise<MetadataResult>
+  extractMetadata: (url: string) => Promise<MetadataResult>
   addDownload: (options: DownloadOptions) => Promise<DownloadItem | null>
   addSpotifyDownload: (url: string, quality?: string) => Promise<DownloadItem[]>
   cancelDownload: (itemId: string) => Promise<void>
@@ -117,8 +137,11 @@ export interface EasyDownloaderAPI {
   setTheme: (mode: ThemeMode) => Promise<void>
   setFetchMetadata: (enabled: boolean) => Promise<void>
   setIncognitoMode: (enabled: boolean) => Promise<void>
+  setNotifications: (enabled: boolean) => Promise<void>
   setGlobalPause: (enabled: boolean) => Promise<void> // Nuevo: toggle global pause
   setMaxConcurrent: (value: number) => Promise<void>
+  selectCookiesFile: () => Promise<string | null>
+  setCookiesPath: (path: string) => Promise<void>
   checkFfmpeg: () => Promise<boolean>
   checkSpotdl: () => Promise<boolean>
   checkYtdlp: () => Promise<boolean>

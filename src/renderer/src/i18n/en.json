@@ -168,5 +168,52 @@
   "stats.speed": "Speed",
   "stats.peak": "Peak",
 
-  "concurrent.title": "Concurrent downloads (1-8)"
+  "concurrent.title": "Concurrent downloads (1-8)",
+
+  "cookies.import": "Import cookies (Netscape format)",
+  "cookies.active": "Cookies active",
+  "a11y.cookies": "Import browser cookies for authenticated downloads",
+  "a11y.changeDownloadFolder": "Change download folder",
+
+  "metadata.title": "Edit Metadata (ID3)",
+  "metadata.titlePh": "Song title",
+  "metadata.artistPh": "Artist name",
+  "metadata.albumPh": "Album name",
+  "metadata.yearPh": "Year",
+  "metadata.genrePh": "Genre",
+  "metadata.trackPh": "Track number",
+  "metadata.artist": "Artist",
+  "metadata.album": "Album",
+  "metadata.year": "Year",
+  "metadata.genre": "Genre",
+  "metadata.track": "Track",
+  "metadata.loading": "Extracting metadata...",
+  "metadata.skip": "Skip",
+  "metadata.confirm": "Download with metadata",
+  "metadata.edit": "Edit ID3",
+
+  "notifications.on": "Notifications ON",
+  "notifications.off": "Notifications OFF",
+  "a11y.notifications": "Toggle download notifications",
+
+  "presets.none": "No preset (manual)",
+  "presets.label": "Conversion preset",
+  "presets.music": "Music (256 kbps)",
+  "presets.podcast": "Podcast (192 kbps, mono)",
+  "presets.archival": "Archival (320 kbps max)",
+  "presets.social": "Social Media (128 kbps)",
+  "presets.video-hd": "Video HD (1080p)",
+  "presets.video-sd": "Video SD (480p)",
+
+  "section.newDownload": "NEW DOWNLOAD",
+  "section.realTimeStatus": "REAL-TIME STATUS",
+  "section.session": "SESSION",
+
+  "stats.realTimeStatus": "REAL-TIME STATUS",
+  "stats.eta": "ETA",
+  "stats.globalProgress": "Global Progress",
+  "stats.active": "active",
+  "stats.done": "done",
+
+  "session.title": "SESSION"
 }

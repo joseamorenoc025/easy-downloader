@@ -64,6 +64,7 @@ export abstract class BaseDownloadManager {
   protected onProgress: ProgressCallback
   protected onComplete: CompleteCallback
   protected onError: ErrorCallback
+  protected cookiesPath: string = ''
 
   constructor(
     downloadPath: string,

@@ -83,7 +83,7 @@ function initDownloadManager(): void {
           completedAt: new Date().toISOString()
         })
 
-        if (Notification.isSupported()) {
+        if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
           const notif = new Notification({
             title: 'Download Complete',
             body: item.title || 'Your download has finished',
@@ -102,6 +102,11 @@ function initDownloadManager(): void {
       })
     }
   )
+
+  const cookiesPath = (store.get('cookiesPath') as string) || ''
+  if (cookiesPath) {
+    downloadManager.setCookiesPath(cookiesPath)
+  }
 }
 
 function initSpotifyManager(): void {
@@ -143,7 +148,7 @@ function initSpotifyManager(): void {
           completedAt: new Date().toISOString()
         })
 
-        if (Notification.isSupported()) {
+        if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
           const notif = new Notification({
             title: 'Spotify Download Complete',
             body: item.title || 'Your Spotify download has finished',
@@ -165,6 +170,11 @@ function initSpotifyManager(): void {
       mainWindow?.webContents.send('spotify-track-error', { itemId, trackTitle })
     }
   )
+
+  const cookiesPath = (store.get('cookiesPath') as string) || ''
+  if (cookiesPath) {
+    spotifyManager.setCookiesPath(cookiesPath)
+  }
 }
 
 app.whenReady().then(() => {

@@ -33,8 +33,10 @@ export class DownloadManager extends BaseDownloadManager {
       downloadedBytes: 0,
       format: options.format,
       quality: options.quality,
+      source: 'youtube',
       incognito: options.incognito || false,
-      writeSubtitles: options.writeSubtitles || false
+      writeSubtitles: options.writeSubtitles || false,
+      metadata: options.metadata
     }
 
     this.queue.push(item)
@@ -74,6 +76,10 @@ export class DownloadManager extends BaseDownloadManager {
     this.processQueue()
   }
 
+  setCookiesPath(path: string): void {
+    this.cookiesPath = path
+  }
+
   protected startDownload(item: DownloadItem, attempt = 1): void {
     if (!this.validateUrl(item.url)) {
       item.status = 'error'
@@ -109,8 +115,39 @@ export class DownloadManager extends BaseDownloadManager {
       '-o',
       String(opts.outtmpl),
       ...(item.format === 'audio'
-        ? ['--extract-audio', '--audio-format', 'mp3', '--audio-quality', item.quality]
-        : ['--write-subs', '--sub-langs', 'en,es', '--embed-subs'])
+        ? [
+            '--extract-audio',
+            '--audio-format',
+            'mp3',
+            '--audio-quality',
+            item.quality,
+            '--embed-thumbnail',
+            '--add-metadata'
+          ]
+        : ['--write-subs', '--sub-langs', 'en,es', '--embed-subs']),
+      ...(this.cookiesPath ? ['--cookies', this.cookiesPath] : []),
+      ...(item.metadata
+        ? [
+            ...(item.metadata.title
+              ? ['--replace-in-metadata', 'title', '.*', item.metadata.title]
+              : []),
+            ...(item.metadata.artist
+              ? ['--replace-in-metadata', 'artist', '.*', item.metadata.artist]
+              : []),
+            ...(item.metadata.album
+              ? ['--replace-in-metadata', 'album', '.*', item.metadata.album]
+              : []),
+            ...(item.metadata.year
+              ? ['--replace-in-metadata', 'upload_year', '.*', item.metadata.year]
+              : []),
+            ...(item.metadata.genre
+              ? ['--replace-in-metadata', 'genre', '.*', item.metadata.genre]
+              : []),
+            ...(item.metadata.track
+              ? ['--replace-in-metadata', 'track', '.*', item.metadata.track]
+              : [])
+          ]
+        : [])
     ]
 
     try {

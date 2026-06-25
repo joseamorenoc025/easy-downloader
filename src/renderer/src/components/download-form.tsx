@@ -3,6 +3,8 @@ import { Button } from './ui/button'
 import { isValidUrl, detectSource, type DetectedSource } from '../lib/utils'
 import { useI18n } from '../i18n/context'
 import { MetadataPreview } from './metadata-preview'
+import { MetadataEditor, type MetadataFields } from './metadata-editor'
+import { CONVERSION_PRESETS, type ConversionPreset } from '../lib/presets'
 import type { DownloadOptions } from '@/types'
 import '../lib/ipc'
 
@@ -33,6 +35,13 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
   const [format, setFormat] = useState<'video' | 'audio'>('video')
   const [quality, setQuality] = useState('best')
   const [error, setError] = useState('')
+  const [metadataEditorOpen, setMetadataEditorOpen] = useState(false)
+  const [pendingDownload, setPendingDownload] = useState<{
+    url: string
+    format: 'video' | 'audio'
+    quality: string
+  } | null>(null)
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
   // Listen for paste events from App.tsx
   useEffect(() => {
@@ -120,6 +129,13 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
         return
       }
 
+      // For audio format, show metadata editor before download
+      if (format === 'audio') {
+        setPendingDownload({ url: trimmedUrl, format, quality })
+        setMetadataEditorOpen(true)
+        return
+      }
+
       // youtube and other both go through yt-dlp
       onAdd({
         url: trimmedUrl,
@@ -130,6 +146,30 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
     },
     [url, format, quality, source, detectedUrls, onAdd, onAddSpotify, onAddBatch, t]
   )
+
+  const handleMetadataConfirm = useCallback(
+    (metadata: MetadataFields) => {
+      if (pendingDownload) {
+        onAdd({
+          ...pendingDownload,
+          metadata
+        })
+        setPendingDownload(null)
+        setMetadataEditorOpen(false)
+        setUrl('')
+      }
+    },
+    [pendingDownload, onAdd]
+  )
+
+  const handleMetadataSkip = useCallback(() => {
+    if (pendingDownload) {
+      onAdd(pendingDownload)
+      setPendingDownload(null)
+      setMetadataEditorOpen(false)
+      setUrl('')
+    }
+  }, [pendingDownload, onAdd])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -162,12 +202,40 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
         />
       </div>
       {detectedUrls && (
-        <p className="text-xs text-blue-500 dark:text-blue-400">
+        <p className="text-xs text-indigo-500 dark:text-indigo-400">
           {t('form.batchDetected', { count: detectedUrls.length })}
         </p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex flex-wrap items-center gap-3">
+        {/* Preset selector */}
+        <select
+          value={selectedPreset || ''}
+          onChange={(e) => {
+            const presetId = e.target.value || null
+            setSelectedPreset(presetId)
+            if (presetId) {
+              const preset = CONVERSION_PRESETS.find((p) => p.id === presetId)
+              if (preset) {
+                setFormat(preset.format)
+                setQuality(preset.quality)
+                if (preset.format === 'audio') {
+                  setSource('youtube')
+                }
+              }
+            }
+          }}
+          aria-label={t('presets.label')}
+          className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+        >
+          <option value="">{t('presets.none')}</option>
+          {CONVERSION_PRESETS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {t(`presets.${p.id}`)}
+            </option>
+          ))}
+        </select>
+
         <div
           role="radiogroup"
           aria-label={t('a11y.sourceToggle')}
@@ -370,6 +438,17 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
           }}
         />
       )}
+
+      <MetadataEditor
+        url={pendingDownload?.url || ''}
+        source={source}
+        open={metadataEditorOpen}
+        onClose={() => {
+          setMetadataEditorOpen(false)
+          setPendingDownload(null)
+        }}
+        onConfirm={handleMetadataConfirm}
+      />
     </form>
   )
 }

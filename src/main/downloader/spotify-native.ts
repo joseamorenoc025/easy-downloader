@@ -196,7 +196,8 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         '--audio-format',
         'mp3',
         '--audio-quality',
-        quality
+        quality,
+        ...(this.cookiesPath ? ['--cookies', this.cookiesPath] : [])
       ]
 
       try {

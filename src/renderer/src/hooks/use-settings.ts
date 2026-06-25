@@ -33,7 +33,9 @@ export function useSettings() {
     fetchMetadata: true,
     incognitoMode: false,
     globalPause: false,
-    maxConcurrent: 3
+    maxConcurrent: 3,
+    cookiesPath: '',
+    notificationsEnabled: true
   })
 
   useEffect(() => {
@@ -67,6 +69,11 @@ export function useSettings() {
     setSettings((prev) => ({ ...prev, incognitoMode: enabled }))
   }, [])
 
+  const setNotifications = useCallback(async (enabled: boolean) => {
+    await window.easyDownloader.setNotifications(enabled)
+    setSettings((prev) => ({ ...prev, notificationsEnabled: enabled }))
+  }, [])
+
   const setMaxConcurrent = useCallback(async (value: number) => {
     await window.easyDownloader.setMaxConcurrent(value)
     setSettings((prev) => ({ ...prev, maxConcurrent: value }))
@@ -80,12 +87,28 @@ export function useSettings() {
     return dir
   }, [])
 
+  const selectCookiesFile = useCallback(async () => {
+    const file = await window.easyDownloader.selectCookiesFile()
+    if (file) {
+      setSettings((prev) => ({ ...prev, cookiesPath: file }))
+    }
+    return file
+  }, [])
+
+  const clearCookies = useCallback(async () => {
+    await window.easyDownloader.setCookiesPath('')
+    setSettings((prev) => ({ ...prev, cookiesPath: '' }))
+  }, [])
+
   return {
     settings,
     updateTheme,
     setFetchMetadata,
     setIncognitoMode,
+    setNotifications,
     setMaxConcurrent,
-    selectDirectory
+    selectDirectory,
+    selectCookiesFile,
+    clearCookies
   }
 }
