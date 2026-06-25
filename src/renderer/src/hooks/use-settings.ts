@@ -32,6 +32,7 @@ export function useSettings() {
     themeMode: 'system',
     fetchMetadata: true,
     incognitoMode: false,
+    globalPause: false,
     maxConcurrent: 3
   })
 

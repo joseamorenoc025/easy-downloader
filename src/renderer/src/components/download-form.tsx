@@ -72,6 +72,22 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
     return () => window.removeEventListener('paste-url-and-go', handler)
   }, [onAdd, onAddSpotify])
 
+  const videoQualities = ['best', '2160p', '1440p', '1080p', '720p', '480p']
+  const audioQualities = ['320', '256', '192', '128']
+
+  const qualities = format === 'video' ? videoQualities : audioQualities
+
+  // Batch URL detection — must be declared before handleSubmit which references it
+  const detectedUrls = useMemo(() => {
+    const lines = url
+      .split(/[\n\r]+/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+    if (lines.length <= 1) return null
+    const valid = lines.filter((l) => isValidUrl(l))
+    return valid.length > 1 ? valid : null
+  }, [url])
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
@@ -116,22 +132,6 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
     },
     [url, format, quality, source, writeSubtitles, detectedUrls, onAdd, onAddSpotify, onAddBatch, t]
   )
-
-  const videoQualities = ['best', '2160p', '1440p', '1080p', '720p', '480p']
-  const audioQualities = ['320', '256', '192', '128']
-
-  const qualities = format === 'video' ? videoQualities : audioQualities
-
-  // Batch URL detection
-  const detectedUrls = useMemo(() => {
-    const lines = url
-      .split(/[\n\r]+/)
-      .map((l) => l.trim())
-      .filter(Boolean)
-    if (lines.length <= 1) return null
-    const valid = lines.filter((l) => isValidUrl(l))
-    return valid.length > 1 ? valid : null
-  }, [url])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3.5">
