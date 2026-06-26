@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, nativeTheme, Notification, clipboard } from '
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { store } from './store'
 import { createWindow } from './window'
-import { setupIPC } from './ipc'
+import { setupIPC, sessionHistory } from './ipc'
 import { setupTray } from './tray'
 import { setupAutoUpdater } from './updater'
 import { DownloadManager } from './downloader/manager'
@@ -58,8 +58,7 @@ function initDownloadManager(): void {
       if (item.incognito || globalIncognito) return
 
       if (item.status === 'completed') {
-        const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
-        history.unshift({
+        const entry = {
           id: item.id,
           url: item.url,
           title: item.title,
@@ -68,20 +67,12 @@ function initDownloadManager(): void {
           source: item.source,
           outputPath: item.outputPath,
           completedAt: new Date().toISOString()
-        })
-        store.set('downloadHistory', history.slice(0, 200))
+        }
+        sessionHistory.unshift(entry)
+        if (sessionHistory.length > 200) sessionHistory.length = 200
 
         // Notify renderer of new history entry (for real-time history view updates)
-        mainWindow?.webContents.send('history-entry-added', {
-          id: item.id,
-          url: item.url,
-          title: item.title,
-          format: item.format,
-          quality: item.quality,
-          source: item.source,
-          outputPath: item.outputPath,
-          completedAt: new Date().toISOString()
-        })
+        mainWindow?.webContents.send('history-entry-added', entry)
 
         if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
           const notif = new Notification({
@@ -123,8 +114,7 @@ function initSpotifyManager(): void {
       if (item.incognito || globalIncognito) return
 
       if (item.status === 'completed') {
-        const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
-        history.unshift({
+        const entry = {
           id: item.id,
           url: item.url,
           title: item.title,
@@ -133,20 +123,12 @@ function initSpotifyManager(): void {
           source: item.source,
           outputPath: item.outputPath,
           completedAt: new Date().toISOString()
-        })
-        store.set('downloadHistory', history.slice(0, 200))
+        }
+        sessionHistory.unshift(entry)
+        if (sessionHistory.length > 200) sessionHistory.length = 200
 
         // Notify renderer of new history entry (for real-time history view updates)
-        mainWindow?.webContents.send('history-entry-added', {
-          id: item.id,
-          url: item.url,
-          title: item.title,
-          format: item.format,
-          quality: item.quality,
-          source: item.source,
-          outputPath: item.outputPath,
-          completedAt: new Date().toISOString()
-        })
+        mainWindow?.webContents.send('history-entry-added', entry)
 
         if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
           const notif = new Notification({
@@ -215,19 +197,6 @@ app.whenReady().then(() => {
     setIsUpdateDownloaded,
     setIsQuitting
   })
-
-  // Prune old history entries on startup
-  const maxAgeDays = (store.get('settings', {}) as Record<string, unknown>).historyMaxAge ?? 90
-  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
-  const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
-  const pruned = history.filter((e) => {
-    const completedAt = e.completedAt as string | undefined
-    if (!completedAt) return true
-    return new Date(completedAt).getTime() >= cutoff
-  })
-  if (pruned.length < history.length) {
-    store.set('downloadHistory', pruned)
-  }
 
   // Window
   mainWindow = createWindow()

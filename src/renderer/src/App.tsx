@@ -390,7 +390,9 @@ function AppContent() {
                 </div>
                 {/* Drawer content */}
                 <div className="flex-1 overflow-y-auto px-5 py-4 queue-scroll">
-                  <History onOpenFolder={openFolder} />
+                  <History
+                    onShowInFolder={(path: string) => window.easyDownloader.showInFolder(path)}
+                  />
                 </div>
               </motion.div>
             </>

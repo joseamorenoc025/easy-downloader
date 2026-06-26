@@ -79,6 +79,10 @@ export abstract class BaseDownloadManager {
     this.onError = onError
   }
 
+  setDownloadPath(path: string): void {
+    this.downloadPath = path
+  }
+
   async ensureBinary(): Promise<void> {
     if (this.binaryReady) return
     const isWin = process.platform === 'win32'

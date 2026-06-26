@@ -9,6 +9,11 @@ import { checkFfmpegInstalled } from './downloader/ffmpeg'
 import { isValidHttpUrl } from './utils/url'
 import { autoUpdater } from './lib/updater'
 import YtDlpWrap from 'yt-dlp-wrap'
+import type { HistoryEntry } from '../src/types'
+
+// Session-only history — no persistence, cleared on app quit
+export const sessionHistory: HistoryEntry[] = []
+const SESSION_HISTORY_MAX = 200
 
 interface IpcDeps {
   getMainWindow: () => BrowserWindow | null
@@ -73,8 +78,11 @@ export function setupIPC(deps: IpcDeps): void {
       properties: ['openDirectory']
     })
     if (!result.canceled && result.filePaths.length > 0) {
-      store.set('downloadPath', result.filePaths[0])
-      return result.filePaths[0]
+      const newPath = result.filePaths[0]
+      store.set('downloadPath', newPath)
+      getDownloadManager()?.setDownloadPath(newPath)
+      getSpotifyManager()?.setDownloadPath(newPath)
+      return newPath
     }
     return null
   })
@@ -300,17 +308,18 @@ export function setupIPC(deps: IpcDeps): void {
   })
 
   ipcMain.handle('get-history', async () => {
-    return store.get('downloadHistory', [])
+    return sessionHistory
   })
 
-  ipcMain.handle('add-history-entry', async (_event, entry) => {
-    const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
-    history.unshift(entry)
-    store.set('downloadHistory', history.slice(0, 200))
+  ipcMain.handle('add-history-entry', async (_event, entry: HistoryEntry) => {
+    sessionHistory.unshift(entry)
+    if (sessionHistory.length > SESSION_HISTORY_MAX) {
+      sessionHistory.length = SESSION_HISTORY_MAX
+    }
   })
 
   ipcMain.handle('clear-history', async () => {
-    store.set('downloadHistory', [])
+    sessionHistory.length = 0
   })
 
   ipcMain.handle('check-file-exists', async (_event, filePath: string) => {
@@ -321,17 +330,12 @@ export function setupIPC(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle('prune-history', async (_event, days?: number) => {
-    const maxAgeDays = days ?? 90
-    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
-    const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
-    const pruned = history.filter((e) => {
-      const completedAt = e.completedAt as string | undefined
-      if (!completedAt) return true
-      return new Date(completedAt).getTime() >= cutoff
-    })
-    store.set('downloadHistory', pruned)
-    return pruned.length
+  ipcMain.handle('show-in-folder', async (_event, filePath: string) => {
+    try {
+      shell.showItemInFolder(filePath)
+    } catch (err) {
+      console.error('show-in-folder failed:', err)
+    }
   })
 
   ipcMain.handle('quit-app', async () => {

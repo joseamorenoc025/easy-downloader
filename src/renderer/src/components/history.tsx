@@ -5,8 +5,7 @@ import type { HistoryEntry } from '@/types'
 import '../lib/ipc'
 
 interface HistoryProps {
-  onOpenFolder: (path?: string) => void
-  onRedownload?: (entry: HistoryEntry) => void
+  onShowInFolder: (path: string) => void
   onBackToQueue?: () => void
 }
 
@@ -24,22 +23,16 @@ function groupByDate(entries: HistoryEntry[], t: (key: string) => string) {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekStart = new Date(todayStart)
   weekStart.setDate(weekStart.getDate() - 7)
-  const monthStart = new Date(todayStart)
-  monthStart.setDate(monthStart.getDate() - 30)
 
   const groups: { label: string; entries: HistoryEntry[] }[] = [
     { label: t('history.today'), entries: [] },
-    { label: t('history.thisWeek'), entries: [] },
-    { label: t('history.thisMonth'), entries: [] },
     { label: t('history.older'), entries: [] }
   ]
 
   for (const e of entries) {
     const d = new Date(e.completedAt)
     if (d >= todayStart) groups[0].entries.push(e)
-    else if (d >= weekStart) groups[1].entries.push(e)
-    else if (d >= monthStart) groups[2].entries.push(e)
-    else groups[3].entries.push(e)
+    else groups[1].entries.push(e)
   }
 
   return groups.filter((g) => g.entries.length > 0)
@@ -59,23 +52,14 @@ function relativeTime(iso: string, locale: string): string {
 
 function HistoryRow({
   entry,
-  onOpenFolder
+  onShowInFolder
 }: {
   entry: HistoryEntry
-  onOpenFolder: (path?: string) => void
+  onShowInFolder: (path: string) => void
 }) {
   const { t, locale } = useI18n()
   const thumb = entry.source === 'youtube' ? getYouTubeThumbnail(entry.url) : null
   const [imgError, setImgError] = useState(false)
-  const [fileExists, setFileExists] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    if (entry.outputPath) {
-      window.easyDownloader.checkFileExists(entry.outputPath).then(setFileExists)
-    } else {
-      setFileExists(false)
-    }
-  }, [entry.outputPath])
 
   const isVideo = entry.format === 'video'
   const qualityLabel = isVideo ? entry.quality : `${entry.quality} kbps`
@@ -127,25 +111,16 @@ function HistoryRow({
         </div>
       </div>
 
-      {/* Status + time */}
+      {/* Time + open */}
       <div className="flex items-center gap-2 shrink-0">
-        {fileExists !== null && (
-          <span
-            className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-              fileExists ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'
-            }`}
-          >
-            {fileExists ? t('history.fileExists') : t('history.fileDeleted')}
-          </span>
-        )}
         <span className="text-[11px] text-muted-foreground whitespace-nowrap">
           {relativeTime(entry.completedAt, locale)}
         </span>
         {entry.outputPath && (
           <button
-            onClick={() => onOpenFolder(entry.outputPath)}
+            onClick={() => onShowInFolder(entry.outputPath!)}
             className="opacity-0 group-hover:opacity-100 rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
-            title={t('history.openFolder')}
+            title={t('history.openFile')}
           >
             <svg
               width="12"
@@ -155,7 +130,8 @@ function HistoryRow({
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+              <path d="M14 2v4a2 2 0 0 0 2 2h4" />
             </svg>
           </button>
         )}
@@ -168,12 +144,11 @@ function HistoryRow({
 
 type Filter = 'all' | 'video' | 'audio'
 
-export function History({ onOpenFolder, onBackToQueue }: HistoryProps) {
+export function History({ onShowInFolder, onBackToQueue }: HistoryProps) {
   const { t } = useI18n()
   const [entries, setEntries] = useState<HistoryEntry[]>([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
-  const [pruningDays, setPruningDays] = useState<number | null>(null)
 
   useEffect(() => {
     window.easyDownloader.getHistory().then(setEntries)
@@ -184,7 +159,7 @@ export function History({ onOpenFolder, onBackToQueue }: HistoryProps) {
     const handler = (item: HistoryEntry) => {
       setEntries((prev) => {
         if (prev.some((e) => e.id === item.id)) return prev
-        return [item, ...prev].slice(0, 200)
+        return [item, ...prev]
       })
     }
     window.easyDownloader.onHistoryEntryAdded(handler)
@@ -197,18 +172,6 @@ export function History({ onOpenFolder, onBackToQueue }: HistoryProps) {
     if (!window.confirm(t('history.confirmClear'))) return
     await window.easyDownloader.clearHistory()
     setEntries([])
-  }
-
-  const handlePrune = async (days: number) => {
-    if (!window.confirm(t('history.confirmPrune', { days }))) return
-    setPruningDays(days)
-    try {
-      await window.easyDownloader.pruneHistory(days)
-      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
-      setEntries((prev) => prev.filter((e) => new Date(e.completedAt).getTime() >= cutoff))
-    } finally {
-      setPruningDays(null)
-    }
   }
 
   const filtered = useMemo(() => {
@@ -319,30 +282,11 @@ export function History({ onOpenFolder, onBackToQueue }: HistoryProps) {
             </button>
           ))}
         </div>
-      </div>
 
-      {/* ── Cleanup bar ── */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] text-muted-foreground">{t('history.cleanOlderThan')}</span>
-        {[
-          { days: 1, label: '1d' },
-          { days: 3, label: '3d' },
-          { days: 7, label: '7d' },
-          { days: 30, label: '30d' }
-        ].map(({ days, label }) => (
-          <button
-            key={days}
-            onClick={() => handlePrune(days)}
-            disabled={pruningDays !== null}
-            className="rounded-lg px-2 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
-          >
-            {label}
-          </button>
-        ))}
-        <div className="flex-1" />
+        {/* Clear session */}
         <button
           onClick={clear}
-          className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
+          className="text-[11px] text-muted-foreground hover:text-destructive transition-colors shrink-0"
           title={t('history.clear')}
         >
           {t('history.clearAll')}
@@ -376,7 +320,7 @@ export function History({ onOpenFolder, onBackToQueue }: HistoryProps) {
             <div className="space-y-0.5">
               <AnimatePresence initial={false}>
                 {g.entries.map((e) => (
-                  <HistoryRow key={e.id} entry={e} onOpenFolder={onOpenFolder} />
+                  <HistoryRow key={e.id} entry={e} onShowInFolder={onShowInFolder} />
                 ))}
               </AnimatePresence>
             </div>

@@ -151,21 +151,21 @@ describe('IPC handlers', () => {
     expect(result).toEqual(queue)
   })
 
-  it('add-history-entry should prepend and cap at 200', async () => {
-    const entries = Array.from({ length: 200 }, (_, i) => ({ id: `old-${i}` }))
-    mockStoreData['downloadHistory'] = entries
+  it('add-history-entry should prepend to session history', async () => {
+    await handlers['add-history-entry']({}, { id: 'entry-1' })
+    await handlers['add-history-entry']({}, { id: 'entry-2' })
 
-    await handlers['add-history-entry']({}, { id: 'new-1' })
-
-    const history = mockStoreData['downloadHistory']
-    expect(history[0].id).toBe('new-1')
-    expect(history.length).toBe(200)
+    const history = await handlers['get-history']()
+    expect(history[0].id).toBe('entry-2')
+    expect(history[1].id).toBe('entry-1')
   })
 
-  it('clear-history should empty history', async () => {
-    mockStoreData['downloadHistory'] = [{ id: '1' }, { id: '2' }]
+  it('clear-history should empty session history', async () => {
+    await handlers['add-history-entry']({}, { id: '1' })
+    await handlers['add-history-entry']({}, { id: '2' })
     await handlers['clear-history']()
-    expect(mockStoreData['downloadHistory']).toEqual([])
+    const history = await handlers['get-history']()
+    expect(history).toEqual([])
   })
 
   it('check-spotdl should always return true', async () => {
