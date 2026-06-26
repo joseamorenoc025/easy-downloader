@@ -9,6 +9,66 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.3.0] - 2026-06-25
+
+### Added
+- **Cookies para YouTube**: importación de cookies en formato Netscape desde el header. El manager pasa `--cookies` a yt-dlp para acceder a contenido autenticado (age-restricted, privado). Persiste la ruta en electron-store.
+- **Editor de metadatos ID3**: al descargar audio, se extraen metadatos vía `yt-dlp --dump-json` y se muestra un modal editable (título, artista, álbum, año, género, pista). Se aplica `--replace-in-metadata` + `--embed-thumbnail --add-metadata`.
+- **Notificaciones de descarga**: toggle on/off en el header. Notificación nativa del SO al completar cada descarga.
+- **Modo portable**: detección automática por `--portable` en argv, variable de entorno o nombre del directorio. `app.setPath('userData', ...)` redirige datos a `portable-data/` junto al ejecutable.
+- **6 presets de conversión**: Music (256 kbps), Podcast (192 kbps mono), Archival (320 kbps), Social Media (128 kbps), Video HD (1080p), Video SD (480p). Cada preset aplica flags automáticos de yt-dlp.
+- **Selector de carpeta de descargas**: dropdown en el header con opciones "Abrir carpeta" y "Cambiar carpeta". Selector nativo de directorio con toast de confirmación al cambiar.
+- **USB / ruta dinámica**: `setDownloadPath()` actualiza managers en tiempo real al cambiar la carpeta desde el selector.
+- **show-in-folder**: resalta el archivo descargado en el explorador del SO (reemplaza open-folder).
+- **Historial session-only**: almacena en memoria durante la sesión, sin persistencia a disco.
+- **Layout contextual dual-pane**: StatsCard con controles de sesión como pills row, eliminando espacio desperdiciado.
+- **Paleta Electric Indigo & Slate**: rediseño completo de colores con tokens CSS semánticos.
+
+### Changed
+- **107 tests** (de 93 a 107): tests de presets, IPC channels, get-settings shape (8 campos), setDownloadPath, session history cap (200), show-in-folder, check-file-exists, set-cookies-path, set-notifications, set-max-concurrent.
+- **Historial simplificado**: lista simple sin grid cards, sin botón re-download, sin cleanup por días. Solo "Clear session".
+- **Botón Historial eliminado del header**: historial solo accesible como lista inline en la cola.
+- **electron-builder 26.8.1**: versión fija para evitar regressions de schema validation en 26.15.x.
+- **BaseDownloadManager**: clase abstracta que elimina ~40% de duplicación entre DownloadManager y SpotifyDownloadManager.
+- **ErrorCategory + classifyYtDlpError**: 9 categorías de error con clasificación case-insensitive y preservación de stderr raw.
+- **Progress throttle 3 capas**: 200ms main, 150ms renderer buffer, 500ms NetworkStats.
+
+### Fixed
+- **USB / external drive downloads**: `select-directory` ahora llama `setDownloadPath()` en managers corriendo, no solo en la store.
+- **yt-dlp-wrap progress regex**: el regex del wrapper estaba roto para yt-dlp actual. Se parsea del raw `ytDlpEvent` tipo `download`.
+
+### Removed
+- Botón "Historial" del header (UI más limpia).
+- Drawer de historial (backdrop + spring animation).
+- Persistencia de historial a electron-store (session-only).
+- `prune-history` IPC (ya no necesario).
+- `historyMaxAge` de Settings y store defaults.
+- `fuse.js` de dependencias (ya no necesario desde v2.2.0).
+
+---
+
+# English summary
+
+## [2.3.0] - 2026-06-25
+- **YouTube cookies**: Netscape cookie import from header. Manager passes `--cookies` to yt-dlp for authenticated content. Path persisted in electron-store.
+- **ID3 metadata editor**: audio downloads extract metadata via `yt-dlp --dump-json`, show editable modal (title, artist, album, year, genre, track), apply `--replace-in-metadata` + `--embed-thumbnail --add-metadata`.
+- **Download notifications**: on/off toggle in header. Native OS notification on each download completion.
+- **Portable mode**: auto-detection via `--portable` argv, env var, or directory name. `app.setPath('userData', ...)` redirects data to `portable-data/` next to the executable.
+- **6 conversion presets**: Music (256 kbps), Podcast (192 kbps mono), Archival (320 kbps), Social Media (128 kbps), Video HD (1080p), Video SD (480p). Each preset applies automatic yt-dlp flags.
+- **Download folder selector**: dropdown in header with "Open folder" and "Change folder" options. Native directory picker with toast confirmation.
+- **USB / dynamic path**: `setDownloadPath()` updates running managers in real-time when folder is changed.
+- **show-in-folder**: highlights downloaded file in the OS file explorer (replaces open-folder).
+- **Session-only history**: in-memory during session, no disk persistence.
+- **Contextual dual-pane layout**: StatsCard with session controls as pills row, eliminating wasted vertical space.
+- **Electric Indigo & Slate palette**: complete color redesign with semantic CSS tokens.
+- **107 tests** (from 93 to 107): presets, IPC channels, get-settings shape (8 fields), setDownloadPath, session history cap (200), show-in-folder, check-file-exists, set-cookies-path, set-notifications, set-max-concurrent.
+- **Simplified history**: simple list without grid cards, no re-download button, no day-based cleanup. Only "Clear session".
+- **History button removed from header**: history only accessible as inline list in queue.
+- **Fixed USB/external drive downloads**: `select-directory` now calls `setDownloadPath()` on running managers, not just in store.
+- **Fixed yt-dlp-wrap progress regex**: wrapper regex was broken for current yt-dlp. Parses from raw `ytDlpEvent` type `download`.
+
+---
+
 ## [2.2.0] - 2026-06-19
 
 ### Added

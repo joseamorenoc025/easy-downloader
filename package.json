@@ -1,6 +1,6 @@
 {
   "name": "easy-downloader",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Desktop app to download videos and audio from YouTube, Spotify and ~1700 sites",
   "author": "Jose Amoreno <joseamorenoc025@gmail.com>",
   "main": "./out/main/index.js",

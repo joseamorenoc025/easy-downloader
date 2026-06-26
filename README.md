@@ -27,7 +27,12 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 - **Selector de calidad de video**: desde 480p hasta mejor calidad disponible.
 - **Cola de descargas** con hasta 3 simultáneas.
 - **Vista previa de metadata** antes de descargar (thumbnail, título, duración).
-- **Historial** con búsqueda, filtros y re-descarga.
+- **Editor de metadatos ID3**: al descargar audio, edita título, artista, álbum, año, género y pista directamente desde la UI.
+- **Cookies para YouTube**: importa cookies en formato Netscape para contenido autenticado.
+- **6 presets de conversión**: Music, Podcast, Archival, Social Media, Video HD, Video SD.
+- **Selector de carpeta**: cambia la carpeta de descargas desde el header.
+- **Notificaciones**: toggle on/off, notificación nativa al completar descarga.
+- **Modo portable**: ejecutable portátil sin instalación (`--portable`).
 - **i18n**: Español e Inglés.
 - **Tema claro / oscuro** (sigue al sistema).
 - **System tray**: minimiza a la bandeja, doble-click restaura.
@@ -44,8 +49,11 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 | **Búsqueda de YouTube** | Scraping de `ytInitialData` | Encuentra el video correcto sin API key |
 | **Spotify** | `spotify-url-info` + yt-dlp | Obtiene metadata del track y busca el audio en YouTube |
 | **Conversión de audio** | ffmpeg | Convierte a MP3 con la calidad elegida |
+| **Cookies** | yt-dlp `--cookies` | Accede a contenido autenticado (age-restricted, privado) |
+| **Metadatos ID3** | yt-dlp `--replace-in-metadata` | Edita y embebe metadatos en archivos de audio |
+| **Presets** | Configuración predefinida | 6 perfiles de conversión (Music, Podcast, etc.) |
 | **Interfaz** | React + Tailwind + framer-motion | UI nativa con animaciones suaves |
-| **Empaquetado** | electron-builder | Instaladores NSIS (Windows) y AppImage/.deb (Linux) |
+| **Empaquetado** | electron-builder | Instaladores NSIS (Windows), AppImage/.deb (Linux) y portable |
 
 ### Arquitectura
 
@@ -210,7 +218,12 @@ A cross-platform desktop app (Windows / Linux) built with Electron + React + Tai
 - **Video quality selector**: from 480p to best available quality.
 - **Download queue** with up to 3 concurrent downloads.
 - **Metadata preview** before downloading (thumbnail, title, duration).
-- **Searchable history** with filters and re-download.
+- **ID3 metadata editor**: edit title, artist, album, year, genre, and track number directly from the UI when downloading audio.
+- **YouTube cookies**: import Netscape-format cookies for authenticated content.
+- **6 conversion presets**: Music, Podcast, Archival, Social Media, Video HD, Video SD.
+- **Folder selector**: change download folder from the header.
+- **Notifications**: on/off toggle, native OS notification on download completion.
+- **Portable mode**: portable executable without installation (`--portable`).
 - **i18n**: Spanish and English.
 - **Light / dark theme** (follows system).
 - **System tray**: minimize to tray, double-click to restore.
@@ -227,8 +240,11 @@ A cross-platform desktop app (Windows / Linux) built with Electron + React + Tai
 | **YouTube search** | `ytInitialData` scraping | Finds the right video without an API key |
 | **Spotify** | `spotify-url-info` + yt-dlp | Gets track metadata and finds the audio on YouTube |
 | **Audio conversion** | ffmpeg | Converts to MP3 at the chosen quality |
+| **Cookies** | yt-dlp `--cookies` | Accesses authenticated content (age-restricted, private) |
+| **ID3 metadata** | yt-dlp `--replace-in-metadata` | Edits and embeds metadata in audio files |
+| **Presets** | Predefined configuration | 6 conversion profiles (Music, Podcast, etc.) |
 | **Interface** | React + Tailwind + framer-motion | Native UI with smooth animations |
-| **Packaging** | electron-builder | NSIS installers (Windows) and AppImage/.deb (Linux) |
+| **Packaging** | electron-builder | NSIS installers (Windows), AppImage/.deb (Linux) and portable |
 
 ### Installation
 
