@@ -1,8 +1,31 @@
 "use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 const electron = require("electron");
 const path = require("path");
-const child_process = require("child_process");
 const fs = require("fs");
+const child_process = require("child_process");
+const YtDlpWrap$3 = require("yt-dlp-wrap");
 const crypto = require("crypto");
 const https = require("node:https");
 const is = {
@@ -99,6 +122,10 @@ const optimizer = {
   }
 };
 const { default: Store } = require("electron-store");
+const isPortable = process.argv.includes("--portable") || process.env.EASYDOWNLOADER_PORTABLE === "1" || path.dirname(electron.app.getPath("exe")).toLowerCase().includes("portable");
+if (isPortable) {
+  electron.app.setPath("userData", path.join(path.dirname(electron.app.getPath("exe")), "data"));
+}
 const store = new Store({
   defaults: {
     downloadPath: electron.app.getPath("downloads"),
@@ -107,7 +134,9 @@ const store = new Store({
     fetchMetadata: true,
     incognitoMode: false,
     globalPause: false,
-    maxConcurrent: 3
+    maxConcurrent: 3,
+    cookiesPath: "",
+    notificationsEnabled: true
   }
 });
 function createWindow() {
@@ -241,6 +270,8 @@ function isValidHttpUrl(url) {
   }
 }
 const { autoUpdater: autoUpdater$1 } = require("electron-updater");
+const sessionHistory = [];
+const SESSION_HISTORY_MAX = 200;
 function setupIPC(deps) {
   const {
     getMainWindow: getMainWindow2,
@@ -287,8 +318,11 @@ function setupIPC(deps) {
       properties: ["openDirectory"]
     });
     if (!result.canceled && result.filePaths.length > 0) {
-      store.set("downloadPath", result.filePaths[0]);
-      return result.filePaths[0];
+      const newPath = result.filePaths[0];
+      store.set("downloadPath", newPath);
+      getDownloadManager2()?.setDownloadPath(newPath);
+      getSpotifyManager2()?.setDownloadPath(newPath);
+      return newPath;
     }
     return null;
   });
@@ -299,8 +333,29 @@ function setupIPC(deps) {
       fetchMetadata: store.get("fetchMetadata"),
       incognitoMode: store.get("incognitoMode"),
       globalPause: store.get("globalPause"),
-      maxConcurrent: store.get("maxConcurrent")
+      maxConcurrent: store.get("maxConcurrent"),
+      cookiesPath: store.get("cookiesPath"),
+      notificationsEnabled: store.get("notificationsEnabled")
     };
+  });
+  electron.ipcMain.handle("select-cookies-file", async () => {
+    const result = await electron.dialog.showOpenDialog(getMainWindow2(), {
+      properties: ["openFile"],
+      filters: [
+        { name: "Netscape Cookie File", extensions: ["txt"] },
+        { name: "All Files", extensions: ["*"] }
+      ]
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      store.set("cookiesPath", result.filePaths[0]);
+      return result.filePaths[0];
+    }
+    return null;
+  });
+  electron.ipcMain.handle("set-cookies-path", async (_event, path2) => {
+    store.set("cookiesPath", path2);
+    getDownloadManager2()?.setCookiesPath(path2);
+    getSpotifyManager2()?.setCookiesPath(path2);
   });
   electron.ipcMain.handle("set-theme", async (_event, mode) => {
     store.set("themeMode", mode);
@@ -315,6 +370,9 @@ function setupIPC(deps) {
   });
   electron.ipcMain.handle("set-incognito-mode", async (_event, enabled) => {
     store.set("incognitoMode", enabled);
+  });
+  electron.ipcMain.handle("set-notifications", async (_event, enabled) => {
+    store.set("notificationsEnabled", enabled);
   });
   electron.ipcMain.handle("set-max-concurrent", async (_event, value) => {
     const clamped = Math.max(1, Math.min(8, Math.round(value)));
@@ -343,6 +401,48 @@ function setupIPC(deps) {
   });
   electron.ipcMain.handle("check-ffmpeg", async () => {
     return checkFfmpegInstalled();
+  });
+  electron.ipcMain.handle("extract-metadata", async (_event, url) => {
+    try {
+      const ytDlp = new YtDlpWrap$3();
+      await getDownloadManager2()?.ensureBinary();
+      const isWin = process.platform === "win32";
+      const binaryName = isWin ? "yt-dlp.exe" : "yt-dlp";
+      const { join } = await import("path");
+      const { existsSync: existsSync2 } = await import("fs");
+      const { app: electronApp2 } = await import("electron");
+      const binaryPath = join(electronApp2.getPath("userData"), binaryName);
+      if (existsSync2(binaryPath)) {
+        ytDlp.setBinaryPath(binaryPath);
+      }
+      const stdout = await ytDlp.execRaw([
+        url,
+        "--dump-json",
+        "--no-warnings",
+        "--no-playlist",
+        "--skip-download"
+      ]);
+      const data = JSON.parse(stdout);
+      return {
+        title: data.title || data.fulltitle || "",
+        artist: data.artist || data.uploader || data.channel || "",
+        album: data.album || "",
+        year: data.upload_year?.toString() || data.release_year?.toString() || "",
+        genre: data.genres?.[0] || data.tags?.[0] || "",
+        track: data.track || data.playlist_index?.toString() || "",
+        thumbnail: data.thumbnail || data.thumbnails?.[data.thumbnails.length - 1]?.url || ""
+      };
+    } catch (err) {
+      return {
+        title: "",
+        artist: "",
+        album: "",
+        year: "",
+        genre: "",
+        track: "",
+        thumbnail: ""
+      };
+    }
   });
   electron.ipcMain.handle("add-spotify-download", async (_event, url, quality) => {
     if (!isValidHttpUrl(url)) {
@@ -415,15 +515,30 @@ function setupIPC(deps) {
     autoUpdater$1.quitAndInstall();
   });
   electron.ipcMain.handle("get-history", async () => {
-    return store.get("downloadHistory", []);
+    return sessionHistory;
   });
   electron.ipcMain.handle("add-history-entry", async (_event, entry) => {
-    const history = store.get("downloadHistory", []);
-    history.unshift(entry);
-    store.set("downloadHistory", history.slice(0, 200));
+    sessionHistory.unshift(entry);
+    if (sessionHistory.length > SESSION_HISTORY_MAX) {
+      sessionHistory.length = SESSION_HISTORY_MAX;
+    }
   });
   electron.ipcMain.handle("clear-history", async () => {
-    store.set("downloadHistory", []);
+    sessionHistory.length = 0;
+  });
+  electron.ipcMain.handle("check-file-exists", async (_event, filePath) => {
+    try {
+      return fs.existsSync(filePath);
+    } catch {
+      return false;
+    }
+  });
+  electron.ipcMain.handle("show-in-folder", async (_event, filePath) => {
+    try {
+      electron.shell.showItemInFolder(filePath);
+    } catch (err) {
+      console.error("show-in-folder failed:", err);
+    }
   });
   electron.ipcMain.handle("quit-app", async () => {
     setIsQuitting2(true);
@@ -602,13 +717,24 @@ function classifyYtDlpError(stderr, exitCode) {
   return { category: "unknown", raw: stderr, exitCode };
 }
 const { default: YtDlpWrap$1 } = require("yt-dlp-wrap");
-function formatSpeed(bytesPerSec) {
-  if (bytesPerSec === 0) return "0 B/s";
-  if (bytesPerSec < 1024) return `${Math.round(bytesPerSec)} B/s`;
-  if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} KiB/s`;
-  if (bytesPerSec < 1024 * 1024 * 1024)
-    return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MiB/s`;
-  return `${(bytesPerSec / (1024 * 1024 * 1024)).toFixed(1)} GiB/s`;
+function parseSize(str) {
+  if (!str) return 0;
+  const match = str.match(/([\d.]+)\s*(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)/i);
+  if (!match) return 0;
+  const val = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  const multipliers = {
+    b: 1,
+    kb: 1024,
+    kib: 1024,
+    mb: 1024 * 1024,
+    mib: 1024 * 1024,
+    gb: 1024 * 1024 * 1024,
+    gib: 1024 * 1024 * 1024,
+    tb: 1024 * 1024 * 1024 * 1024,
+    tib: 1024 * 1024 * 1024 * 1024
+  };
+  return val * (multipliers[unit] || 1);
 }
 class BaseDownloadManager {
   queue = [];
@@ -620,15 +746,22 @@ class BaseDownloadManager {
   paused = false;
   /** Acumulador de stderr por item, para clasificar el error al cierre. */
   stderrBuffers = /* @__PURE__ */ new Map();
+  /** Throttle: timestamp del último envío de progreso por item (ms). */
+  lastProgressSent = /* @__PURE__ */ new Map();
+  static PROGRESS_THROTTLE_MS = 200;
   onProgress;
   onComplete;
   onError;
+  cookiesPath = "";
   constructor(downloadPath, onProgress, onComplete, onError) {
     this.downloadPath = downloadPath;
     this.ytDlp = new YtDlpWrap$1();
     this.onProgress = onProgress;
     this.onComplete = onComplete;
     this.onError = onError;
+  }
+  setDownloadPath(path2) {
+    this.downloadPath = path2;
   }
   async ensureBinary() {
     if (this.binaryReady) return;
@@ -704,25 +837,15 @@ class BaseDownloadManager {
     }
   }
   setupEmitterListeners(emitter, item, attempt, context) {
-    emitter.on("progress", (progress) => {
-      const pct = progress.percent ?? 0;
-      item.progress = pct;
-      const rawSpeed = progress.currentSpeed;
-      if (typeof rawSpeed === "number") {
-        item.speed = formatSpeed(rawSpeed);
-      } else if (typeof rawSpeed === "string" && rawSpeed.trim()) {
-        item.speed = rawSpeed.trim();
+    const progressRegex = /\[download\]\s+([\d.]+)%\s+of\s+~?([\d.]+\s*\w+)\s+at\s+([\d.]+\s*\w+\/s)\s+ETA\s+(\S+)/;
+    const throttledOnProgress = (data) => {
+      const now = Date.now();
+      const last = this.lastProgressSent.get(item.id) ?? 0;
+      if (now - last >= BaseDownloadManager.PROGRESS_THROTTLE_MS) {
+        this.lastProgressSent.set(item.id, now);
+        this.onProgress(data);
       }
-      item.eta = progress.eta ?? "";
-      this.onProgress({
-        id: item.id,
-        percentage: pct.toFixed(1),
-        speed: item.speed,
-        eta: item.eta,
-        downloaded: "",
-        total: progress.totalSize ?? ""
-      });
-    });
+    };
     emitter.on("ytDlpEvent", (eventType, eventData) => {
       if (eventType === "Destination") {
         const filePath = eventData.trim();
@@ -735,7 +858,8 @@ class BaseDownloadManager {
           speed: item.speed,
           eta: item.eta,
           downloaded: "",
-          total: ""
+          total: "",
+          title: item.title
         });
       }
       if (eventType === "ExtractAudio") {
@@ -747,8 +871,34 @@ class BaseDownloadManager {
           speed: item.speed,
           eta: item.eta,
           downloaded: "",
-          total: ""
+          total: "",
+          title: item.title
         });
+      }
+      if (eventType === "download" || eventType === "progress") {
+        const rawLine = `[download] ${eventData}`;
+        const match = rawLine.match(progressRegex);
+        if (match) {
+          const pct = parseFloat(match[1]);
+          const totalSizeStr = match[2].trim();
+          const speedStr = match[3].trim();
+          const etaStr = match[4].trim();
+          const totalBytes = parseSize(totalSizeStr);
+          const downloadedBytes = totalBytes > 0 ? Math.round(pct / 100 * totalBytes) : 0;
+          item.progress = pct;
+          item.speed = speedStr;
+          item.eta = etaStr;
+          throttledOnProgress({
+            id: item.id,
+            percentage: pct.toFixed(1),
+            speed: item.speed,
+            eta: item.eta,
+            downloaded: downloadedBytes > 0 ? `${downloadedBytes} B` : "",
+            total: totalSizeStr,
+            title: item.title,
+            totalSize: totalSizeStr
+          });
+        }
       }
       if (typeof eventData === "string" && (eventType === "error" || eventType === "stderr" || /error|warning/i.test(eventType))) {
         const buf = this.stderrBuffers.get(item.id) || "";
@@ -763,6 +913,7 @@ class BaseDownloadManager {
       if (code === 0) {
         item.status = "completed";
         item.progress = 100;
+        this.lastProgressSent.delete(item.id);
         this.onComplete(item);
         this.cleanQueue();
         setTimeout(() => this.processQueue(), 100);
@@ -776,7 +927,8 @@ class BaseDownloadManager {
             speed: item.speed,
             eta: "",
             downloaded: "",
-            total: ""
+            total: "",
+            title: item.title
           });
           setTimeout(() => this.startDownload(item, attempt + 1), 3e3);
         } else {
@@ -785,6 +937,7 @@ class BaseDownloadManager {
           item.error = details;
           item.errorCategory = classified.category;
           item.errorDetails = details;
+          this.lastProgressSent.delete(item.id);
           this.onError(item.id, classified.category, details);
           this.cleanQueue();
           setTimeout(() => this.processQueue(), 100);
@@ -806,7 +959,8 @@ class BaseDownloadManager {
             speed: item.speed,
             eta: "",
             downloaded: "",
-            total: ""
+            total: "",
+            title: item.title
           });
           setTimeout(() => this.startDownload(item, attempt + 1), 3e3);
         } else {
@@ -814,6 +968,7 @@ class BaseDownloadManager {
           item.error = stderr || err.message;
           item.errorCategory = classified.category;
           item.errorDetails = stderr || err.message;
+          this.lastProgressSent.delete(item.id);
           this.onError(item.id, classified.category, stderr || err.message);
           this.cleanQueue();
           setTimeout(() => this.processQueue(), 100);
@@ -849,8 +1004,10 @@ class DownloadManager extends BaseDownloadManager {
       downloadedBytes: 0,
       format: options.format,
       quality: options.quality,
+      source: "youtube",
       incognito: options.incognito || false,
-      writeSubtitles: options.writeSubtitles || false
+      writeSubtitles: options.writeSubtitles || false,
+      metadata: options.metadata
     };
     this.queue.push(item);
     this.processQueue();
@@ -885,6 +1042,9 @@ class DownloadManager extends BaseDownloadManager {
     this.maxConcurrent = Math.max(1, Math.min(8, Math.round(value)));
     this.processQueue();
   }
+  setCookiesPath(path2) {
+    this.cookiesPath = path2;
+  }
   startDownload(item, attempt = 1) {
     if (!this.validateUrl(item.url)) {
       item.status = "error";
@@ -917,8 +1077,24 @@ class DownloadManager extends BaseDownloadManager {
       String(opts.format),
       "-o",
       String(opts.outtmpl),
-      ...item.format === "audio" ? ["--extract-audio", "--audio-format", "mp3", "--audio-quality", item.quality] : [],
-      ...item.writeSubtitles ? ["--write-subs", "--sub-langs", "en,es", "--embed-subs"] : []
+      ...item.format === "audio" ? [
+        "--extract-audio",
+        "--audio-format",
+        "mp3",
+        "--audio-quality",
+        item.quality,
+        "--embed-thumbnail",
+        "--add-metadata"
+      ] : ["--write-subs", "--sub-langs", "en,es", "--embed-subs"],
+      ...this.cookiesPath ? ["--cookies", this.cookiesPath] : [],
+      ...item.metadata ? [
+        ...item.metadata.title ? ["--replace-in-metadata", "title", ".*", item.metadata.title] : [],
+        ...item.metadata.artist ? ["--replace-in-metadata", "artist", ".*", item.metadata.artist] : [],
+        ...item.metadata.album ? ["--replace-in-metadata", "album", ".*", item.metadata.album] : [],
+        ...item.metadata.year ? ["--replace-in-metadata", "upload_year", ".*", item.metadata.year] : [],
+        ...item.metadata.genre ? ["--replace-in-metadata", "genre", ".*", item.metadata.genre] : [],
+        ...item.metadata.track ? ["--replace-in-metadata", "track", ".*", item.metadata.track] : []
+      ] : []
     ];
     try {
       const emitter = this.ytDlp.exec(args);
@@ -934,7 +1110,8 @@ class DownloadManager extends BaseDownloadManager {
             speed: item.speed,
             eta: item.eta,
             downloaded: "",
-            total: ""
+            total: "",
+            title: item.title
           });
         }
         if (eventType === "download" && eventData.includes("Downloading video")) {
@@ -947,7 +1124,8 @@ class DownloadManager extends BaseDownloadManager {
               speed: item.speed,
               eta: item.eta,
               downloaded: "",
-              total: ""
+              total: "",
+              title: item.title
             });
           }
         }
@@ -1185,7 +1363,8 @@ class SpotifyDownloadManager extends BaseDownloadManager {
         "--audio-format",
         "mp3",
         "--audio-quality",
-        quality
+        quality,
+        ...this.cookiesPath ? ["--cookies", this.cookiesPath] : []
       ];
       try {
         const emitter = this.ytDlp.exec(args);
@@ -1220,9 +1399,6 @@ class SpotifyDownloadManager extends BaseDownloadManager {
           setTimeout(() => this.processQueue(), 100);
           return;
         }
-        console.log(
-          `[spotify] Found: "${match.title}" for "${spotifyTrack.artist} - ${spotifyTrack.name}"`
-        );
         executeDownload(match.url);
       }).catch((err) => {
         item.status = "error";
@@ -1249,27 +1425,21 @@ class YtDlpUpdater {
     try {
       const currentVersion = this.getVersion();
       if (!currentVersion) {
-        console.log("[yt-dlp] No binary found, downloading...");
         await this.downloadStandalone();
         return;
       }
       const latestVersion = await this.getLatestVersion();
       if (!latestVersion) {
-        console.log("[yt-dlp] Could not fetch latest version");
         return;
       }
       if (currentVersion === latestVersion) {
-        console.log(`[yt-dlp] Already up to date (${currentVersion})`);
         return;
       }
-      console.log(`[yt-dlp] Updating ${currentVersion} -> ${latestVersion}...`);
       if (this.isPipInstalled()) {
         await this.updateViaPip();
       } else {
         await this.downloadStandalone();
       }
-      const newVersion = this.getVersion();
-      console.log(`[yt-dlp] Updated to ${newVersion}`);
     } catch (err) {
       console.error("[yt-dlp] Update failed:", err);
     } finally {
@@ -1314,7 +1484,6 @@ class YtDlpUpdater {
     }
   }
   async updateViaPip() {
-    console.log("[yt-dlp] Updating via pip...");
     child_process.execSync("pip install -U yt-dlp", { stdio: "pipe", timeout: 12e4 });
   }
   async downloadStandalone() {
@@ -1366,8 +1535,7 @@ function initDownloadManager() {
       const globalIncognito = store.get("incognitoMode") || false;
       if (item.incognito || globalIncognito) return;
       if (item.status === "completed") {
-        const history = store.get("downloadHistory", []);
-        history.unshift({
+        const entry = {
           id: item.id,
           url: item.url,
           title: item.title,
@@ -1376,19 +1544,11 @@ function initDownloadManager() {
           source: item.source,
           outputPath: item.outputPath,
           completedAt: (/* @__PURE__ */ new Date()).toISOString()
-        });
-        store.set("downloadHistory", history.slice(0, 200));
-        mainWindow?.webContents.send("history-entry-added", {
-          id: item.id,
-          url: item.url,
-          title: item.title,
-          format: item.format,
-          quality: item.quality,
-          source: item.source,
-          outputPath: item.outputPath,
-          completedAt: (/* @__PURE__ */ new Date()).toISOString()
-        });
-        if (electron.Notification.isSupported()) {
+        };
+        sessionHistory.unshift(entry);
+        if (sessionHistory.length > 200) sessionHistory.length = 200;
+        mainWindow?.webContents.send("history-entry-added", entry);
+        if (electron.Notification.isSupported() && store.get("notificationsEnabled")) {
           const notif = new electron.Notification({
             title: "Download Complete",
             body: item.title || "Your download has finished",
@@ -1407,6 +1567,10 @@ function initDownloadManager() {
       });
     }
   );
+  const cookiesPath = store.get("cookiesPath") || "";
+  if (cookiesPath) {
+    downloadManager.setCookiesPath(cookiesPath);
+  }
 }
 function initSpotifyManager() {
   const dlPath = store.get("downloadPath") || electron.app.getPath("downloads");
@@ -1420,8 +1584,7 @@ function initSpotifyManager() {
       const globalIncognito = store.get("incognitoMode") || false;
       if (item.incognito || globalIncognito) return;
       if (item.status === "completed") {
-        const history = store.get("downloadHistory", []);
-        history.unshift({
+        const entry = {
           id: item.id,
           url: item.url,
           title: item.title,
@@ -1430,19 +1593,11 @@ function initSpotifyManager() {
           source: item.source,
           outputPath: item.outputPath,
           completedAt: (/* @__PURE__ */ new Date()).toISOString()
-        });
-        store.set("downloadHistory", history.slice(0, 200));
-        mainWindow?.webContents.send("history-entry-added", {
-          id: item.id,
-          url: item.url,
-          title: item.title,
-          format: item.format,
-          quality: item.quality,
-          source: item.source,
-          outputPath: item.outputPath,
-          completedAt: (/* @__PURE__ */ new Date()).toISOString()
-        });
-        if (electron.Notification.isSupported()) {
+        };
+        sessionHistory.unshift(entry);
+        if (sessionHistory.length > 200) sessionHistory.length = 200;
+        mainWindow?.webContents.send("history-entry-added", entry);
+        if (electron.Notification.isSupported() && store.get("notificationsEnabled")) {
           const notif = new electron.Notification({
             title: "Spotify Download Complete",
             body: item.title || "Your Spotify download has finished",
@@ -1464,6 +1619,10 @@ function initSpotifyManager() {
       mainWindow?.webContents.send("spotify-track-error", { itemId, trackTitle });
     }
   );
+  const cookiesPath = store.get("cookiesPath") || "";
+  if (cookiesPath) {
+    spotifyManager.setCookiesPath(cookiesPath);
+  }
 }
 electron.app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.easydownloader");

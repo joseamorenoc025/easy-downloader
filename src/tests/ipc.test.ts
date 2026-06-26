@@ -82,13 +82,18 @@ describe('IPC handlers', () => {
       'get-queue',
       'select-directory',
       'get-settings',
+      'select-cookies-file',
+      'set-cookies-path',
       'set-theme',
       'set-fetch-metadata',
       'set-incognito-mode',
+      'set-notifications',
+      'set-max-concurrent',
       'set-global-pause',
       'pause-all',
       'resume-all',
       'check-ffmpeg',
+      'extract-metadata',
       'add-spotify-download',
       'open-folder',
       'check-spotdl',
@@ -101,6 +106,8 @@ describe('IPC handlers', () => {
       'get-history',
       'add-history-entry',
       'clear-history',
+      'check-file-exists',
+      'show-in-folder',
       'quit-app'
     ]
     for (const ch of expectedChannels) {
@@ -114,6 +121,9 @@ describe('IPC handlers', () => {
     mockStoreData['fetchMetadata'] = false
     mockStoreData['incognitoMode'] = true
     mockStoreData['globalPause'] = false
+    mockStoreData['maxConcurrent'] = 3
+    mockStoreData['cookiesPath'] = '/my/cookies.txt'
+    mockStoreData['notificationsEnabled'] = true
 
     const result = await handlers['get-settings']()
     expect(result).toEqual({
@@ -121,7 +131,10 @@ describe('IPC handlers', () => {
       themeMode: 'dark',
       fetchMetadata: false,
       incognitoMode: true,
-      globalPause: false
+      globalPause: false,
+      maxConcurrent: 3,
+      cookiesPath: '/my/cookies.txt',
+      notificationsEnabled: true
     })
   })
 
@@ -233,5 +246,43 @@ describe('IPC handlers', () => {
   it('get-history should return empty array by default', async () => {
     const result = await handlers['get-history']()
     expect(result).toEqual([])
+  })
+
+  it('show-in-folder should call shell.showItemInFolder', async () => {
+    const { shell } = await import('electron')
+    ;(shell as any).showItemInFolder = vi.fn()
+
+    await handlers['show-in-folder']({}, '/some/file.mp4')
+    expect(shell.showItemInFolder).toHaveBeenCalledWith('/some/file.mp4')
+  })
+
+  it('check-file-exists should return true for existing file', async () => {
+    const result = await handlers['check-file-exists']({}, '/existing/file.mp4')
+    expect(typeof result).toBe('boolean')
+  })
+
+  it('set-cookies-path should store value', async () => {
+    await handlers['set-cookies-path']({}, '/my/cookies.txt')
+    expect(mockStoreData['cookiesPath']).toBe('/my/cookies.txt')
+  })
+
+  it('set-notifications should store value', async () => {
+    await handlers['set-notifications']({}, false)
+    expect(mockStoreData['notificationsEnabled']).toBe(false)
+  })
+
+  it('set-max-concurrent should store value clamped 1-8', async () => {
+    await handlers['set-max-concurrent']({}, 5)
+    expect(mockStoreData['maxConcurrent']).toBe(5)
+  })
+
+  it('add-history-entry should cap at 200 entries', async () => {
+    for (let i = 0; i < 210; i++) {
+      await handlers['add-history-entry']({}, { id: `entry-${i}` })
+    }
+    const history = await handlers['get-history']()
+    expect(history).toHaveLength(200)
+    expect(history[0].id).toBe('entry-209')
+    expect(history[199].id).toBe('entry-10')
   })
 })

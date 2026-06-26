@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DownloadPanel } from './components/download-panel'
 import { StatsCard } from './components/stats-card'
 import { QueueList } from './components/queue-list'
-import { History } from './components/history'
 import { ThemeToggle } from './components/theme-toggle'
 import { DependencyBanner } from './components/dependency-banner'
 import { ToastProvider, useToast } from './components/toast'
@@ -40,7 +39,6 @@ function AppContent() {
   } = useSettings()
   const { t, locale, setLocale } = useI18n()
   const { toast } = useToast()
-  const [historyOpen, setHistoryOpen] = useState(false)
   const [deps, setDeps] = useState<DependencyStatus | null>(null)
   const [depsDismissed, setDepsDismissed] = useState(false)
 
@@ -211,18 +209,6 @@ function AppContent() {
 
         {/* Right controls */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Queue indicator + History toggle */}
-          <button
-            onClick={() => setHistoryOpen(!historyOpen)}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              historyOpen
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-          >
-            {t('history.title')}
-          </button>
-
           {/* Language toggle */}
           <button
             onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
@@ -328,9 +314,8 @@ function AppContent() {
         </div>
       </div>
 
-      {/* ─── Queue (always visible) + History Drawer ──────────────── */}
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl">
-        {/* Queue */}
+      {/* ─── Queue (always visible) ──────────────── */}
+      <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
         <div className="glass h-full overflow-y-auto px-5 py-4 pr-1 transition-all duration-300">
           <QueueList
             items={queue}
@@ -342,62 +327,6 @@ function AppContent() {
             isPaused={settings.globalPause}
           />
         </div>
-
-        {/* History Drawer */}
-        <AnimatePresence>
-          {historyOpen && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                key="history-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 bg-black/30 backdrop-blur-sm z-10"
-                onClick={() => setHistoryOpen(false)}
-              />
-              {/* Drawer panel */}
-              <motion.div
-                key="history-drawer"
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="absolute top-0 right-0 bottom-0 w-[380px] max-w-[90vw] glass z-20 flex flex-col overflow-hidden rounded-l-2xl"
-              >
-                {/* Drawer header */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
-                  <h2 className="text-sm font-semibold text-foreground">{t('history.title')}</h2>
-                  <button
-                    onClick={() => setHistoryOpen(false)}
-                    className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-                {/* Drawer content */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 queue-scroll">
-                  <History
-                    onShowInFolder={(path: string) => window.easyDownloader.showInFolder(path)}
-                  />
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Screen reader live region */}

@@ -256,6 +256,14 @@ describe('BaseDownloadManager (via DownloadManager)', () => {
     })
   })
 
+  describe('setDownloadPath()', () => {
+    it('should update the download path', () => {
+      expect((manager as any).downloadPath).toBe('/mock/downloads')
+      manager.setDownloadPath('/usb/Downloads')
+      expect((manager as any).downloadPath).toBe('/usb/Downloads')
+    })
+  })
+
   describe('validateUrl()', () => {
     it('should accept valid HTTP URLs', () => {
       expect((manager as any).validateUrl('https://youtube.com/watch?v=abc')).toBe(true)
