@@ -159,7 +159,7 @@ export interface EasyDownloaderAPI {
   addHistoryEntry: (entry: HistoryEntry) => Promise<void>
   clearHistory: () => Promise<void>
   checkFileExists: (path: string) => Promise<boolean>
-  pruneHistory: () => Promise<number>
+  pruneHistory: (days?: number) => Promise<number>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
   onDownloadComplete: (callback: (item: DownloadItem) => void) => void
   onDownloadError: (

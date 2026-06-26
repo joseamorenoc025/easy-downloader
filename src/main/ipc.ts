@@ -321,8 +321,8 @@ export function setupIPC(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle('prune-history', async () => {
-    const maxAgeDays = (store.get('settings', {}) as Record<string, unknown>).historyMaxAge ?? 90
+  ipcMain.handle('prune-history', async (_event, days?: number) => {
+    const maxAgeDays = days ?? 90
     const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
     const history = store.get('downloadHistory', []) as Array<Record<string, unknown>>
     const pruned = history.filter((e) => {

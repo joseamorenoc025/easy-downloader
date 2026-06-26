@@ -6,7 +6,7 @@ import '../lib/ipc'
 
 interface HistoryProps {
   onOpenFolder: (path?: string) => void
-  onRedownload: (entry: HistoryEntry) => void
+  onRedownload?: (entry: HistoryEntry) => void
   onBackToQueue?: () => void
 }
 
@@ -17,12 +17,6 @@ function getYouTubeThumbnail(url: string): string | null {
     /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/
   )
   return match ? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg` : null
-}
-
-function getSpotifyColor(url: string): string {
-  const sum = url.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  const hues = [142, 200, 260, 320, 30, 80]
-  return `hsl(${hues[sum % hues.length]}, 65%, 40%)`
 }
 
 function groupByDate(entries: HistoryEntry[], t: (key: string) => string) {
@@ -61,21 +55,17 @@ function relativeTime(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
 }
 
-// ── Thumbnail card ────────────────────────────────────────────────────────────
+// ── List row ─────────────────────────────────────────────────────────────────
 
-function HistoryCard({
+function HistoryRow({
   entry,
-  onOpenFolder,
-  onRedownload
+  onOpenFolder
 }: {
   entry: HistoryEntry
   onOpenFolder: (path?: string) => void
-  onRedownload: (entry: HistoryEntry) => void
 }) {
   const { t, locale } = useI18n()
   const thumb = entry.source === 'youtube' ? getYouTubeThumbnail(entry.url) : null
-  const spotifyBg = entry.source === 'spotify' ? getSpotifyColor(entry.url) : ''
-  const [hovered, setHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [fileExists, setFileExists] = useState<boolean | null>(null)
 
@@ -88,246 +78,89 @@ function HistoryCard({
   }, [entry.outputPath])
 
   const isVideo = entry.format === 'video'
-  const badgeLabel = isVideo ? 'MP4' : 'MP3'
   const qualityLabel = isVideo ? entry.quality : `${entry.quality} kbps`
-
-  const handleOpenFile = () => {
-    if (entry.outputPath) {
-      window.easyDownloader.openFolder(entry.outputPath)
-    }
-  }
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.93, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-      className="relative group cursor-pointer select-none"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.15 }}
+      className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-accent/50 transition-colors group"
     >
-      {/* ── Thumbnail area ── */}
-      <div className="relative overflow-hidden rounded-xl aspect-video bg-muted shadow-md group-hover:shadow-xl transition-shadow duration-300">
-        {/* Image / fallback */}
+      {/* Thumbnail */}
+      <div className="w-16 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
         {thumb && !imgError ? (
           <img
             src={thumb}
-            alt={entry.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            alt=""
+            className="w-full h-full object-cover"
             onError={() => setImgError(true)}
           />
-        ) : entry.source === 'spotify' ? (
-          <div
-            className="w-full h-full flex flex-col items-center justify-center gap-1"
-            style={{ background: `linear-gradient(135deg, ${spotifyBg}, #1a1a2e)` }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="#1DB954">
-              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-            </svg>
-            <span className="text-white/80 text-[10px] font-medium px-2 text-center truncate w-full text-center">
-              {entry.title}
-            </span>
-          </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/60 to-slate-900">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-900/40 to-slate-800">
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="rgba(255,255,255,0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeWidth="2"
             >
               <rect width="18" height="18" x="3" y="3" rx="2" />
               <path d="m10 8 6 4-6 4V8Z" />
             </svg>
           </div>
         )}
+      </div>
 
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground truncate">{entry.title}</p>
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+          <span>{isVideo ? 'MP4' : 'MP3'}</span>
+          <span>·</span>
+          <span>{qualityLabel}</span>
+          <span>·</span>
+          <span>{entry.source === 'spotify' ? 'Spotify' : 'YouTube'}</span>
+        </div>
+      </div>
 
-        {/* Format badge */}
-        <span
-          className={`absolute top-2 right-2 rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide ${
-            isVideo ? 'bg-indigo-600 text-white' : 'bg-indigo-400 text-white'
-          }`}
-        >
-          {badgeLabel}
-        </span>
-
-        {/* Source badge */}
-        <span className="absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-black/50 text-white/80 backdrop-blur-sm">
-          {entry.source === 'spotify' ? '🎵 Spotify' : '▶ YouTube'}
-        </span>
-
-        {/* File status badge */}
+      {/* Status + time */}
+      <div className="flex items-center gap-2 shrink-0">
         {fileExists !== null && (
           <span
-            className={`absolute bottom-2 right-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm ${
-              fileExists
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+              fileExists ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'
             }`}
           >
             {fileExists ? t('history.fileExists') : t('history.fileDeleted')}
           </span>
         )}
-
-        {/* Bottom info row (always visible) */}
-        <div className="absolute bottom-0 inset-x-0 p-2.5">
-          <p className="text-white text-xs font-semibold leading-snug line-clamp-2 drop-shadow">
-            {entry.title}
-          </p>
-          <p className="text-white/55 text-[10px] mt-0.5">
-            {qualityLabel} · {relativeTime(entry.completedAt, locale)}
-          </p>
-        </div>
-
-        {/* ── Hover overlay ── */}
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 backdrop-blur-[2px]"
+        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+          {relativeTime(entry.completedAt, locale)}
+        </span>
+        {entry.outputPath && (
+          <button
+            onClick={() => onOpenFolder(entry.outputPath)}
+            className="opacity-0 group-hover:opacity-100 rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+            title={t('history.openFolder')}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              {/* Primary action: Open file or Re-download */}
-              {fileExists ? (
-                <motion.button
-                  initial={{ y: 6, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.05 }}
-                  onClick={handleOpenFile}
-                  className="flex items-center gap-1.5 rounded-xl bg-white text-black px-4 py-2 text-xs font-bold shadow-lg hover:bg-white/90 active:scale-95"
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-                  </svg>
-                  {t('history.openFile')}
-                </motion.button>
-              ) : (
-                <motion.button
-                  initial={{ y: 6, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.05 }}
-                  onClick={() => onRedownload(entry)}
-                  className="flex items-center gap-1.5 rounded-xl bg-white text-black px-4 py-2 text-xs font-bold shadow-lg hover:bg-white/90 active:scale-95"
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 16l-4-4h2.5V4h3v8H16l-4 4Z" />
-                    <path d="M4 18h16" />
-                  </svg>
-                  {t('history.redownload')}
-                </motion.button>
-              )}
-
-              {/* Secondary: Open folder */}
-              {entry.outputPath && (
-                <motion.button
-                  initial={{ y: 6, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.08 }}
-                  onClick={() => onOpenFolder(entry.outputPath)}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/30 text-white/90 px-4 py-1.5 text-xs font-medium hover:bg-white/10 active:scale-95"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
-                  </svg>
-                  {t('history.openFolder')}
-                </motion.button>
-              )}
-
-              {/* Tertiary: Re-download (only if file exists, as alternative) */}
-              {fileExists && (
-                <motion.button
-                  initial={{ y: 6, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.11 }}
-                  onClick={() => onRedownload(entry)}
-                  className="flex items-center gap-1.5 rounded-xl text-white/60 px-3 py-1 text-[11px] font-medium hover:text-white/90 hover:bg-white/5 active:scale-95"
-                >
-                  {t('history.redownload')}
-                </motion.button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+            </svg>
+          </button>
+        )}
       </div>
     </motion.div>
-  )
-}
-
-// ── Section row ───────────────────────────────────────────────────────────────
-
-function HistorySection({
-  label,
-  entries,
-  onOpenFolder,
-  onRedownload
-}: {
-  label: string
-  entries: HistoryEntry[]
-  onOpenFolder: (path?: string) => void
-  onRedownload: (entry: HistoryEntry) => void
-}) {
-  const { t } = useI18n()
-  return (
-    <div className="space-y-2">
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-0.5">
-        {label}
-        <span className="ml-2 text-muted-foreground/40 normal-case tracking-normal font-normal">
-          {t('history.filesCount', { count: entries.length })}
-        </span>
-      </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <AnimatePresence initial={false}>
-          {entries.map((e) => (
-            <HistoryCard
-              key={e.id}
-              entry={e}
-              onOpenFolder={onOpenFolder}
-              onRedownload={onRedownload}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
-    </div>
   )
 }
 
@@ -335,18 +168,18 @@ function HistorySection({
 
 type Filter = 'all' | 'video' | 'audio'
 
-export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryProps) {
+export function History({ onOpenFolder, onBackToQueue }: HistoryProps) {
   const { t } = useI18n()
   const [entries, setEntries] = useState<HistoryEntry[]>([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
-  const [pruning, setPruning] = useState(false)
+  const [pruningDays, setPruningDays] = useState<number | null>(null)
 
   useEffect(() => {
     window.easyDownloader.getHistory().then(setEntries)
   }, [])
 
-  // Real-time updates: listen for new completions while viewing history
+  // Real-time updates
   useEffect(() => {
     const handler = (item: HistoryEntry) => {
       setEntries((prev) => {
@@ -366,19 +199,15 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
     setEntries([])
   }
 
-  const handlePrune = async () => {
-    if (!window.confirm(t('history.confirmPrune'))) return
-    setPruning(true)
+  const handlePrune = async (days: number) => {
+    if (!window.confirm(t('history.confirmPrune', { days }))) return
+    setPruningDays(days)
     try {
-      const remaining = await window.easyDownloader.pruneHistory()
-      setEntries((prev) =>
-        prev.filter((e) => {
-          const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
-          return new Date(e.completedAt).getTime() >= cutoff
-        })
-      )
+      await window.easyDownloader.pruneHistory(days)
+      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+      setEntries((prev) => prev.filter((e) => new Date(e.completedAt).getTime() >= cutoff))
     } finally {
-      setPruning(false)
+      setPruningDays(null)
     }
   }
 
@@ -401,7 +230,6 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
       >
         <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
           <svg
-            xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -423,7 +251,6 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
             className="mt-2 flex items-center gap-1.5 rounded-xl bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-sm hover:bg-accent transition-colors"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               width="13"
               height="13"
               viewBox="0 0 24 24"
@@ -443,26 +270,22 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
     )
   }
 
-  // ── No results ──
   const noResults = filtered.length === 0
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-2">
         {/* Search */}
         <div className="relative flex-1">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none"
-            xmlns="http://www.w3.org/2000/svg"
             width="13"
             height="13"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
           >
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
@@ -476,13 +299,13 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
           />
         </div>
 
-        {/* Format filter pills */}
+        {/* Format filter */}
         <div className="flex items-center gap-0.5 rounded-xl bg-muted p-0.5 shrink-0">
           {(['all', 'video', 'audio'] as Filter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
                 filter === f
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -496,56 +319,33 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Prune old entries */}
-        <button
-          onClick={handlePrune}
-          disabled={pruning}
-          className="shrink-0 rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 transition-colors disabled:opacity-50"
-          title={t('history.pruneOld')}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* ── Cleanup bar ── */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] text-muted-foreground">{t('history.cleanOlderThan')}</span>
+        {[
+          { days: 1, label: '1d' },
+          { days: 3, label: '3d' },
+          { days: 7, label: '7d' },
+          { days: 30, label: '30d' }
+        ].map(({ days, label }) => (
+          <button
+            key={days}
+            onClick={() => handlePrune(days)}
+            disabled={pruningDays !== null}
+            className="rounded-lg px-2 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
           >
-            <path d="M3 6h18" />
-            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            <line x1="10" x2="10" y1="11" y2="17" />
-            <line x1="14" x2="14" y1="11" y2="17" />
-          </svg>
-        </button>
-
-        {/* Clear all */}
+            {label}
+          </button>
+        ))}
+        <div className="flex-1" />
         <button
           onClick={clear}
-          className="shrink-0 rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
           title={t('history.clear')}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M9 6V4h6v2" />
-          </svg>
+          {t('history.clearAll')}
         </button>
       </div>
 
@@ -564,15 +364,23 @@ export function History({ onOpenFolder, onRedownload, onBackToQueue }: HistoryPr
       </AnimatePresence>
 
       {/* ── Groups ── */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {groups.map((g) => (
-          <HistorySection
-            key={g.label}
-            label={g.label}
-            entries={g.entries}
-            onOpenFolder={onOpenFolder}
-            onRedownload={onRedownload}
-          />
+          <div key={g.label} className="space-y-1">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 py-1">
+              {g.label}
+              <span className="ml-2 text-muted-foreground/40 normal-case tracking-normal font-normal">
+                ({g.entries.length})
+              </span>
+            </h2>
+            <div className="space-y-0.5">
+              <AnimatePresence initial={false}>
+                {g.entries.map((e) => (
+                  <HistoryRow key={e.id} entry={e} onOpenFolder={onOpenFolder} />
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
         ))}
       </div>
     </div>

@@ -90,8 +90,9 @@
   "history.openFile": "Open file",
   "history.fileExists": "On disk",
   "history.fileDeleted": "Deleted",
-  "history.pruneOld": "Clean old entries (90+ days)",
-  "history.confirmPrune": "Remove downloads older than 90 days?",
+  "history.cleanOlderThan": "Clean older than:",
+  "history.clearAll": "Clear all",
+  "history.confirmPrune": "Remove downloads older than {days} days?",
 
   "tray.show": "Show EasyDownloader",
   "tray.hide": "Hide",

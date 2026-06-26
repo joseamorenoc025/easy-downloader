@@ -10,7 +10,7 @@ import { ToastProvider, useToast } from './components/toast'
 import { useDownloads } from './hooks/use-downloads'
 import { useSettings } from './hooks/use-settings'
 import { I18nProvider, useI18n } from './i18n/context'
-import type { DownloadOptions, HistoryEntry, DependencyStatus } from '@/types'
+import type { DownloadOptions, DependencyStatus } from '@/types'
 import { isValidUrl } from './lib/utils'
 import './lib/ipc'
 
@@ -390,17 +390,7 @@ function AppContent() {
                 </div>
                 {/* Drawer content */}
                 <div className="flex-1 overflow-y-auto px-5 py-4 queue-scroll">
-                  <History
-                    onOpenFolder={openFolder}
-                    onRedownload={(entry: HistoryEntry) => {
-                      if (entry.source === 'spotify') {
-                        handleAddSpotify(entry.url, entry.quality)
-                      } else {
-                        handleAdd({ url: entry.url, format: entry.format, quality: entry.quality })
-                      }
-                      setHistoryOpen(false)
-                    }}
-                  />
+                  <History onOpenFolder={openFolder} />
                 </div>
               </motion.div>
             </>
