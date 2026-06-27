@@ -1,6 +1,6 @@
 {
   "name": "easy-downloader",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Desktop app to download videos and audio from YouTube, Spotify and ~1700 sites",
   "author": "Jose Amoreno <joseamorenoc025@gmail.com>",
   "main": "./out/main/index.js",
@@ -97,14 +97,8 @@
     ],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "artifactName": "${productName}-Setup-${version}.${ext}"
-        },
-        {
-          "target": "portable",
-          "artifactName": "${productName}-${version}.${ext}"
-        }
+        "nsis",
+        "portable"
       ],
       "icon": "resources/icon.ico",
       "signAndEditExecutable": false,

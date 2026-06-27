@@ -9,10 +9,17 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.3.2] - 2026-06-27
+
+### Fixed
+- **Build fix: `artifactName` en target objects**: electron-builder 26.8.1 no soporta `artifactName` dentro de los objetos del array `target` de `win`. Se revirtió a target strings simples (`["nsis", "portable"]`). El `Remove-Item` en `build.yml` es el mecanismo definitivo para eliminar duplicados.
+
+---
+
 ## [2.3.1] - 2026-06-26
 
 ### Fixed
-- **Duplicados de .exe en releases**: electron-builder generaba 4 archivos .exe (2 hifenados + 2 con punto). Fix: `artifactName` explícito por target en `package.json` + `Remove-Item` safety net en `build.yml`. Próximos releases subirán solo 2 .exe.
+- **Duplicados de .exe en releases**: electron-builder generaba 4 archivos .exe (2 hifenados + 2 con punto). Fix: `Remove-Item` safety net en `build.yml`. Próximos releases subirán solo 2 .exe.
 - **E2E tests actualizados**: eliminado `history.spec.ts` (componente dead code), selectores actualizados para layout dual-pane (incognito, metadata, pause movidos de header a StatsCard). Agregado `new-features.spec.ts` (13 tests: cookies, notifications, folder dropdown, presets, concurrent controls).
 - **README**: tabla explicativa Setup vs Portable en secciones ES/EN.
 
@@ -23,8 +30,11 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 # English summary
 
+## [2.3.2] - 2026-06-27
+- **Build fix: `artifactName` in target objects**: electron-builder 26.8.1 does not support `artifactName` inside `win.target` array objects. Reverted to simple target strings. The `Remove-Item` in `build.yml` remains the definitive mechanism for duplicate cleanup.
+
 ## [2.3.1] - 2026-06-26
-- **Fixed duplicate .exe in releases**: electron-builder was generating 4 .exe files (2 hyphenated + 2 dot-named). Fixed with explicit `artifactName` per target in `package.json` + `Remove-Item` safety net in `build.yml`. Future releases will upload only 2 .exe files.
+- **Fixed duplicate .exe in releases**: electron-builder was generating 4 .exe files. Fixed with `Remove-Item` safety net in `build.yml`. Future releases will upload only 2 .exe files.
 - **Updated E2E tests**: removed `history.spec.ts` (dead code), updated selectors for dual-pane layout (incognito, metadata, pause moved from header to StatsCard). Added `new-features.spec.ts` (13 tests: cookies, notifications, folder dropdown, presets, concurrent controls).
 - **README**: explanatory table for Setup vs Portable in ES/EN sections.
 
