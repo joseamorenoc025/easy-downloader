@@ -31,15 +31,10 @@ test.describe('App Launch', () => {
     await expect(youtubeBtn).toHaveAttribute('aria-checked', 'true')
   })
 
-  test('queue/history tabs are present', async ({ window }) => {
-    const queueTab = window.locator('button[role="tab"]').filter({ hasText: /queue|cola/i })
-    const historyTab = window
-      .locator('button[role="tab"]')
-      .filter({ hasText: /history|historial/i })
-
-    await expect(queueTab).toBeVisible()
-    await expect(historyTab).toBeVisible()
-    await expect(queueTab).toHaveAttribute('aria-selected', 'true')
+  test('queue section is visible by default', async ({ window }) => {
+    // The queue is always visible as a list (no tabs)
+    const queueSection = window.getByText(/no downloads yet|no hay descargas|welcome|bienvenido/i)
+    await expect(queueSection).toBeVisible()
   })
 
   test('app version in footer matches package.json', async ({ electronApp, window }) => {

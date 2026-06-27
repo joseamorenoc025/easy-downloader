@@ -31,7 +31,7 @@ test.describe('Queue Management', () => {
 
   test('global pause button toggles', async ({ window }) => {
     const pauseBtn = window
-      .locator('header button')
+      .locator('button')
       .filter({ hasText: /play|pause|reanudar|pausar/i })
       .first()
     await expect(pauseBtn).toBeVisible()
@@ -40,7 +40,7 @@ test.describe('Queue Management', () => {
     await window.waitForTimeout(300)
 
     const newBtn = window
-      .locator('header button')
+      .locator('button')
       .filter({ hasText: /play|pause|reanudar|pausar/i })
       .first()
     await expect(newBtn).toBeVisible()

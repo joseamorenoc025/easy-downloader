@@ -33,7 +33,7 @@ test.describe('Settings', () => {
 
   test('incognito toggle changes state on click', async ({ window }) => {
     const incognitoBtn = window
-      .locator('header button')
+      .locator('button')
       .filter({ hasText: /incognito/i })
       .first()
     await expect(incognitoBtn).toBeVisible()
@@ -48,7 +48,7 @@ test.describe('Settings', () => {
   })
 
   test('metadata toggle changes state on click', async ({ window }) => {
-    const metadataBtn = window.locator('header button').filter({ hasText: /meta/i }).first()
+    const metadataBtn = window.locator('button').filter({ hasText: /meta/i }).first()
     await expect(metadataBtn).toBeVisible()
 
     const initialClass = await metadataBtn.getAttribute('class')
