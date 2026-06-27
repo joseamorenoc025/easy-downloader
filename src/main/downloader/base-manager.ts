@@ -135,7 +135,18 @@ export abstract class BaseDownloadManager {
 
   cancelAll(): void {
     for (const [, active] of this.activeItems) {
-      active.emitter.ytDlpProcess?.kill('SIGTERM')
+      const proc = active.emitter.ytDlpProcess
+      if (proc) {
+        proc.kill('SIGTERM')
+        // Force-kill after 2s if SIGTERM didn't work (Windows)
+        setTimeout(() => {
+          try {
+            proc.kill('SIGKILL')
+          } catch {
+            // process already dead
+          }
+        }, 2000)
+      }
       active.item.status = 'cancelled'
       this.onComplete(active.item)
     }

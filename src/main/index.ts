@@ -20,10 +20,25 @@ process.on('uncaughtException', (err) => {
 let mainWindow: BrowserWindow | null = null
 let downloadManager: DownloadManager | null = null
 let spotifyManager: SpotifyDownloadManager | null = null
+let tray: ReturnType<typeof setupTray> = null
 let isQuitting = false
 let isUpdateDownloaded = false
 
 const isTestMode = process.env.EASYDOWNLOADER_TEST === '1'
+
+// Single instance lock — prevent multiple windows
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
 
 function getMainWindow(): BrowserWindow | null {
   return mainWindow
@@ -243,12 +258,12 @@ app.whenReady().then(() => {
   }
 
   // Tray
-  setupTray(getMainWindow)
+  tray = setupTray(getMainWindow)
 
   // Minimize to tray on close (skip in test mode)
   if (!isTestMode) {
     mainWindow.on('close', (event) => {
-      if (!app.isQuitting) {
+      if (!isQuitting && !app.isQuitting) {
         event.preventDefault()
         mainWindow?.hide()
       }
@@ -290,24 +305,21 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('before-quit', (event) => {
+app.on('before-quit', () => {
   if (isQuitting) return
   isQuitting = true
-  event.preventDefault()
   try {
+    tray?.destroy()
     downloadManager?.cancelAll()
     spotifyManager?.cancelAll()
   } catch (e) {
-    console.error('Error during cancelAll on quit:', e)
+    console.error('Error during cleanup on quit:', e)
   }
-  setTimeout(() => app.quit(), 500)
 })
 
 process.on('SIGTERM', () => {
-  isQuitting = true
-  app.quit()
+  if (!isQuitting) app.quit()
 })
 process.on('SIGINT', () => {
-  isQuitting = true
-  app.quit()
+  if (!isQuitting) app.quit()
 })

@@ -9,6 +9,26 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.4.0] - 2026-06-27
+
+### Fixed
+- **Proceso zombie al cerrar la app**: al hacer clic en X, la ventana se ocultaba pero el proceso seguía vivo indefinitely. Ahora el handler `before-quit` destruye el tray y permite que el proceso termine limpiamente.
+- **Múltiples instancias**: se agregó `requestSingleInstanceLock()`. Si la app ya está abierta, el segundo intento enfoca la ventana existente en vez de crear una nueva.
+- **Loop reentrante en `before-quit`**: el handler anterior hacía `event.preventDefault()` + `setTimeout(quit, 500)` creando un ciclo complejo. Ahora solo hace cleanup (destroy tray, cancelAll) y permite que el quit proceda.
+- **Procesos yt-dlp zombie en Windows**: `cancelAll()` ahora envía `SIGKILL` forzado después de 2s si `SIGTERM` no funcionó.
+
+---
+
+# English summary
+
+## [2.4.0] - 2026-06-27
+- **Fixed zombie process on close**: clicking X now properly terminates the app. The `before-quit` handler destroys the tray and allows the process to exit cleanly.
+- **Single instance lock**: `requestSingleInstanceLock()` prevents multiple instances. A second launch focuses the existing window.
+- **Fixed re-entrant quit loop**: removed `event.preventDefault()` + `setTimeout(quit)` pattern from `before-quit`. Cleanup (destroy tray, cancelAll) runs once, then quit proceeds normally.
+- **Force-kill yt-dlp processes**: `cancelAll()` sends `SIGKILL` after 2s if `SIGTERM` didn't work (Windows compatibility).
+
+---
+
 ## [2.3.2] - 2026-06-27
 
 ### Fixed
@@ -29,6 +49,12 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ---
 
 # English summary
+
+## [2.4.0] - 2026-06-27
+- **Fixed zombie process on close**: clicking X now properly terminates the app. The `before-quit` handler destroys the tray and allows the process to exit cleanly.
+- **Single instance lock**: `requestSingleInstanceLock()` prevents multiple instances. A second launch focuses the existing window.
+- **Fixed re-entrant quit loop**: removed `event.preventDefault()` + `setTimeout(quit)` pattern from `before-quit`. Cleanup (destroy tray, cancelAll) runs once, then quit proceeds normally.
+- **Force-kill yt-dlp processes**: `cancelAll()` sends `SIGKILL` after 2s if `SIGTERM` didn't work (Windows compatibility).
 
 ## [2.3.2] - 2026-06-27
 - **Build fix: `artifactName` in target objects**: electron-builder 26.8.1 does not support `artifactName` inside `win.target` array objects. Reverted to simple target strings. The `Remove-Item` in `build.yml` remains the definitive mechanism for duplicate cleanup.
