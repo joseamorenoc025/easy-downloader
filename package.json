@@ -97,8 +97,14 @@
     ],
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "artifactName": "${productName}-Setup-${version}.${ext}"
+        },
+        {
+          "target": "portable",
+          "artifactName": "${productName}-${version}.${ext}"
+        }
       ],
       "icon": "resources/icon.ico",
       "signAndEditExecutable": false,
