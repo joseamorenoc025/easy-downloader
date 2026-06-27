@@ -9,6 +9,27 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.3.1] - 2026-06-26
+
+### Fixed
+- **Duplicados de .exe en releases**: electron-builder generaba 4 archivos .exe (2 hifenados + 2 con punto). Fix: `artifactName` explícito por target en `package.json` + `Remove-Item` safety net en `build.yml`. Próximos releases subirán solo 2 .exe.
+- **E2E tests actualizados**: eliminado `history.spec.ts` (componente dead code), selectores actualizados para layout dual-pane (incognito, metadata, pause movidos de header a StatsCard). Agregado `new-features.spec.ts` (13 tests: cookies, notifications, folder dropdown, presets, concurrent controls).
+- **README**: tabla explicativa Setup vs Portable en secciones ES/EN.
+
+### Changed
+- **107 unit tests** + **33 E2E tests** (de 34 a 33 tras eliminación de tests muertos, +13 nuevos).
+
+---
+
+# English summary
+
+## [2.3.1] - 2026-06-26
+- **Fixed duplicate .exe in releases**: electron-builder was generating 4 .exe files (2 hyphenated + 2 dot-named). Fixed with explicit `artifactName` per target in `package.json` + `Remove-Item` safety net in `build.yml`. Future releases will upload only 2 .exe files.
+- **Updated E2E tests**: removed `history.spec.ts` (dead code), updated selectors for dual-pane layout (incognito, metadata, pause moved from header to StatsCard). Added `new-features.spec.ts` (13 tests: cookies, notifications, folder dropdown, presets, concurrent controls).
+- **README**: explanatory table for Setup vs Portable in ES/EN sections.
+
+---
+
 ## [2.3.0] - 2026-06-25
 
 ### Added
@@ -94,6 +115,26 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 ---
 
 # English summary
+
+## [2.3.1] - 2026-06-26
+- **Fixed duplicate .exe in releases**: explicit `artifactName` per target + `Remove-Item` safety net. Future releases upload only 2 .exe.
+- **Updated E2E tests**: removed dead `history.spec.ts`, updated selectors for dual-pane layout, added `new-features.spec.ts` (13 tests).
+- **README**: Setup vs Portable explanatory table.
+
+## [2.3.0] - 2026-06-25
+- **YouTube cookies**: Netscape cookie import, `--cookies` arg to yt-dlp for authenticated content.
+- **ID3 metadata editor**: extract/edit/embed metadata on audio downloads.
+- **Download notifications**: on/off toggle, native OS notification.
+- **Portable mode**: auto-detection, `portable-data/` directory.
+- **6 conversion presets**: Music, Podcast, Archival, Social Media, Video HD, Video SD.
+- **Download folder selector**: header dropdown, native directory picker.
+- **USB fix**: `setDownloadPath()` updates running managers live.
+- **show-in-folder**: highlights file in OS explorer.
+- **Session-only history**: in-memory, no persistence.
+- **Electric Indigo & Slate palette**: complete color redesign.
+- **107 tests** (from 93).
+
+---
 
 ## [2.2.0] - 2026-06-19
 - **Native Spotify**: complete `spotdl` replacement using `spotify-url-info` + `yt-dlp`. No Python or pip needed. Downloads tracks, albums, and playlists directly from the UI.
