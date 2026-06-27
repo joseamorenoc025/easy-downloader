@@ -18,7 +18,7 @@
 
 | Platform | Command |
 |---|---|
-| **Windows** | Download the `.exe` from [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest) and run it |
+| **Windows** | Download `EasyDownloader-Setup-*.exe` (installer) or `EasyDownloader-*.exe` (portable) from [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest) |
 | **Debian / Ubuntu** | `sudo dpkg -i easy-downloader_*.deb && sudo apt-get install -f` |
 | **Fedora / others** | `chmod +x EasyDownloader-*.AppImage && ./EasyDownloader-*.AppImage` |
 | **From source** | `git clone … && npm install && npm run dev` |
@@ -101,12 +101,18 @@ You can also [open an issue](https://github.com/joseamorenoc025/easy-downloader/
 
 ### Windows
 
-1. Download `EasyDownloader-Setup-2.x.x.exe` from [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest).
-2. If SmartScreen shows the blue "Windows protected your PC" screen:
+Two `.exe` files are available in [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest):
+
+| File | Use |
+|---|---|
+| `EasyDownloader-Setup-*.exe` | **NSIS Installer** — creates desktop shortcut and start menu entry. Recommended for daily use. |
+| `EasyDownloader-*.exe` | **Portable** — run directly without installing. Data is saved in `portable-data/` next to the executable. Ideal for USB drives. |
+
+For both, if SmartScreen shows the blue "Windows protected your PC" screen:
    - Click **"More info"** (cyan link)
    - Click **"Run anyway"**
-3. The NSIS installer creates a desktop shortcut and a start menu entry.
-4. The first time you open the app, `yt-dlp` downloads automatically (~30 MB, once).
+
+The first time you open the app, `yt-dlp` downloads automatically (~30 MB, once).
 
 > The SmartScreen warning is expected for unsigned apps. The binary is safe (see [FAQ](#-faq)).
 

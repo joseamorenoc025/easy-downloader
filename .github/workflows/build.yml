@@ -45,6 +45,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Remove duplicate .exe (dot-named variants)
+        if: matrix.platform == 'win'
+        run: |
+          Remove-Item dist/EasyDownloader.*.exe -ErrorAction SilentlyContinue
+          Remove-Item dist/EasyDownloader.Setup.*.exe -ErrorAction SilentlyContinue
+
       - name: Package (Linux)
         if: matrix.platform == 'linux'
         run: |
@@ -62,8 +68,8 @@ jobs:
             dist/*.exe
             dist/*.AppImage
             dist/*.deb
-            dist/*.yml
-            dist/*.yaml
+            dist/latest.yml
+            dist/latest-linux.yml
           fail_on_unmatched_files: false
 
       - name: Upload Artifact

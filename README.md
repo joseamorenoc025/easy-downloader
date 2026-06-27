@@ -105,9 +105,14 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 
 #### Windows
 
-1. Descarga `EasyDownloader-Setup-2.x.x.exe` desde [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest).
-2. Ejecuta el instalador NSIS. Si Windows muestra SmartScreen, click "More info" → "Run anyway".
-3. Listo. La app crea un acceso directo en escritorio y menú inicio.
+En [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest) hay dos archivos `.exe`:
+
+| Archivo | Uso |
+|---|---|
+| `EasyDownloader-Setup-*.exe` | **Instalador NSIS** — crea acceso directo y menú inicio. Recomendado para uso diario. |
+| `EasyDownloader-*.exe` | **Portable** — ejecutar directamente sin instalar. Los datos se guardan en `portable-data/` junto al ejecutable. Ideal para USB. |
+
+Para ambos, si Windows muestra SmartScreen, click "More info" → "Run anyway".
 
 #### Debian / Ubuntu (`.deb`)
 
@@ -250,9 +255,14 @@ A cross-platform desktop app (Windows / Linux) built with Electron + React + Tai
 
 #### Windows
 
-1. Download `EasyDownloader-Setup-2.x.x.exe` from [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest).
-2. Run the NSIS installer. If Windows shows SmartScreen, click "More info" → "Run anyway".
-3. Done. App creates a desktop shortcut and start menu entry.
+Two `.exe` files are available in [Releases](https://github.com/joseamorenoc025/easy-downloader/releases/latest):
+
+| File | Use |
+|---|---|
+| `EasyDownloader-Setup-*.exe` | **NSIS Installer** — creates desktop shortcut and start menu entry. Recommended for daily use. |
+| `EasyDownloader-*.exe` | **Portable** — run directly without installing. Data is saved in `portable-data/` next to the executable. Ideal for USB drives. |
+
+For both, if Windows shows SmartScreen, click "More info" → "Run anyway".
 
 #### Debian / Ubuntu (`.deb`)
 
