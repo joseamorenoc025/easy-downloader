@@ -37,18 +37,14 @@ function formatSpeedLabel(bytesPerSec: number): string {
 interface StatsCardProps {
   queue: DownloadItem[]
   settings?: Settings
-  onTogglePause?: () => void
   onToggleIncognito?: () => void
-  onToggleMetadata?: () => void
   onChangeConcurrent?: (value: number) => void
 }
 
 export function StatsCard({
   queue,
   settings,
-  onTogglePause,
   onToggleIncognito,
-  onToggleMetadata,
   onChangeConcurrent
 }: StatsCardProps) {
   const { t } = useI18n()
@@ -106,34 +102,6 @@ export function StatsCard({
       {/* Session controls row */}
       {settings && (
         <div className="flex items-center gap-1 flex-wrap">
-          {/* Pause/Resume */}
-          <button
-            onClick={onTogglePause}
-            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors ${
-              settings.globalPause
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-            title={settings.globalPause ? t('header.resumePause') : t('header.pauseResume')}
-          >
-            {settings.globalPause ? (
-              <>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-                {t('header.pause')}
-              </>
-            ) : (
-              <>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-                {t('header.play')}
-              </>
-            )}
-          </button>
-
           {/* Incognito */}
           <button
             onClick={onToggleIncognito}
@@ -160,31 +128,6 @@ export function StatsCard({
               <line x1="2" x2="22" y1="2" y2="22" />
             </svg>
             {settings.incognitoMode ? t('header.incognitoOn') : t('header.incognitoOff')}
-          </button>
-
-          {/* Metadata */}
-          <button
-            onClick={onToggleMetadata}
-            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors ${
-              settings.fetchMetadata
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            }`}
-            title={settings.fetchMetadata ? t('header.metadataOn') : t('header.metadataOff')}
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" x2="12" y1="16" y2="12" />
-              <line x1="12" x2="12.01" y1="8" y2="8" />
-            </svg>
-            {t('header.meta')}
           </button>
 
           {/* Concurrent downloads */}

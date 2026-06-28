@@ -150,6 +150,11 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
     item.status = 'downloading'
     const spotifyTrack = item.spotifyTrack
 
+    // Set title early so notifications and history show the track name
+    if (spotifyTrack) {
+      item.title = `${spotifyTrack.artist} - ${spotifyTrack.name}`
+    }
+
     const executeDownload = (youtubeUrl: string) => {
       const playlistName = item.playlistName
       const sanitizedArtist = spotifyTrack ? sanitizeFilename(spotifyTrack.artist) : ''
@@ -197,19 +202,6 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         const emitter = this.ytDlp.exec(args)
         this.activeItems.set(item.id, { item, emitter })
         this.setupEmitterListeners(emitter, item, attempt, 'spotify')
-
-        const originalComplete = this.onComplete
-        const wrappedOnComplete = (completedItem: DownloadItem) => {
-          if (spotifyTrack) {
-            completedItem.title = `${spotifyTrack.artist} - ${spotifyTrack.name}`
-          }
-          originalComplete(completedItem)
-        }
-        this.onComplete = wrappedOnComplete
-
-        emitter.on('close', () => {
-          this.onComplete = originalComplete
-        })
       } catch (err) {
         item.status = 'error'
         item.error = (err as Error).message

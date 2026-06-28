@@ -30,7 +30,6 @@ function AppContent() {
   const {
     settings,
     updateTheme,
-    setFetchMetadata,
     setIncognitoMode,
     setNotifications,
     setMaxConcurrent,
@@ -94,11 +93,6 @@ function AppContent() {
     if (dir) {
       toast(`${t('app.changeFolderConfirm').replace('{path}', dir)}`, 'success', 3000)
     }
-  }
-
-  const handleTogglePause = () => {
-    const newPause = !settings.globalPause
-    window.easyDownloader.setGlobalPause(newPause)
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -410,9 +404,7 @@ function AppContent() {
               <StatsCard
                 queue={queue}
                 settings={settings}
-                onTogglePause={handleTogglePause}
                 onToggleIncognito={() => setIncognitoMode(!settings.incognitoMode)}
-                onToggleMetadata={() => setFetchMetadata(!settings.fetchMetadata)}
                 onChangeConcurrent={setMaxConcurrent}
               />
             </div>

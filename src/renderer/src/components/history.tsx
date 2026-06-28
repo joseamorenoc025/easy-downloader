@@ -151,7 +151,10 @@ export function History({ onShowInFolder, onBackToQueue }: HistoryProps) {
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
-    window.easyDownloader.getHistory().then(setEntries)
+    window.easyDownloader
+      .getHistory()
+      .then(setEntries)
+      .catch(() => setEntries([]))
   }, [])
 
   // Real-time updates

@@ -20,10 +20,16 @@ export function MetadataPreview({ url, source, onDownload }: MetadataPreviewProp
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
-    if (!url) { setMeta(null); setError(''); return }
-    if (source === 'spotify') { setMeta(null); setError(''); return }
-    // Skip metadata fetch if disabled in settings
-    if (!settings.fetchMetadata) { setMeta(null); setError(''); return }
+    if (!url) {
+      setMeta(null)
+      setError('')
+      return
+    }
+    if (source === 'spotify') {
+      setMeta(null)
+      setError('')
+      return
+    }
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(async () => {
@@ -39,29 +45,22 @@ export function MetadataPreview({ url, source, onDownload }: MetadataPreviewProp
       }
     }, 500)
 
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [url, source, t, settings.fetchMetadata])
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [url, source, t])
 
   if (!url) return null
   if (source === 'spotify') return null
-  if (!settings.fetchMetadata) return null
 
   return (
     <div className="rounded-lg border bg-card p-3 transition-colors">
-      {loading && (
-        <p className="text-xs text-muted-foreground">{t('preview.loading')}</p>
-      )}
-      {error && (
-        <p className="text-xs text-destructive">{error}</p>
-      )}
+      {loading && <p className="text-xs text-muted-foreground">{t('preview.loading')}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
       {meta && !loading && (
         <div className="flex gap-3">
           {meta.thumbnail && (
-            <img
-              src={meta.thumbnail}
-              alt={meta.title}
-              className="size-16 rounded object-cover"
-            />
+            <img src={meta.thumbnail} alt={meta.title} className="size-16 rounded object-cover" />
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-card-foreground">{meta.title}</p>

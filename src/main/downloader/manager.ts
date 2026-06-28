@@ -43,7 +43,45 @@ export class DownloadManager extends BaseDownloadManager {
 
     this.queue.push(item)
     this.processQueue()
+
+    // Pre-fetch title via --print title (non-blocking, best-effort)
+    this.fetchTitle(item).catch(() => {})
+
     return item
+  }
+
+  private async fetchTitle(item: DownloadItem): Promise<void> {
+    try {
+      const args = [
+        item.url,
+        '--print',
+        'title',
+        '--skip-download',
+        '--no-warnings',
+        '--no-playlist',
+        '--socket-timeout',
+        '10'
+      ]
+      if (this.cookiesPath) {
+        args.push('--cookies', this.cookiesPath)
+      }
+      const title = await this.ytDlp.execRaw(args)
+      const cleanTitle = title.trim()
+      if (cleanTitle && cleanTitle !== 'NA') {
+        item.title = cleanTitle
+        this.onProgress({
+          id: item.id,
+          percentage: '0',
+          speed: '',
+          eta: '',
+          downloaded: '',
+          total: '',
+          title: item.title
+        })
+      }
+    } catch {
+      // Keep 'Queued...' as fallback
+    }
   }
 
   pauseAll(): void {

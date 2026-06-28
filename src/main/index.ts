@@ -90,12 +90,16 @@ function initDownloadManager(): void {
         mainWindow?.webContents.send('history-entry-added', entry)
 
         if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
-          const notif = new Notification({
-            title: 'Download Complete',
-            body: item.title || 'Your download has finished',
-            silent: true
-          })
-          notif.show()
+          try {
+            const notif = new Notification({
+              title: 'Download Complete',
+              body: item.title || 'Your download has finished',
+              silent: false
+            })
+            notif.show()
+          } catch (e) {
+            console.error('Notification failed:', e)
+          }
         }
       }
     },
@@ -146,12 +150,16 @@ function initSpotifyManager(): void {
         mainWindow?.webContents.send('history-entry-added', entry)
 
         if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
-          const notif = new Notification({
-            title: 'Spotify Download Complete',
-            body: item.title || 'Your Spotify download has finished',
-            silent: true
-          })
-          notif.show()
+          try {
+            const notif = new Notification({
+              title: 'Spotify Download Complete',
+              body: item.title || 'Your Spotify download has finished',
+              silent: false
+            })
+            notif.show()
+          } catch (e) {
+            console.error('Notification failed:', e)
+          }
         }
       }
     },
@@ -195,9 +203,10 @@ app.whenReady().then(() => {
   else if (themeMode === 'light') nativeTheme.themeSource = 'light'
   else nativeTheme.themeSource = 'system'
 
-  // Always start unpaused — stale globalPause from previous session causes
-  // UI/main-process state mismatch (UI shows "paused" indicator but downloads run)
+  // Always start unpaused and non-incognito — stale state from previous session causes
+  // UI/main-process state mismatch
   store.set('globalPause', false)
+  store.set('incognitoMode', false)
 
   // Init managers
   initDownloadManager()
