@@ -127,10 +127,14 @@ export class YtdlpSearchProvider {
     }
   }
 
+  protected createYtDlpInstance(): any {
+    const YtDlpWrap = require('yt-dlp-wrap')
+    return new YtDlpWrap()
+  }
+
   private async fallbackBinarySearch(query: string): Promise<SearchResult[]> {
     try {
-      const YtDlpWrap = require('yt-dlp-wrap')
-      const ytDlp = new YtDlpWrap()
+      const ytDlp = this.createYtDlpInstance()
       const ffmpegPath = getFfmpegPath()
 
       const args = [

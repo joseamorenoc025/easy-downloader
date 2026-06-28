@@ -26,10 +26,13 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 - **Selector de calidad de audio**: 320, 256, 192 o 128 kbps para descargas de Spotify.
 - **Selector de calidad de video**: desde 480p hasta mejor calidad disponible.
 - **Cola de descargas** con hasta 3 simultáneas.
+- **Selector de contenedor de video**: MP4 (default), MKV o WebM.
+- **Selector de formato de audio**: MP3 (default), AAC, FLAC, Opus, WAV o M4A.
+- **Historial**: pestaña con búsqueda, filtro y tiempo relativo (session-only, no persiste).
 - **Vista previa de metadata** antes de descargar (thumbnail, título, duración).
 - **Editor de metadatos ID3**: al descargar audio, edita título, artista, álbum, año, género y pista directamente desde la UI.
 - **Cookies para YouTube**: importa cookies en formato Netscape para contenido autenticado.
-- **6 presets de conversión**: Music, Podcast, Archival, Social Media, Video HD, Video SD.
+- **6 presets de conversión**: Music, Podcast, Archival (FLAC lossless), Social Media, Video HD, Video SD.
 - **Selector de carpeta**: cambia la carpeta de descargas desde el header.
 - **Notificaciones**: toggle on/off, notificación nativa al completar descarga.
 - **Modo portable**: ejecutable portátil sin instalación (`--portable`).
@@ -40,6 +43,8 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 - **Drag & drop** y **Ctrl+V global** para pegar URLs.
 - **Cola persistente**: sobrevive reinicios.
 - **Toast notifications**: feedback visual en errores y éxitos.
+- **Single instance lock**: previene múltiples instancias de la app.
+- **Proceso limpio al cerrar**: destruye tray y cancela descargas pendientes al cerrar.
 
 ### Cómo funciona
 
@@ -47,11 +52,14 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 |---|---|---|
 | **YouTube y otros sitios** | yt-dlp | Descarga video/audio de ~1700 fuentes |
 | **Búsqueda de YouTube** | Scraping de `ytInitialData` | Encuentra el video correcto sin API key |
+| **Fallback de búsqueda** | yt-dlp binary (`ytsearch1:`) | Cuando el scraping falla (403/429), usa el binario directamente |
 | **Spotify** | `spotify-url-info` + yt-dlp | Obtiene metadata del track y busca el audio en YouTube |
-| **Conversión de audio** | ffmpeg | Convierte a MP3 con la calidad elegida |
+| **Conversión de audio** | ffmpeg | Convierte al formato elegido (MP3, FLAC, AAC, etc.) |
 | **Cookies** | yt-dlp `--cookies` | Accede a contenido autenticado (age-restricted, privado) |
 | **Metadatos ID3** | yt-dlp `--replace-in-metadata` | Edita y embebe metadatos en archivos de audio |
-| **Presets** | Configuración predefinida | 6 perfiles de conversión (Music, Podcast, etc.) |
+| **Presets** | Configuración predefinida | 6 perfiles de conversión (Music, Podcast, Archival FLAC, etc.) |
+| **Contenedor de video** | yt-dlp `--merge-output-format` | MP4, MKV o WebM para descargas de video |
+| **Formato de audio** | yt-dlp `--audio-format` | MP3, AAC, FLAC, Opus, WAV o M4A |
 | **Interfaz** | React + Tailwind + framer-motion | UI nativa con animaciones suaves |
 | **Empaquetado** | electron-builder | Instaladores NSIS (Windows), AppImage/.deb (Linux) y portable |
 
@@ -64,8 +72,9 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 │  │  index.ts    │  │  BaseDownloadManager (abstract)  │  │
 │  │  IPC + Tray  │  │  ├─ ensureBinary()               │  │
 │  │  Window mgmt │  │  ├─ processQueue()               │  │
-│  └──────────────┘  │  ├─ cancelItem / cancelAll        │  │
-│                    │  ├─ setupEmitterListeners()       │  │
+│  │  Single lock │  │  ├─ cancelItem / cancelAll        │  │
+│  └──────────────┘  │  ├─ setupEmitterListeners()       │  │
+│                    │  ├─ setDownloadPath()             │  │
 │                    │  └─ validateUrl()                 │  │
 │                    └───────┬──────────┬────────────────┘  │
 │                            │          │                   │
@@ -74,14 +83,15 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 │  ┌───────────────────┐              ┌──────────────────┐ │
 │  │ DownloadManager   │              │ SpotifyDownload  │ │
 │  │ (YouTube/yt-dlp)  │              │ Manager          │ │
-│  │ addToQueue()      │              │ addSpotifyUrl()  │ │
+│  │ --merge-output-   │              │ --audio-format   │ │
+│  │   format (dyn)    │              │ (MP3/FLAC/AAC)  │ │
 │  └───────────────────┘              └──────────────────┘ │
 │         │                                    │           │
 │         ▼                                    ▼           │
 │  ┌───────────────┐              ┌────────────────────┐  │
 │  │ yt-dlp binary │              │ spotify-url-info   │  │
 │  │ (auto-update) │              │ + yt-dlp-search    │  │
-│  └───────────────┘              │   (LRU cache)      │  │
+│  └───────────────┘              │   (LRU + fallback) │  │
 │                                 └────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                             │
@@ -91,8 +101,9 @@ Una app de escritorio multiplataforma (Windows / Linux) construida con Electron 
 │                  Electron Renderer                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
 │  │ DownloadForm │  │  QueueList   │  │   History    │   │
-│  │ URL input    │  │  Active DLs  │  │  Past DLs    │   │
-│  │ Format/Qlty  │  │  Progress    │  │  Search      │   │
+│  │ URL input    │  │  Active DLs  │  │  Session DLs │   │
+│  │ Container/   │  │  Progress    │  │  Search      │   │
+│  │ Audio fmt    │  │              │  │  Filter      │   │
 │  └──────────────┘  └──────────────┘  └──────────────┘   │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
 │  │  ThemeToggle │  │  Toast       │  │  i18n        │   │
@@ -153,10 +164,12 @@ No se requiere instalar `spotdl`, `pip`, `python` ni ninguna otra herramienta ex
 
 1. Arranca la app.
 2. Pega una URL en el campo de texto (o Ctrl+V en cualquier lado, o arrastra el enlace).
-3. Elige formato: **Video (MP4)** o **Audio (MP3)**.
-4. Elige calidad.
-5. Click **Descargar**. El item aparece en la cola; cuando termina se mueve al historial.
-6. Para abrir la carpeta donde se descargó, click en el item completado → "Abrir carpeta".
+3. Elige formato de contenedor: **Video (MP4)**, **Audio (MP3)**, u otra fuente.
+4. Si es video, elige contenedor (MP4/MKV/WebM). Si es audio, elige formato (MP3/AAC/FLAC/Opus/WAV/M4A).
+5. Elige calidad.
+6. Click **Descargar**. El item aparece en la cola; cuando termina se mueve al historial.
+7. Click en el icono de reloj en el header para ver el historial de la sesión.
+8. Para abrir la carpeta donde se descargó, click en el item completado → "Abrir carpeta".
 
 ### FAQ
 
@@ -168,6 +181,15 @@ R: No. La app incluye un motor nativo de Spotify que usa `spotify-url-info` para
 
 **P: ¿Qué calidad de audio puedo elegir para Spotify?**
 R: 320, 256, 192 o 128 kbps. La opción por defecto es 320 kbps.
+
+**P: ¿Qué formatos de contenedor soporta?**
+R: Para video: MP4 (default), MKV y WebM. Para audio: MP3 (default), AAC, FLAC, Opus, WAV y M4A. Los presets "Archival" usan FLAC lossless.
+
+**P: ¿Qué es el fallback de búsqueda de Spotify?**
+R: Cuando el scraping de YouTube falla (error 403/429), la app usa automáticamente el binario de yt-dlp como fallback para encontrar el audio en YouTube.
+
+**P: ¿El historial persiste después de cerrar la app?**
+R: No. El historial es session-only (solo dura mientras la app está abierta). Está diseñado para control rápido de lo que se descargó en la sesión actual.
 
 **P: ¿Por qué no veo 2K / 4K en el selector de calidad?**
 R: La UI expone hasta 1080p. Puedes usar el preset `best` que descarga la mejor calidad disponible (incluye 4K si el video la tiene).
@@ -183,13 +205,18 @@ R: Sí. Lee [CONTRIBUTING.md](CONTRIBUTING.md).
 **La app no descarga nada / se queda en "queued":**
 - Revisa el banner de dependencias al inicio. Si yt-dlp está roto, click "Retry".
 - Verifica conexión a internet.
+- Si la URL es de Spotify y el scraping falla, la app usa automáticamente el fallback de yt-dlp binary.
 
 **Audio sale sin video o viceversa:**
 - ffmpeg no está en PATH. En Windows descarga de [ffmpeg.org](https://ffmpeg.org/download.html) y agrégalo al PATH. En Linux: `sudo apt install ffmpeg`.
+- Verifica que el formato de contenedor seleccionado sea compatible con tu reproductor.
 
 **Linux: la app no abre / crashea al inicio:**
 - Ejecuta desde terminal para ver el error: `easy-downloader`
 - Instala las dependencias listadas en `package.json:linux.deb.depends`.
+
+**Múltiples instancias de la app:**
+- La app previene múltiples instancias automáticamente. Si tienes otro proceso, ciérralo desde el Task Manager (Windows) o `kill` (Linux).
 
 ### Licencia
 
@@ -222,10 +249,13 @@ A cross-platform desktop app (Windows / Linux) built with Electron + React + Tai
 - **Audio quality selector**: 320, 256, 192, or 128 kbps for Spotify downloads.
 - **Video quality selector**: from 480p to best available quality.
 - **Download queue** with up to 3 concurrent downloads.
+- **Video container selector**: MP4 (default), MKV, or WebM.
+- **Audio format selector**: MP3 (default), AAC, FLAC, Opus, WAV, or M4A.
+- **History tab**: session-only history with search, filter, and relative time.
 - **Metadata preview** before downloading (thumbnail, title, duration).
 - **ID3 metadata editor**: edit title, artist, album, year, genre, and track number directly from the UI when downloading audio.
 - **YouTube cookies**: import Netscape-format cookies for authenticated content.
-- **6 conversion presets**: Music, Podcast, Archival, Social Media, Video HD, Video SD.
+- **6 conversion presets**: Music, Podcast, Archival (FLAC lossless), Social Media, Video HD, Video SD.
 - **Folder selector**: change download folder from the header.
 - **Notifications**: on/off toggle, native OS notification on download completion.
 - **Portable mode**: portable executable without installation (`--portable`).
@@ -236,6 +266,8 @@ A cross-platform desktop app (Windows / Linux) built with Electron + React + Tai
 - **Drag & drop** and **global Ctrl+V** to paste URLs.
 - **Persistent queue**: survives restarts.
 - **Toast notifications**: visual feedback for errors and successes.
+- **Single instance lock**: prevents multiple instances of the app.
+- **Clean shutdown**: destroys tray and cancels pending downloads on close.
 
 ### How it works
 
@@ -243,11 +275,14 @@ A cross-platform desktop app (Windows / Linux) built with Electron + React + Tai
 |---|---|---|
 | **YouTube and other sites** | yt-dlp | Downloads video/audio from ~1700 sources |
 | **YouTube search** | `ytInitialData` scraping | Finds the right video without an API key |
+| **Search fallback** | yt-dlp binary (`ytsearch1:`) | When scraping fails (403/429), uses the binary directly |
 | **Spotify** | `spotify-url-info` + yt-dlp | Gets track metadata and finds the audio on YouTube |
-| **Audio conversion** | ffmpeg | Converts to MP3 at the chosen quality |
+| **Audio conversion** | ffmpeg | Converts to the chosen format (MP3, FLAC, AAC, etc.) |
 | **Cookies** | yt-dlp `--cookies` | Accesses authenticated content (age-restricted, private) |
 | **ID3 metadata** | yt-dlp `--replace-in-metadata` | Edits and embeds metadata in audio files |
-| **Presets** | Predefined configuration | 6 conversion profiles (Music, Podcast, etc.) |
+| **Presets** | Predefined configuration | 6 conversion profiles (Music, Podcast, Archival FLAC, etc.) |
+| **Video container** | yt-dlp `--merge-output-format` | MP4, MKV, or WebM for video downloads |
+| **Audio format** | yt-dlp `--audio-format` | MP3, AAC, FLAC, Opus, WAV, or M4A |
 | **Interface** | React + Tailwind + framer-motion | Native UI with smooth animations |
 | **Packaging** | electron-builder | NSIS installers (Windows), AppImage/.deb (Linux) and portable |
 
@@ -303,10 +338,12 @@ No `spotdl`, `pip`, `python`, or other external tools required.
 
 1. Launch the app.
 2. Paste a URL (Ctrl+V anywhere, or drag & drop).
-3. Choose format: **Video (MP4)** or **Audio (MP3)**.
-4. Choose quality.
-5. Click **Download**. Item appears in the queue; when done it moves to history.
-6. To open the download folder, click the completed item → "Open folder".
+3. Choose container: **Video (MP4)**, **Audio (MP3)**, or other source.
+4. If video, choose container (MP4/MKV/WebM). If audio, choose format (MP3/AAC/FLAC/Opus/WAV/M4A).
+5. Choose quality.
+6. Click **Download**. Item appears in the queue; when done it moves to history.
+7. Click the clock icon in the header to view session history.
+8. To open the download folder, click the completed item → "Open folder".
 
 ### FAQ
 
@@ -318,6 +355,15 @@ A: No. The app includes a native Spotify engine that uses `spotify-url-info` for
 
 **Q: What audio quality can I choose for Spotify?**
 A: 320, 256, 192, or 128 kbps. Default is 320 kbps.
+
+**Q: What container formats are supported?**
+A: For video: MP4 (default), MKV, and WebM. For audio: MP3 (default), AAC, FLAC, Opus, WAV, and M4A. "Archival" presets use lossless FLAC.
+
+**Q: What is the Spotify search fallback?**
+A: When YouTube scraping fails (403/429 error), the app automatically uses the yt-dlp binary as a fallback to find the audio on YouTube.
+
+**Q: Does history persist after closing the app?**
+A: No. History is session-only (lasts only while the app is open). It's designed for quick control of what was downloaded in the current session.
 
 **Q: Why don't I see 2K / 4K in the quality selector?**
 A: The UI exposes up to 1080p. You can use the `best` preset which downloads the best available quality (including 4K if available).
@@ -333,13 +379,18 @@ A: Yes. See [CONTRIBUTING.md](CONTRIBUTING.md).
 **App doesn't download / stuck on "queued":**
 - Check the dependencies banner at startup. If yt-dlp is broken, click "Retry".
 - Verify your internet connection.
+- If the URL is from Spotify and scraping fails, the app automatically uses the yt-dlp binary fallback.
 
 **Audio comes out without video (or vice versa):**
 - ffmpeg is not in PATH. On Windows download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH. On Linux: `sudo apt install ffmpeg`.
+- Verify the selected container format is compatible with your player.
 
 **Linux: app won't open / crashes at launch:**
 - Run from terminal to see the error: `easy-downloader`
 - Install the deps listed in `package.json:linux.deb.depends`.
+
+**Multiple instances of the app:**
+- The app prevents multiple instances automatically. If you have another process, close it from Task Manager (Windows) or `kill` (Linux).
 
 ### License
 
@@ -364,8 +415,10 @@ EasyDownloader is free and always will be. If you find it useful, consider suppo
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + framer-motion
 - **Backend**: Electron 42 + electron-vite
 - **Downloads**: yt-dlp-wrap (yt-dlp), spotify-url-info (Spotify metadata)
+- **Search**: YouTube scraping + yt-dlp binary fallback
 - **Packaging**: electron-builder + electron-updater
 - **Storage**: electron-store
+- **Tests**: Vitest (115 unit tests) + Playwright (33 E2E tests)
 
 ## Development
 
