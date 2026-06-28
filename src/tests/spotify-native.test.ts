@@ -243,7 +243,7 @@ describe('SpotifyDownloadManager', () => {
         quality: '320',
         source: 'spotify'
       }
-      ;(item as any).spotifyTrack = { name: 'Test Song', artist: 'Test Artist' }
+      item.spotifyTrack = { name: 'Test Song', artist: 'Test Artist' }
       ;(manager as any).startDownload(item, 1)
 
       await vi.advanceTimersByTimeAsync(200)
@@ -269,7 +269,7 @@ describe('SpotifyDownloadManager', () => {
         quality: '320',
         source: 'spotify'
       }
-      ;(item as any).spotifyTrack = { name: 'Song', artist: 'Artist' }
+      item.spotifyTrack = { name: 'Song', artist: 'Artist' }
       ;(manager as any).startDownload(item, 1)
 
       await vi.advanceTimersByTimeAsync(200)

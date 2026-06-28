@@ -6,16 +6,9 @@ import { AUDIO_FORMAT_MAP } from './options'
 import { YtdlpSearchProvider } from './core/providers/ytdlp-search.provider'
 import { BaseDownloadManager, type ErrorCallback } from './base-manager'
 import spotifyUrlInfoFactory from '../lib/spotify-url-info'
-import type { DownloadItem, DownloadProgress } from '../../src/types'
+import type { DownloadItem, DownloadProgress, SpotifyTrack } from '../../src/types'
 
 type TrackErrorCallback = (itemId: string, trackTitle: string) => void
-
-interface SpotifyTrack {
-  name: string
-  artist: string
-  duration?: number
-  uri?: string
-}
 
 interface ResolvedPlaylist {
   playlistName?: string
@@ -70,10 +63,10 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
       for (const track of resolved.tracks) {
         const title = `${track.artist} - ${track.name}`
         const item = this.createItem(url, title)
-        ;(item as any).spotifyTrack = track
+        item.spotifyTrack = track
         if (quality) item.quality = quality
         if (resolved.playlistName) {
-          ;(item as any).playlistName = resolved.playlistName
+          item.playlistName = resolved.playlistName
         }
         this.queue.push(item)
         addedItems.push(item)
@@ -155,10 +148,10 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
     }
 
     item.status = 'downloading'
-    const spotifyTrack = (item as any).spotifyTrack as SpotifyTrack | undefined
+    const spotifyTrack = item.spotifyTrack
 
     const executeDownload = (youtubeUrl: string) => {
-      const playlistName = (item as any).playlistName as string | undefined
+      const playlistName = item.playlistName
       const sanitizedArtist = spotifyTrack ? sanitizeFilename(spotifyTrack.artist) : ''
       const sanitizedTitle = spotifyTrack ? sanitizeFilename(spotifyTrack.name) : `track-${item.id}`
       const trackFilename = `${sanitizedArtist} - ${sanitizedTitle}`.slice(0, MAX_FILENAME_LENGTH)
@@ -194,7 +187,7 @@ export class SpotifyDownloadManager extends BaseDownloadManager {
         outTemplate,
         '--extract-audio',
         '--audio-format',
-        'mp3',
+        item.audioFormat || 'mp3',
         '--audio-quality',
         quality,
         ...(this.cookiesPath ? ['--cookies', this.cookiesPath] : [])

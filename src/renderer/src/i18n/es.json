@@ -26,6 +26,8 @@
   "form.audio": "Audio",
   "form.resolution": "Resolución",
   "form.bitrate": "Bitrate",
+  "form.container": "Contenedor",
+  "form.audioFormat": "Formato de audio",
   "form.loading": "Cargando...",
   "form.noMetadata": "No se pudo obtener información",
   "form.quality.best": "Mejor (calidad máxima)",
@@ -166,6 +168,7 @@
   "header.downloads": "Descargas",
   "header.switchToEn": "Cambiar a English",
   "header.switchToEs": "Cambiar a Español",
+  "header.history": "Historial",
 
   "context.paste": "Pegar URL",
   "context.pasteAndGo": "Pegar URL y descargar",

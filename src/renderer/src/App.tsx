@@ -5,6 +5,7 @@ import { StatsCard } from './components/stats-card'
 import { QueueList } from './components/queue-list'
 import { ThemeToggle } from './components/theme-toggle'
 import { DependencyBanner } from './components/dependency-banner'
+import { History } from './components/history'
 import { ToastProvider, useToast } from './components/toast'
 import { useDownloads } from './hooks/use-downloads'
 import { useSettings } from './hooks/use-settings'
@@ -42,6 +43,7 @@ function AppContent() {
   const [deps, setDeps] = useState<DependencyStatus | null>(null)
   const [depsDismissed, setDepsDismissed] = useState(false)
   const [folderOpen, setFolderOpen] = useState(false)
+  const [activeView, setActiveView] = useState<'queue' | 'history'>('queue')
   const folderRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -282,6 +284,32 @@ function AppContent() {
 
         {/* Right controls */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* History toggle */}
+          <button
+            onClick={() => setActiveView(activeView === 'queue' ? 'history' : 'queue')}
+            aria-label={t('header.history')}
+            className={`shrink-0 rounded-xl p-1.5 ${
+              activeView === 'history'
+                ? 'text-indigo-500 bg-indigo-500/10'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
+            title={activeView === 'queue' ? t('header.history') : t('app.title')}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </button>
+
           {/* Language toggle */}
           <button
             onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
@@ -362,45 +390,59 @@ function AppContent() {
         </div>
       </header>
 
-      {/* ─── Workspace: Dual Pane ─────────────────────────────────── */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-[1fr_320px]">
-        {/* Left: Download Panel */}
-        <div className="min-h-0 flex flex-col">
-          <DownloadPanel
-            onAdd={handleAdd}
-            onAddSpotify={handleAddSpotify}
-            onAddBatch={addBatchDownloads}
-            isLoading={isLoading}
-          />
-        </div>
+      {/* ─── Main Content ─────────────────────────────────── */}
+      {activeView === 'queue' ? (
+        <>
+          {/* Workspace: Dual Pane */}
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-[1fr_320px]">
+            {/* Left: Download Panel */}
+            <div className="min-h-0 flex flex-col">
+              <DownloadPanel
+                onAdd={handleAdd}
+                onAddSpotify={handleAddSpotify}
+                onAddBatch={addBatchDownloads}
+                isLoading={isLoading}
+              />
+            </div>
 
-        {/* Right: Stats Card (with session controls) */}
-        <div className="min-h-0">
-          <StatsCard
-            queue={queue}
-            settings={settings}
-            onTogglePause={handleTogglePause}
-            onToggleIncognito={() => setIncognitoMode(!settings.incognitoMode)}
-            onToggleMetadata={() => setFetchMetadata(!settings.fetchMetadata)}
-            onChangeConcurrent={setMaxConcurrent}
-          />
-        </div>
-      </div>
+            {/* Right: Stats Card (with session controls) */}
+            <div className="min-h-0">
+              <StatsCard
+                queue={queue}
+                settings={settings}
+                onTogglePause={handleTogglePause}
+                onToggleIncognito={() => setIncognitoMode(!settings.incognitoMode)}
+                onToggleMetadata={() => setFetchMetadata(!settings.fetchMetadata)}
+                onChangeConcurrent={setMaxConcurrent}
+              />
+            </div>
+          </div>
 
-      {/* ─── Queue (always visible) ──────────────── */}
-      <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
-        <div className="glass h-full overflow-y-auto px-5 py-4 pr-1 transition-all duration-300">
-          <QueueList
-            items={queue}
-            onCancel={cancelDownload}
-            onCancelAll={cancelAll}
-            onOpenFolder={openFolder}
-            onRetry={retryDownload}
-            onClearCompleted={clearCompleted}
-            isPaused={settings.globalPause}
-          />
+          {/* Queue (always visible) */}
+          <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
+            <div className="glass h-full overflow-y-auto px-5 py-4 pr-1 transition-all duration-300">
+              <QueueList
+                items={queue}
+                onCancel={cancelDownload}
+                onCancelAll={cancelAll}
+                onOpenFolder={openFolder}
+                onRetry={retryDownload}
+                onClearCompleted={clearCompleted}
+                isPaused={settings.globalPause}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
+          <div className="glass h-full overflow-y-auto px-5 py-4 pr-1 transition-all duration-300">
+            <History
+              onShowInFolder={(path) => window.easyDownloader.showInFolder(path)}
+              onBackToQueue={() => setActiveView('queue')}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Screen reader live region */}
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">

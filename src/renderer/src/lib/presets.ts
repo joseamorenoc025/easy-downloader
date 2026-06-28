@@ -4,6 +4,8 @@ export interface ConversionPreset {
   description: string
   format: 'video' | 'audio'
   quality: string
+  containerFormat?: 'mp4' | 'mkv' | 'webm'
+  audioFormat?: 'mp3' | 'aac' | 'flac' | 'opus' | 'wav' | 'm4a'
   extraArgs: string[]
 }
 
@@ -27,9 +29,10 @@ export const CONVERSION_PRESETS: ConversionPreset[] = [
   {
     id: 'archival',
     name: 'Archival',
-    description: 'Maximum quality for archiving (320 kbps)',
+    description: 'Lossless quality for archiving (FLAC)',
     format: 'audio',
     quality: '320',
+    audioFormat: 'flac',
     extraArgs: ['--embed-thumbnail', '--add-metadata']
   },
   {

@@ -9,6 +9,38 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.0] - 2026-06-28
+
+### Added
+- **Historial como pestaña**: botón de reloj en el header que alterna entre Cola e Historial. El componente `history.tsx` (332 líneas) ahora se renderiza como vista completa con búsqueda, filtro y tiempo relativo.
+- **Selector de contenedor de video**: dropdown con MP4 (default), MKV, WebM. Se aplica `--merge-output-format` a yt-dlp.
+- **Selector de formato de audio**: dropdown con MP3 (default), AAC, FLAC, Opus, WAV, M4A. Se aplica `--audio-format` dinámico.
+- **Fallback para búsquedas de Spotify**: cuando el scraping de YouTube falla (403, 429), se usa el binario de yt-dlp como fallback (`ytsearch1:query --dump-json`).
+
+### Changed
+- **Tipos extendidos**: `DownloadItem` ahora incluye `spotifyTrack?: SpotifyTrack` y `playlistName?: string`. `DownloadOptions` incluye `containerFormat?` y `audioFormat?`.
+- **Presets actualizados**: "Archival" ahora usa FLAC (lossless) en vez de MP3 320kbps.
+- **`.gitignore`**: agregado `/venv/`, `/.venv/`, `/env/`.
+
+### Fixed
+- **Type safety en Spotify**: eliminados 4 casts `as any` en `spotify-native.ts`. Los campos `spotifyTrack` y `playlistName` ahora son parte oficial de `DownloadItem`.
+
+---
+
+# English summary
+
+## [2.5.0] - 2026-06-28
+- **History as tab**: clock button in header toggles between Queue and History views. The `history.tsx` component (332 lines) renders as a full view with search, filter, and relative time.
+- **Video container selector**: dropdown with MP4 (default), MKV, WebM. Applies `--merge-output-format` to yt-dlp.
+- **Audio format selector**: dropdown with MP3 (default), AAC, FLAC, Opus, WAV, M4A. Applies dynamic `--audio-format`.
+- **Spotify search fallback**: when YouTube scraping fails (403, 429), falls back to yt-dlp binary (`ytsearch1:query --dump-json`).
+- **Extended types**: `DownloadItem` now includes `spotifyTrack?: SpotifyTrack` and `playlistName?: string`. `DownloadOptions` includes `containerFormat?` and `audioFormat?`.
+- **Updated presets**: "Archival" now uses FLAC (lossless) instead of MP3 320kbps.
+- **Type safety**: removed 4 `as any` casts in `spotify-native.ts`.
+- **`.gitignore`**: added `/venv/`, `/.venv/`, `/env/`.
+
+---
+
 ## [2.4.0] - 2026-06-27
 
 ### Fixed

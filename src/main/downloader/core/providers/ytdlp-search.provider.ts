@@ -1,4 +1,5 @@
 import https from 'node:https'
+import { getFfmpegPath } from '../../ffmpeg'
 
 function parseDuration(text: string): number {
   const parts = text.split(':').map(Number)
@@ -28,7 +29,10 @@ function httpsGet(url: string, headers: Record<string, string>): Promise<string>
       res.on('error', reject)
     })
     req.on('error', reject)
-    req.setTimeout(15000, () => { req.destroy(); reject(new Error('Timeout')) })
+    req.setTimeout(15000, () => {
+      req.destroy()
+      reject(new Error('Timeout'))
+    })
   })
 }
 
@@ -55,6 +59,18 @@ export class YtdlpSearchProvider {
 
     const candidates = await this.fetchCandidates(query)
 
+    // Fallback: usar binario de yt-dlp si el scraping falló
+    if (candidates.length === 0) {
+      console.warn('[yt-search] Scraping failed, falling back to yt-dlp binary')
+      const fallbackResults = await this.fallbackBinarySearch(query)
+      if (this.cache.size >= this.MAX_CACHE) {
+        const firstKey = this.cache.keys().next().value
+        if (firstKey) this.cache.delete(firstKey)
+      }
+      this.cache.set(cacheKey, fallbackResults)
+      return fallbackResults.length > 0 ? fallbackResults[0] : null
+    }
+
     if (this.cache.size >= this.MAX_CACHE) {
       const firstKey = this.cache.keys().next().value
       if (firstKey) this.cache.delete(firstKey)
@@ -69,9 +85,10 @@ export class YtdlpSearchProvider {
       const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
 
       const html = await httpsGet(url, {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': 'text/html,application/xhtml+xml'
+        Accept: 'text/html,application/xhtml+xml'
       })
 
       const match = html.match(/ytInitialData\s*=\s*({.+?});\s*<\/script>/)
@@ -79,8 +96,8 @@ export class YtdlpSearchProvider {
 
       const data = JSON.parse(match[1])
       const contents =
-        data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
-          ?.sectionListRenderer?.contents || []
+        data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer
+          ?.contents || []
 
       const results: SearchResult[] = []
 
@@ -106,6 +123,43 @@ export class YtdlpSearchProvider {
       return results
     } catch (err) {
       console.error('[yt-search] Failed:', err)
+      return []
+    }
+  }
+
+  private async fallbackBinarySearch(query: string): Promise<SearchResult[]> {
+    try {
+      const YtDlpWrap = require('yt-dlp-wrap')
+      const ytDlp = new YtDlpWrap()
+      const ffmpegPath = getFfmpegPath()
+
+      const args = [
+        `ytsearch1:${query}`,
+        '--dump-json',
+        '--skip-download',
+        '--no-warnings',
+        '--no-playlist'
+      ]
+      if (ffmpegPath) {
+        args.push('--ffmpeg-location', ffmpegPath)
+      }
+
+      const output = await ytDlp.execRaw(args)
+      const data = JSON.parse(output)
+
+      if (!data || !data.id) return []
+
+      return [
+        {
+          id: data.id,
+          title: data.title || query,
+          uploader: data.uploader || data.channel || '',
+          duration: data.duration || 0,
+          url: `https://www.youtube.com/watch?v=${data.id}`
+        }
+      ]
+    } catch (err) {
+      console.error('[yt-search] Fallback binary search failed:', err)
       return []
     }
   }

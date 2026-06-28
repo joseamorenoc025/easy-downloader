@@ -34,12 +34,18 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
   const [source, setSource] = useState<DetectedSource>('youtube')
   const [format, setFormat] = useState<'video' | 'audio'>('video')
   const [quality, setQuality] = useState('best')
+  const [containerFormat, setContainerFormat] = useState<'mp4' | 'mkv' | 'webm'>('mp4')
+  const [audioFormat, setAudioFormat] = useState<'mp3' | 'aac' | 'flac' | 'opus' | 'wav' | 'm4a'>(
+    'mp3'
+  )
   const [error, setError] = useState('')
   const [metadataEditorOpen, setMetadataEditorOpen] = useState(false)
   const [pendingDownload, setPendingDownload] = useState<{
     url: string
     format: 'video' | 'audio'
     quality: string
+    containerFormat?: 'mp4' | 'mkv' | 'webm'
+    audioFormat?: 'mp3' | 'aac' | 'flac' | 'opus' | 'wav' | 'm4a'
   } | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
@@ -131,7 +137,7 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
 
       // For audio format, show metadata editor before download
       if (format === 'audio') {
-        setPendingDownload({ url: trimmedUrl, format, quality })
+        setPendingDownload({ url: trimmedUrl, format, quality, containerFormat, audioFormat })
         setMetadataEditorOpen(true)
         return
       }
@@ -140,11 +146,25 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
       onAdd({
         url: trimmedUrl,
         format,
-        quality
+        quality,
+        containerFormat,
+        audioFormat
       })
       setUrl('')
     },
-    [url, format, quality, source, detectedUrls, onAdd, onAddSpotify, onAddBatch, t]
+    [
+      url,
+      format,
+      quality,
+      containerFormat,
+      audioFormat,
+      source,
+      detectedUrls,
+      onAdd,
+      onAddSpotify,
+      onAddBatch,
+      t
+    ]
   )
 
   const handleMetadataConfirm = useCallback(
@@ -346,6 +366,33 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
                 </option>
               ))}
             </select>
+            {format === 'video' && (
+              <select
+                value={containerFormat}
+                onChange={(e) => setContainerFormat(e.target.value as typeof containerFormat)}
+                aria-label={t('form.container')}
+                className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+              >
+                <option value="mp4">MP4</option>
+                <option value="mkv">MKV</option>
+                <option value="webm">WebM</option>
+              </select>
+            )}
+            {format === 'audio' && (
+              <select
+                value={audioFormat}
+                onChange={(e) => setAudioFormat(e.target.value as typeof audioFormat)}
+                aria-label={t('form.audioFormat')}
+                className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+              >
+                <option value="mp3">MP3</option>
+                <option value="aac">AAC</option>
+                <option value="flac">FLAC</option>
+                <option value="opus">Opus</option>
+                <option value="wav">WAV</option>
+                <option value="m4a">M4A</option>
+              </select>
+            )}
           </>
         )}
 
@@ -401,6 +448,33 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
                 </option>
               ))}
             </select>
+            {format === 'video' && (
+              <select
+                value={containerFormat}
+                onChange={(e) => setContainerFormat(e.target.value as typeof containerFormat)}
+                aria-label={t('form.container')}
+                className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+              >
+                <option value="mp4">MP4</option>
+                <option value="mkv">MKV</option>
+                <option value="webm">WebM</option>
+              </select>
+            )}
+            {format === 'audio' && (
+              <select
+                value={audioFormat}
+                onChange={(e) => setAudioFormat(e.target.value as typeof audioFormat)}
+                aria-label={t('form.audioFormat')}
+                className="rounded-xl border border-input bg-background/80 px-3 py-1.5 text-sm focus:outline-none"
+              >
+                <option value="mp3">MP3</option>
+                <option value="aac">AAC</option>
+                <option value="flac">FLAC</option>
+                <option value="opus">Opus</option>
+                <option value="wav">WAV</option>
+                <option value="m4a">M4A</option>
+              </select>
+            )}
           </>
         )}
 
@@ -433,7 +507,14 @@ export function DownloadForm({ onAdd, onAddSpotify, onAddBatch, isLoading }: Dow
           url={url}
           source={source}
           onDownload={() => {
-            onAdd({ url: url.trim(), format, quality, playlistFolder: true })
+            onAdd({
+              url: url.trim(),
+              format,
+              quality,
+              containerFormat,
+              audioFormat,
+              playlistFolder: true
+            })
             setUrl('')
           }}
         />

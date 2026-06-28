@@ -36,6 +36,8 @@ export class DownloadManager extends BaseDownloadManager {
       source: 'youtube',
       incognito: options.incognito || false,
       writeSubtitles: options.writeSubtitles || false,
+      containerFormat: options.containerFormat,
+      audioFormat: options.audioFormat,
       metadata: options.metadata
     }
 
@@ -118,13 +120,20 @@ export class DownloadManager extends BaseDownloadManager {
         ? [
             '--extract-audio',
             '--audio-format',
-            'mp3',
+            item.audioFormat || 'mp3',
             '--audio-quality',
             item.quality,
             '--embed-thumbnail',
             '--add-metadata'
           ]
-        : ['--write-subs', '--sub-langs', 'en,es', '--embed-subs']),
+        : [
+            '--merge-output-format',
+            item.containerFormat || 'mp4',
+            '--write-subs',
+            '--sub-langs',
+            'en,es',
+            '--embed-subs'
+          ]),
       ...(this.cookiesPath ? ['--cookies', this.cookiesPath] : []),
       ...(item.metadata
         ? [

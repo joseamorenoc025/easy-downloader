@@ -2,13 +2,16 @@ import type { DownloadOptions } from '../../src/types'
 import { app } from 'electron'
 import { mkdirSync, existsSync } from 'fs'
 
-const VIDEO_FORMAT_MAP: Record<string, string> = {
-  'best': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-  '2160p': 'bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/best[height<=2160][ext=mp4]/best',
-  '1440p': 'bestvideo[height<=1440][ext=mp4]+bestaudio[ext=m4a]/best[height<=1440][ext=mp4]/best',
-  '1080p': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
-  '720p': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
-  '480p': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best'
+function buildVideoFormatStr(quality: string, container: string): string {
+  const map: Record<string, string> = {
+    best: `bestvideo[ext=${container}]+bestaudio[ext=m4a]/best[ext=${container}]/best`,
+    '2160p': `bestvideo[height<=2160][ext=${container}]+bestaudio[ext=m4a]/best[height<=2160][ext=${container}]/best`,
+    '1440p': `bestvideo[height<=1440][ext=${container}]+bestaudio[ext=m4a]/best[height<=1440][ext=${container}]/best`,
+    '1080p': `bestvideo[height<=1080][ext=${container}]+bestaudio[ext=m4a]/best[height<=1080][ext=${container}]/best`,
+    '720p': `bestvideo[height<=720][ext=${container}]+bestaudio[ext=m4a]/best[height<=720][ext=${container}]/best`,
+    '480p': `bestvideo[height<=480][ext=${container}]+bestaudio[ext=m4a]/best[height<=480][ext=${container}]/best`
+  }
+  return map[quality] || map['best']
 }
 
 export const AUDIO_FORMAT_MAP: Record<string, string> = {
@@ -22,12 +25,12 @@ function getDefaultOutputDir(): string {
   return app.getPath('downloads')
 }
 
-export function buildDownloadOptions(
-  options: DownloadOptions
-): Record<string, unknown> {
+export function buildDownloadOptions(options: DownloadOptions): Record<string, unknown> {
   const isAudio = options.format === 'audio'
-  const formatMap = isAudio ? AUDIO_FORMAT_MAP : VIDEO_FORMAT_MAP
-  const formatStr = formatMap[options.quality] || formatMap['best']
+  const container = options.containerFormat || 'mp4'
+  const formatStr = isAudio
+    ? AUDIO_FORMAT_MAP[options.quality] || AUDIO_FORMAT_MAP['128']
+    : buildVideoFormatStr(options.quality, container)
 
   const outputDir = options.outputDir || getDefaultOutputDir()
 
@@ -51,10 +54,11 @@ export function buildDownloadOptions(
   }
 
   if (isAudio) {
+    const audioFmt = options.audioFormat || 'mp3'
     ytDlpOptions.postprocessors = [
       {
         key: 'FFmpegExtractAudio',
-        preferredcodec: 'mp3',
+        preferredcodec: audioFmt,
         preferredquality: options.quality
       }
     ]

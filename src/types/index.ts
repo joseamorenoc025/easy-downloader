@@ -9,6 +9,13 @@ export type DownloadErrorCategory =
   | 'unsupported'
   | 'unknown'
 
+export interface SpotifyTrack {
+  name: string
+  artist: string
+  duration?: number
+  uri?: string
+}
+
 export interface DownloadItem {
   id: string
   url: string
@@ -39,6 +46,10 @@ export interface DownloadItem {
     genre?: string
     track?: string
   }
+  /** Spotify: metadata de la pista original. */
+  spotifyTrack?: SpotifyTrack
+  /** Spotify: nombre de la playlist o álbum de origen. */
+  playlistName?: string
 }
 
 export interface FormatInfo {
@@ -69,6 +80,8 @@ export interface DownloadOptions {
   outputDir?: string
   playlistFolder?: boolean
   writeSubtitles?: boolean
+  containerFormat?: 'mp4' | 'mkv' | 'webm'
+  audioFormat?: 'mp3' | 'aac' | 'flac' | 'opus' | 'wav' | 'm4a'
   metadata?: {
     title?: string
     artist?: string
