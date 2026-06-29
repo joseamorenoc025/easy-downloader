@@ -9,6 +9,31 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.1] - 2026-06-28
+
+### Fixed
+- **Título en la cola de descargas**: `fetchTitle()` ahora usa `child_process.execFile` directo con el binario de yt-dlp en vez de `yt-dlp-wrap.execRaw()` (que fallaba silenciosamente por wrapper CJS). El nombre real del video/canción aparece en la cola antes de que inicie la descarga.
+- **Notificaciones**: reset de `notificationsEnabled: true` al iniciar la app (como se hace con `globalPause` e `incognitoMode`). Notificaciones ahora son audibles (`silent: false`). Logs de debug agregados para diagnóstico.
+- **Historial**: reset de `incognitoMode: false` al iniciar la app para evitar que sesiones anteriores silencien el historial. `.catch()` agregado al `getHistory()` en el renderer.
+- **Spotify race condition**: el título del track ahora se asigna directamente al item antes de la descarga, eliminando el patrón de mutar `this.onComplete` que corrompía títulos con descargas concurrentes.
+- **UI limpia**: eliminados botones Play (pausa global) y Meta (toggle metadata) del StatsCard. Metadata preview ahora siempre está activo sin toggle.
+
+### Changed
+- **115 unit tests** + **33 E2E tests**.
+
+---
+
+# English summary
+
+## [2.5.1] - 2026-06-28
+- **Fixed queue title**: `fetchTitle()` now uses `child_process.execFile` directly instead of `yt-dlp-wrap.execRaw()` (which failed silently due to CJS wrapper). Real video/song name appears in queue before download starts.
+- **Fixed notifications**: reset `notificationsEnabled: true` on startup. Notifications are now audible (`silent: false`). Debug logs added.
+- **Fixed history**: reset `incognitoMode: false` on startup to prevent stale sessions from suppressing history. Added `.catch()` to `getHistory()` in renderer.
+- **Fixed Spotify race condition**: track title is assigned directly to the item before download starts, eliminating the `this.onComplete` mutation pattern that corrupted titles under concurrent downloads.
+- **Cleaner UI**: removed Play (global pause) and Meta (metadata toggle) buttons from StatsCard. Metadata preview is now always active.
+
+---
+
 ## [2.5.0] - 2026-06-28
 
 ### Added
