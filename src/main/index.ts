@@ -90,6 +90,7 @@ function initDownloadManager(): void {
         mainWindow?.webContents.send('history-entry-added', entry)
 
         if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
+          console.log('[notification] Showing for:', item.title)
           try {
             const notif = new Notification({
               title: 'Download Complete',
@@ -97,9 +98,17 @@ function initDownloadManager(): void {
               silent: false
             })
             notif.show()
+            console.log('[notification] Shown successfully')
           } catch (e) {
-            console.error('Notification failed:', e)
+            console.error('[notification] Failed:', e)
           }
+        } else {
+          console.log(
+            '[notification] Skipped — supported:',
+            Notification.isSupported(),
+            'enabled:',
+            store.get('notificationsEnabled')
+          )
         }
       }
     },
@@ -150,6 +159,7 @@ function initSpotifyManager(): void {
         mainWindow?.webContents.send('history-entry-added', entry)
 
         if (Notification.isSupported() && (store.get('notificationsEnabled') as boolean)) {
+          console.log('[notification] Showing Spotify for:', item.title)
           try {
             const notif = new Notification({
               title: 'Spotify Download Complete',
@@ -157,9 +167,17 @@ function initSpotifyManager(): void {
               silent: false
             })
             notif.show()
+            console.log('[notification] Spotify shown successfully')
           } catch (e) {
-            console.error('Notification failed:', e)
+            console.error('[notification] Spotify failed:', e)
           }
+        } else {
+          console.log(
+            '[notification] Spotify skipped — supported:',
+            Notification.isSupported(),
+            'enabled:',
+            store.get('notificationsEnabled')
+          )
         }
       }
     },
@@ -207,6 +225,7 @@ app.whenReady().then(() => {
   // UI/main-process state mismatch
   store.set('globalPause', false)
   store.set('incognitoMode', false)
+  store.set('notificationsEnabled', true)
 
   // Init managers
   initDownloadManager()
