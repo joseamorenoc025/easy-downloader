@@ -52,21 +52,28 @@ export class DownloadManager extends BaseDownloadManager {
 
   private async fetchTitle(item: DownloadItem): Promise<void> {
     try {
+      const { execFile } = await import('child_process')
+      const binPath = this.ytDlp.getBinaryPath()
       const args = [
-        item.url,
         '--print',
         'title',
         '--skip-download',
         '--no-warnings',
         '--no-playlist',
         '--socket-timeout',
-        '10'
+        '10',
+        item.url
       ]
       if (this.cookiesPath) {
         args.push('--cookies', this.cookiesPath)
       }
-      const title = await this.ytDlp.execRaw(args)
-      const cleanTitle = title.trim()
+      const stdout = await new Promise<string>((resolve, reject) => {
+        execFile(binPath, args, { timeout: 15000 }, (err, stdout) => {
+          if (err) reject(err)
+          else resolve(stdout)
+        })
+      })
+      const cleanTitle = stdout.trim()
       if (cleanTitle && cleanTitle !== 'NA') {
         item.title = cleanTitle
         this.onProgress({
@@ -79,8 +86,8 @@ export class DownloadManager extends BaseDownloadManager {
           title: item.title
         })
       }
-    } catch {
-      // Keep 'Queued...' as fallback
+    } catch (err) {
+      console.error('[fetchTitle] Failed:', err)
     }
   }
 
