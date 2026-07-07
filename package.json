@@ -36,7 +36,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "electron-store": "^10.0.0",
     "electron-updater": "^6.3.9",
-    "framer-motion": "^12.41.0",
+    "framer-motion": "^12.42.2",
     "fuse.js": "^7.4.2",
     "spotify-url-info": "^3.3.1",
     "yt-dlp-wrap": "^2.3.12"
