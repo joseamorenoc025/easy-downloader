@@ -38,7 +38,7 @@
     "electron-updater": "^6.3.9",
     "framer-motion": "^12.42.2",
     "fuse.js": "^7.5.0",
-    "spotify-url-info": "^3.3.1",
+    "spotify-url-info": "^3.3.3",
     "yt-dlp-wrap": "^2.3.12"
   },
   "devDependencies": {
